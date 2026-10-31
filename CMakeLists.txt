@@ -35,3 +35,7 @@ find_package(Threads REQUIRED)
 
 add_subdirectory(ThirdParty)
 add_subdirectory(Engine/Runtime/Core)
+
+if(BUILD_TESTING)
+    include(Engine/Runtime/Core/Tests.cmake)
+endif()
