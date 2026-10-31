@@ -1,0 +1,63 @@
+# Roxell generated build and test output
+/.build/
+/out/
+/.cache/
+/Testing/
+/RoxellEditorCookContracts_*/
+/Saved/
+/TestResults/
+/ThirdParty/dxc/restored/
+/ThirdParty/slang/restored/
+*.log
+*.binlog
+
+# IDE and user state
+/.vs/
+/.vscode/
+/.idea/
+*.suo
+*.user
+*.rsuser
+*.VC.db
+*.VC.opendb
+*.sln.docstates
+
+# C/C++ products
+*.obj
+*.o
+*.pch
+*.pdb
+*.ilk
+*.lib
+*.a
+*.dll
+*.so
+*.dylib
+*.exe
+*.out
+
+# CMake/Ninja products outside the canonical build root
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+build.ninja
+*.ninja
+*.ninja_deps
+*.ninja_log
+
+# Python tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+
+# Temporary files
+*.tmp
+*.bak
+*~
+~$*
+
+# Authored local projects and editable content (preserve during artifact cleanup)
+/.local/
