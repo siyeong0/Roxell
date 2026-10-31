@@ -2,42 +2,36 @@
 
 ## Requirements
 
-On Windows, install Visual Studio C++ tools, the Windows SDK, CMake 3.28 or later, Ninja 1.13 or later, Python 3.11 or later, and Node.js. Run the commands below from the repository root in an x64 Developer PowerShell.
-
-Install the Python test dependencies once:
-
-```powershell
-python -m pip install -r DevKit/Automation/requirements-test.txt
-```
+On Windows, install Visual Studio C++ tools, the Windows SDK, CMake 3.28 or later, and Ninja 1.13 or later. Run the commands below from the repository root in an x64 Developer PowerShell.
 
 ## Build and test
 
 ```powershell
-& ./DevKit/bootstrap.ps1 build
-& ./DevKit/bootstrap.ps1 test
+cmake -S . -B .build/windows-ninja -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build .build/windows-ninja
+ctest --test-dir .build/windows-ninja --output-on-failure
 ```
 
-The build uses `.build/windows-ninja` and configures it if needed. The test command builds first, then runs CTest. Reuse this build tree. Pass `-Configuration Release` or `-Parallel <jobs>` when needed.
+Reuse the build tree for subsequent builds. Set `BUILD_TESTING=OFF` when configuring to omit test targets.
 
 To run a focused test:
 
 ```powershell
-& ./DevKit/bootstrap.ps1 test -Target Test-CoreContracts -TestFilter '^Roxell\.Core$'
+cmake --build .build/windows-ninja --target Test-CoreMath
+ctest --test-dir .build/windows-ninja -R '^Roxell\.Core\.Math\.' --output-on-failure
 ```
 
 To generate the Visual Studio solution:
 
 ```powershell
-& ./DevKit/bootstrap.ps1 configure -Generator 'Visual Studio 17 2022'
+cmake -S . -B .build/windows-vs -G 'Visual Studio 17 2022' -A x64
 ```
 
 Open `.build/windows-vs/Roxell.sln`. Regenerate it after source-list changes; do not edit generated files.
 
-Release builds enable supported first-party interprocedural optimization by default (`ROXELL_ENABLE_RELEASE_IPO`); sanitized builds skip it. Record the configuration, IPO setting, and worker count when comparing performance.
-
 ## Verification
 
-Test the behavior affected by your changes. Run `python DevKit/Architecture/validate_modules.py` for API, manifest, or source-policy changes, and build `Test-ContractHeaders` for public-header changes. Use a reusable ASan build for ownership changes and check affected backends. Skipped tests are not verified. Check links and diffs for documentation changes. See [Tests](../Tests/README.md) for test design.
+Test the behavior affected by your changes. Check links and diffs for documentation changes. See [Tests](../Tests/README.md) for the available test targets.
 
 ## Git and pull requests
 

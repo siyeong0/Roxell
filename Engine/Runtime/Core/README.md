@@ -17,4 +17,5 @@ Link `Runtime-Core` and include the headers for the types you use. `Public/Core.
 
 Core uses an explicit memory resource for owned allocations. The resource must outlive the objects and allocations it owns. Native platform services are provided by platform-specific code.
 
-JSON serialization uses the bundled nlohmann/json library. Tests are not included yet.
+JSON serialization uses the bundled nlohmann/json library. Unit tests use GoogleTest;
+see [Tests](../../../Tests/README.md) for build and run instructions.
