@@ -39,6 +39,33 @@ Release builds enable supported first-party interprocedural optimization by defa
 
 Test the behavior affected by your changes. Run `python DevKit/Architecture/validate_modules.py` for API, manifest, or source-policy changes, and build `Test-ContractHeaders` for public-header changes. Use a reusable ASan build for ownership changes and check affected backends. Skipped tests are not verified. Check links and diffs for documentation changes. See [Tests](../Tests/README.md) for test design.
 
+## Git and pull requests
+
+Write PR and commit titles in English using `<type>: <description>`. Start the description with a capitalized verb, describe the change, and omit the final period. Keep commit subjects around 50 characters when practical. Choose one type for the main change:
+
+| Type | Use |
+| --- | --- |
+| `feat` | New features or public APIs |
+| `fix` | Bug fixes |
+| `refactor` | Code changes that preserve behavior |
+| `build` | Build configuration and dependencies |
+| `test` | Test additions or changes |
+| `docs` | Documentation |
+| `chore` | Other repository maintenance |
+
+For example, use `feat: Add Core memory resources` for a feature PR and `test: Add memory resource tests` for its test commit. Use `add` in the description rather than as a type.
+
+Name branches `<type>/<short-description>` using the same types, lowercase letters, and hyphens. Use one branch per PR. For example:
+
+- `build/core-foundation`
+- `feat/core-memory`
+- `fix/array-overflow`
+- `docs/git-conventions`
+
+Keep each commit focused on one logical change. Add a commit body when the reason or constraints need explanation; separate it from the subject with a blank line and wrap lines around 72 characters.
+
+In the PR description, briefly explain what changed and why. Include relevant checks and their results, and note any tests not run or remaining limitations. Keep simple changes concise.
+
 ## Local files
 
 - `.build/` contains reusable build output.
