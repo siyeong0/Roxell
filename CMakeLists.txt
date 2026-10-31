@@ -28,3 +28,10 @@ else()
 endif()
 
 include(CTest)
+
+option(ROXELL_ENABLE_PROFILING "Enable profiling instrumentation" ON)
+
+find_package(Threads REQUIRED)
+
+add_subdirectory(ThirdParty)
+add_subdirectory(Engine/Runtime/Core)
