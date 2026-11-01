@@ -6,6 +6,10 @@ target_include_directories(ThirdParty-NlohmannJson SYSTEM INTERFACE
 if(ROXELL_RHI_BACKEND STREQUAL "Vulkan")
     add_subdirectory(vulkan_headers)
 endif()
-if(BUILD_TESTING AND ROXELL_BUILD_RHI_GPU_TESTS)
+if(ROXELL_BUILD_SHADER_COMPILER OR (BUILD_TESTING AND ROXELL_BUILD_RHI_GPU_TESTS))
     add_subdirectory(dxc)
+endif()
+
+if(ROXELL_BUILD_SHADER_COMPILER)
+    add_subdirectory(slang)
 endif()
