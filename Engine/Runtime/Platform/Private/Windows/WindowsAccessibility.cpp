@@ -19,6 +19,8 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	namespace
 	{
 		class AccessibilityProvider;
@@ -27,10 +29,10 @@ namespace rox::os
 	struct WindowsAccessibilityState
 	{
 	public:
-		rox::core::Mutex Mutex;
+		Mutex Mutex;
 		AccessibilitySnapshot Snapshot;
-		core::Array<core::SharedPtr<AccessibilityActionState>> Queue;
-		core::Array<AccessibilityProvider*> Providers;
+		Array<SharedPtr<AccessibilityActionState>> Queue;
+		Array<AccessibilityProvider*> Providers;
 
 		HWND Window = nullptr;
 		DWORD OwnerThread = 0;
@@ -41,8 +43,8 @@ namespace rox::os
 
 	public:
 		explicit WindowsAccessibilityState(HWND window) noexcept
-			: Queue(core::SystemMemoryResource::Get())
-			, Providers(core::SystemMemoryResource::Get())
+			: Queue(SystemMemoryResource::Get())
+			, Providers(SystemMemoryResource::Get())
 			, Window(window)
 			, OwnerThread(GetCurrentThreadId())
 		{
@@ -51,33 +53,33 @@ namespace rox::os
 
 	namespace
 	{
-		core::MemoryResource& getAccessibilityResource() noexcept
+		MemoryResource& getAccessibilityResource() noexcept
 		{
-			return core::SystemMemoryResource::Get();
+			return SystemMemoryResource::Get();
 		}
 
-		HRESULT toNativeStatus(core::EErrorCode error) noexcept
+		HRESULT toNativeStatus(EErrorCode error) noexcept
 		{
 			switch (error)
 			{
-			case core::EErrorCode::None:
+			case EErrorCode::None:
 				return S_OK;
-			case core::EErrorCode::PermissionDenied:
+			case EErrorCode::PermissionDenied:
 				return UIA_E_ELEMENTNOTENABLED;
-			case core::EErrorCode::InvalidArgument:
+			case EErrorCode::InvalidArgument:
 				return E_INVALIDARG;
-			case core::EErrorCode::Unsupported:
+			case EErrorCode::Unsupported:
 				return UIA_E_NOTSUPPORTED;
-			case core::EErrorCode::ExternalFailure:
+			case EErrorCode::ExternalFailure:
 				return E_OUTOFMEMORY;
-			case core::EErrorCode::Timeout:
+			case EErrorCode::Timeout:
 				return UIA_E_TIMEOUT;
 			default:
 				return UIA_E_ELEMENTNOTAVAILABLE;
 			}
 		}
 
-		HRESULT createBstr(core::StringView text, BSTR* output)
+		HRESULT createBstr(StringView text, BSTR* output)
 		{
 			if (!output)
 			{
@@ -108,7 +110,7 @@ namespace rox::os
 			return S_OK;
 		}
 
-		core::uint32 getAdjacentByteOffset(core::StringView text, core::uint32 byte, bool bForward) noexcept
+		uint32 getAdjacentByteOffset(StringView text, uint32 byte, bool bForward) noexcept
 		{
 			if (bForward)
 			{
@@ -135,17 +137,17 @@ namespace rox::os
 			return byte;
 		}
 
-		HRESULT submitAction(const core::SharedPtr<WindowsAccessibilityState>& state, AccessibilityId id, EAccessibilityAction kind, core::StringView value = {}, core::uint32 first = 0, core::uint32 last = 0, core::uint64 contentRevision = 0)
+		HRESULT submitAction(const SharedPtr<WindowsAccessibilityState>& state, AccessibilityId id, EAccessibilityAction kind, StringView value = {}, uint32 first = 0, uint32 last = 0, uint64 contentRevision = 0)
 		{
-			core::SharedPtr<AccessibilityActionState> request;
+			SharedPtr<AccessibilityActionState> request;
 
-			if (!core::SharedPtr<AccessibilityActionState>::CreateInto(getAccessibilityResource(), &request, getAccessibilityResource()) || !request->Action.Value.Assign(value))
+			if (!SharedPtr<AccessibilityActionState>::CreateInto(getAccessibilityResource(), &request, getAccessibilityResource()) || !request->Action.Value.Assign(value))
 			{
 				return E_OUTOFMEMORY;
 			}
 
 			{
-				rox::core::LockGuard lock(state->Mutex);
+				LockGuard lock(state->Mutex);
 				const AccessibilityNode* node = state->Snapshot.Find(id);
 
 				if (state->bClosed || !node || (contentRevision && node->ContentRevision != contentRevision))
@@ -201,7 +203,7 @@ namespace rox::os
 				}
 			}
 
-			rox::core::UniqueLock lock(request->Mutex);
+			UniqueLock lock(request->Mutex);
 
 			while (!request->bComplete)
 			{
@@ -209,10 +211,10 @@ namespace rox::os
 				{
 					request->Changed.wait(lock);
 				}
-				else if (request->Changed.wait_until(lock, request->Deadline) == rox::core::EWaitStatus::timeout && !request->bStarted)
+				else if (request->Changed.wait_until(lock, request->Deadline) == EWaitStatus::timeout && !request->bStarted)
 				{
 					request->bComplete = true;
-					request->Error = core::EErrorCode::Timeout;
+					request->Error = EErrorCode::Timeout;
 				}
 			}
 
@@ -235,13 +237,13 @@ namespace rox::os
 			public IVirtualizedItemProvider
 		{
 		public:
-			core::SharedPtr<WindowsAccessibilityState> State;
+			SharedPtr<WindowsAccessibilityState> State;
 			AccessibilityId Id;
-			rox::core::Atomic<ULONG> References{ 1 };
+			Atomic<ULONG> References{ 1 };
 
 		public:
-			AccessibilityProvider(core::SharedPtr<WindowsAccessibilityState> state, AccessibilityId id) noexcept
-				: State(rox::core::Move(state))
+			AccessibilityProvider(SharedPtr<WindowsAccessibilityState> state, AccessibilityId id) noexcept
+				: State(Move(state))
 				, Id(id)
 			{
 			}
@@ -329,7 +331,7 @@ namespace rox::os
 
 				if (!remaining)
 				{
-					core::DestroyObject(getAccessibilityResource(), this);
+					DestroyObject(getAccessibilityResource(), this);
 				}
 
 				return remaining;
@@ -357,7 +359,7 @@ namespace rox::os
 				}
 
 				*output = nullptr;
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 
 				if (State->bClosed)
 				{
@@ -498,7 +500,7 @@ namespace rox::os
 
 				double percentage;
 				{
-					rox::core::LockGuard lock(State->Mutex);
+					LockGuard lock(State->Mutex);
 					const AccessibilityNode* node = State->bClosed ? nullptr : State->Snapshot.Find(Id);
 
 					if (!node)
@@ -506,10 +508,10 @@ namespace rox::os
 						return UIA_E_ELEMENTNOTAVAILABLE;
 					}
 
-					const double step = rox::core::Max(
+					const double step = Max(
 						0.001, node->VerticalViewSize *
 						((vertical == ScrollAmount_LargeDecrement || vertical == ScrollAmount_LargeIncrement) ? 0.9 : 0.1));
-					percentage = rox::core::ClampValue(
+					percentage = ClampValue(
 						node->VerticalScrollPercent + (vertical == ScrollAmount_NoAmount ? 0
 							: (vertical == ScrollAmount_LargeDecrement || vertical == ScrollAmount_SmallDecrement)
 							? -step
@@ -522,7 +524,7 @@ namespace rox::os
 
 			HRESULT STDMETHODCALLTYPE SetScrollPercent(double horizontal, double vertical) override
 			{
-				if (horizontal != UIA_ScrollPatternNoScroll || !rox::core::IsFinite(vertical) || (vertical != UIA_ScrollPatternNoScroll && (vertical < 0 || vertical > 100)))
+				if (horizontal != UIA_ScrollPatternNoScroll || !IsFinite(vertical) || (vertical != UIA_ScrollPatternNoScroll && (vertical < 0 || vertical > 100)))
 				{
 					return E_INVALIDARG;
 				}
@@ -532,7 +534,7 @@ namespace rox::os
 					return S_OK;
 				}
 
-				return submitAction(State, Id, EAccessibilityAction::ScrollTo, {}, static_cast<core::uint32>(vertical * 10000));
+				return submitAction(State, Id, EAccessibilityAction::ScrollTo, {}, static_cast<uint32>(vertical * 10000));
 			}
 
 			HRESULT scrollProperty(double* output, bool bSize)
@@ -542,7 +544,7 @@ namespace rox::os
 					return E_POINTER;
 				}
 
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 				const AccessibilityNode* node = State->bClosed ? nullptr : State->Snapshot.Find(Id);
 
 				if (!node)
@@ -623,7 +625,7 @@ namespace rox::os
 
 		};
 
-		AccessibilityProvider* findOrCreateProvider(const core::SharedPtr<WindowsAccessibilityState>& state, AccessibilityId id)
+		AccessibilityProvider* findOrCreateProvider(const SharedPtr<WindowsAccessibilityState>& state, AccessibilityId id)
 		{
 			if (state->bClosed || (id.IsValid() && !state->Snapshot.Find(id)))
 			{
@@ -645,7 +647,7 @@ namespace rox::os
 				return nullptr;
 			}
 
-			AccessibilityProvider* created = core::CreateObject<AccessibilityProvider>(getAccessibilityResource(), state, id);
+			AccessibilityProvider* created = CreateObject<AccessibilityProvider>(getAccessibilityResource(), state, id);
 
 			if (!created)
 			{
@@ -672,7 +674,7 @@ namespace rox::os
 			}
 
 			*output = nullptr;
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 
 			if (State->bClosed)
 			{
@@ -739,7 +741,7 @@ namespace rox::os
 			}
 
 			VariantInit(output);
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 
 			if (State->bClosed)
 			{
@@ -766,9 +768,9 @@ namespace rox::os
 			{
 				output->vt = VT_BSTR;
 
-				return createBstr(property == UIA_FrameworkIdPropertyId ? core::StringView("Rui")
+				return createBstr(property == UIA_FrameworkIdPropertyId ? StringView("Rui")
 					: node ? node->Name.View()
-					: core::StringView("Rui window"),
+					: StringView("Rui window"),
 					&output->bstrVal);
 			}
 
@@ -813,7 +815,7 @@ namespace rox::os
 			}
 
 			*output = nullptr;
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 
 			if (State->bClosed)
 			{
@@ -908,7 +910,7 @@ namespace rox::os
 			}
 
 			*output = nullptr;
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 
 			if (State->bClosed || (Id.IsValid() && !State->Snapshot.Find(Id)))
 			{
@@ -921,7 +923,7 @@ namespace rox::os
 			}
 
 			int values[9]{ UiaAppendRuntimeId };
-			const core::uint64 fields[]{ Id.Owner, Id.Slot, Id.Generation, Id.Item };
+			const uint64 fields[]{ Id.Owner, Id.Slot, Id.Generation, Id.Item };
 
 			for (unsigned index = 0; index < 4; ++index)
 			{
@@ -952,7 +954,7 @@ namespace rox::os
 			}
 
 			*output = {};
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 
 			if (State->bClosed)
 			{
@@ -988,7 +990,7 @@ namespace rox::os
 			}
 
 			*output = nullptr;
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 
 			if (State->bClosed)
 			{
@@ -1015,7 +1017,7 @@ namespace rox::os
 			}
 
 			*output = nullptr;
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 
 			if (State->bClosed)
 			{
@@ -1054,7 +1056,7 @@ namespace rox::os
 			}
 
 			*output = nullptr;
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 
 			if (State->bClosed)
 			{
@@ -1087,7 +1089,7 @@ namespace rox::os
 				return E_POINTER;
 			}
 
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 			const AccessibilityNode* node = State->bClosed ? nullptr : State->Snapshot.Find(Id);
 
 			if (!node)
@@ -1121,9 +1123,9 @@ namespace rox::os
 				return E_INVALIDARG;
 			}
 
-			core::Array<char> utf8(getAccessibilityResource());
+			Array<char> utf8(getAccessibilityResource());
 
-			if (!utf8.ResizeUninitialized(static_cast<rox::core::usize>(count)))
+			if (!utf8.ResizeUninitialized(static_cast<usize>(count)))
 			{
 				return E_OUTOFMEMORY;
 			}
@@ -1144,7 +1146,7 @@ namespace rox::os
 			}
 
 			*output = nullptr;
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 			const AccessibilityNode* node = State->bClosed ? nullptr : State->Snapshot.Find(Id);
 
 			if (!node)
@@ -1167,7 +1169,7 @@ namespace rox::os
 				return E_POINTER;
 			}
 
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 			const AccessibilityNode* node = State->bClosed ? nullptr : State->Snapshot.Find(Id);
 
 			if (!node)
@@ -1187,7 +1189,7 @@ namespace rox::os
 				return E_POINTER;
 			}
 
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 			const AccessibilityNode* node = State->bClosed ? nullptr : State->Snapshot.Find(Id);
 
 			if (!node)
@@ -1208,7 +1210,7 @@ namespace rox::os
 			}
 
 			*output = nullptr;
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 
 			if (State->bClosed)
 			{
@@ -1236,7 +1238,7 @@ namespace rox::os
 				return E_POINTER;
 			}
 
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 			const AccessibilityNode* node = State->bClosed ? nullptr : State->Snapshot.Find(Id);
 
 			if (!node)
@@ -1258,17 +1260,17 @@ namespace rox::os
 		class AccessibilityRange final : public ITextRangeProvider
 		{
 		public:
-			core::SharedPtr<WindowsAccessibilityState> State;
+			SharedPtr<WindowsAccessibilityState> State;
 			AccessibilityId Id;
-			core::uint64 Revision;
-			core::uint32 First;
-			core::uint32 Last;
-			rox::core::Atomic<ULONG> References{ 1 };
+			uint64 Revision;
+			uint32 First;
+			uint32 Last;
+			Atomic<ULONG> References{ 1 };
 
 		public:
-			AccessibilityRange(core::SharedPtr<WindowsAccessibilityState> state, AccessibilityId id, core::uint64 revision, core::uint32 first,
-				core::uint32 last) noexcept
-				: State(rox::core::Move(state))
+			AccessibilityRange(SharedPtr<WindowsAccessibilityState> state, AccessibilityId id, uint64 revision, uint32 first,
+				uint32 last) noexcept
+				: State(core::Move(state))
 				, Id(id)
 				, Revision(revision)
 				, First(first)
@@ -1314,7 +1316,7 @@ namespace rox::os
 
 				if (!remaining)
 				{
-					core::DestroyObject(getAccessibilityResource(), this);
+					DestroyObject(getAccessibilityResource(), this);
 				}
 
 				return remaining;
@@ -1328,14 +1330,14 @@ namespace rox::os
 				}
 
 				*output = nullptr;
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 
 				if (!node())
 				{
 					return UIA_E_ELEMENTNOTAVAILABLE;
 				}
 
-				*output = core::CreateObject<AccessibilityRange>(getAccessibilityResource(), State, Id, Revision, First, Last);
+				*output = CreateObject<AccessibilityRange>(getAccessibilityResource(), State, Id, Revision, First, Last);
 
 				return *output ? S_OK : E_OUTOFMEMORY;
 			}
@@ -1355,7 +1357,7 @@ namespace rox::os
 					return S_OK;
 				}
 
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 
 				if (!node() || !range->node())
 				{
@@ -1382,7 +1384,7 @@ namespace rox::os
 					return E_INVALIDARG;
 				}
 
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 
 				if (!node() || !range->node())
 				{
@@ -1393,9 +1395,9 @@ namespace rox::os
 				return S_OK;
 			}
 
-			core::uint32 boundary(const AccessibilityNode& current, core::uint32 byte, TextUnit unit, bool bForward) const noexcept
+			uint32 boundary(const AccessibilityNode& current, uint32 byte, TextUnit unit, bool bForward) const noexcept
 			{
-				const core::StringView text = current.Value.View();
+				const StringView text = current.Value.View();
 
 				if (unit == TextUnit_Character)
 				{
@@ -1424,12 +1426,12 @@ namespace rox::os
 				}
 
 				// Unsupported format/word/page units promote to the supported document unit.
-				return bForward ? static_cast<core::uint32>(text.Size()) : 0;
+				return bForward ? static_cast<uint32>(text.Size()) : 0;
 			}
 
 			HRESULT STDMETHODCALLTYPE ExpandToEnclosingUnit(TextUnit unit) override
 			{
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 				const AccessibilityNode* current = node();
 
 				if (!current)
@@ -1458,7 +1460,7 @@ namespace rox::os
 				else
 				{
 					First = 0;
-					Last = static_cast<core::uint32>(current->Value.Size());
+					Last = static_cast<uint32>(current->Value.Size());
 				}
 
 				return S_OK;
@@ -1490,7 +1492,7 @@ namespace rox::os
 					return E_INVALIDARG;
 				}
 
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 				const AccessibilityNode* current = node();
 
 				if (!current)
@@ -1518,7 +1520,7 @@ namespace rox::os
 
 					if (matched > 0)
 					{
-						*output = core::CreateObject<AccessibilityRange>(getAccessibilityResource(), State, Id, Revision, First + static_cast<core::uint32>(prefix), First + static_cast<core::uint32>(prefix + matched));
+						*output = CreateObject<AccessibilityRange>(getAccessibilityResource(), State, Id, Revision, First + static_cast<uint32>(prefix), First + static_cast<uint32>(prefix + matched));
 					}
 				}
 
@@ -1535,7 +1537,7 @@ namespace rox::os
 				}
 
 				VariantInit(output);
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 				const AccessibilityNode* current = node();
 
 				if (!current)
@@ -1564,7 +1566,7 @@ namespace rox::os
 				}
 
 				*output = nullptr;
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 				const AccessibilityNode* current = node();
 
 				if (!current)
@@ -1579,7 +1581,7 @@ namespace rox::os
 					return *output ? S_OK : E_OUTOFMEMORY;
 				}
 
-				core::Result<core::Array<AccessibilityRect>> rectangles = current->Geometry->GetBounds(First, Last, getAccessibilityResource());
+				Result<Array<AccessibilityRect>> rectangles = current->Geometry->GetBounds(First, Last, getAccessibilityResource());
 
 				if (!rectangles)
 				{
@@ -1604,7 +1606,7 @@ namespace rox::os
 				{
 					double values[]{ rect.X + State->Origin.x, rect.Y + State->Origin.y, rect.Width, rect.Height };
 
-					for (core::float64 value : values)
+					for (float64 value : values)
 					{
 						SafeArrayPutElement(*output, &index, &value);
 						++index;
@@ -1622,7 +1624,7 @@ namespace rox::os
 				}
 
 				*output = nullptr;
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 
 				if (!node())
 				{
@@ -1655,7 +1657,7 @@ namespace rox::os
 					return E_INVALIDARG;
 				}
 
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 				const AccessibilityNode* current = node();
 
 				if (!current)
@@ -1704,7 +1706,7 @@ namespace rox::os
 					return E_INVALIDARG;
 				}
 
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 				const AccessibilityNode* current = node();
 
 				if (!current)
@@ -1717,7 +1719,7 @@ namespace rox::os
 
 				while (*moved != count)
 				{
-					const core::uint32 next = boundary(*current, First, unit, bForward);
+					const uint32 next = boundary(*current, First, unit, bForward);
 
 					if (next == First || (bNonempty && next == current->Value.Size()))
 					{
@@ -1752,7 +1754,7 @@ namespace rox::os
 					return E_INVALIDARG;
 				}
 
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 				const AccessibilityNode* current = node();
 
 				if (!current)
@@ -1760,11 +1762,11 @@ namespace rox::os
 					return UIA_E_ELEMENTNOTAVAILABLE;
 				}
 
-				core::uint32& selected = endpoint == TextPatternRangeEndpoint_Start ? First : Last;
+				uint32& selected = endpoint == TextPatternRangeEndpoint_Start ? First : Last;
 
 				while (*moved != count)
 				{
-					const core::uint32 next = boundary(*current, selected, unit, count > 0);
+					const uint32 next = boundary(*current, selected, unit, count > 0);
 
 					if (next == selected)
 					{
@@ -1804,14 +1806,14 @@ namespace rox::os
 					return E_INVALIDARG;
 				}
 
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 
 				if (!node() || !range->node())
 				{
 					return UIA_E_ELEMENTNOTAVAILABLE;
 				}
 
-				const core::uint32 value = target == TextPatternRangeEndpoint_Start ? range->First : range->Last;
+				const uint32 value = target == TextPatternRangeEndpoint_Start ? range->First : range->Last;
 
 				if (endpoint == TextPatternRangeEndpoint_Start)
 				{
@@ -1837,10 +1839,10 @@ namespace rox::os
 
 			HRESULT action(EAccessibilityAction kind)
 			{
-				core::uint32 first;
-				core::uint32 last;
+				uint32 first;
+				uint32 last;
 				{
-					rox::core::LockGuard lock(State->Mutex);
+					LockGuard lock(State->Mutex);
 
 					if (!node())
 					{
@@ -1881,7 +1883,7 @@ namespace rox::os
 					return E_POINTER;
 				}
 
-				rox::core::LockGuard lock(State->Mutex);
+				LockGuard lock(State->Mutex);
 
 				if (!node())
 				{
@@ -1934,7 +1936,7 @@ namespace rox::os
 			}
 
 			*output = nullptr;
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 			const AccessibilityNode* node = State->bClosed ? nullptr : State->Snapshot.Find(Id);
 
 			if (!node)
@@ -1947,7 +1949,7 @@ namespace rox::os
 				return E_ACCESSDENIED;
 			}
 
-			*output = core::CreateObject<AccessibilityRange>(getAccessibilityResource(), State, Id, node->ContentRevision, 0u, static_cast<core::uint32>(node->Value.Size()));
+			*output = CreateObject<AccessibilityRange>(getAccessibilityResource(), State, Id, node->ContentRevision, 0u, static_cast<uint32>(node->Value.Size()));
 			return *output ? S_OK : E_OUTOFMEMORY;
 		}
 
@@ -1959,7 +1961,7 @@ namespace rox::os
 			}
 
 			*output = nullptr;
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 			const AccessibilityNode* node = State->bClosed ? nullptr : State->Snapshot.Find(Id);
 
 			if (!node)
@@ -1974,7 +1976,7 @@ namespace rox::os
 
 			if (node->Role == EAccessibilityRole::Edit)
 			{
-				AccessibilityRange* range = core::CreateObject<AccessibilityRange>(getAccessibilityResource(), State, Id, node->ContentRevision, node->SelectionStart, node->SelectionEnd);
+				AccessibilityRange* range = CreateObject<AccessibilityRange>(getAccessibilityResource(), State, Id, node->ContentRevision, node->SelectionStart, node->SelectionEnd);
 
 				if (!range)
 				{
@@ -2010,7 +2012,7 @@ namespace rox::os
 			}
 
 			*output = nullptr;
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 			const AccessibilityNode* node = State->bClosed ? nullptr : State->Snapshot.Find(Id);
 
 			if (!node)
@@ -2028,22 +2030,22 @@ namespace rox::os
 				return createRangeArray(nullptr, output);
 			}
 
-			core::uint32 first = 0;
-			core::uint32 last = static_cast<core::uint32>(node->Value.Size());
+			uint32 first = 0;
+			uint32 last = static_cast<uint32>(node->Value.Size());
 
 			if (node->Geometry)
 			{
-				core::Result<core::uint32> start = node->Geometry->HitTest(node->Bounds.X, node->Bounds.Y);
-				core::Result<core::uint32> end = node->Geometry->HitTest(node->Bounds.X + node->Bounds.Width, node->Bounds.Y + node->Bounds.Height);
+				Result<uint32> start = node->Geometry->HitTest(node->Bounds.X, node->Bounds.Y);
+				Result<uint32> end = node->Geometry->HitTest(node->Bounds.X + node->Bounds.Width, node->Bounds.Y + node->Bounds.Height);
 
 				if (start && end)
 				{
-					first = rox::core::Min(start.Value(), end.Value());
-					last = rox::core::Max(start.Value(), end.Value());
+					first = Min(start.Value(), end.Value());
+					last = Max(start.Value(), end.Value());
 				}
 			}
 
-			AccessibilityRange* range = core::CreateObject<AccessibilityRange>(getAccessibilityResource(), State, Id, node->ContentRevision, first, last);
+			AccessibilityRange* range = CreateObject<AccessibilityRange>(getAccessibilityResource(), State, Id, node->ContentRevision, first, last);
 
 			if (!range)
 			{
@@ -2061,7 +2063,7 @@ namespace rox::os
 			}
 
 			*output = nullptr;
-			rox::core::LockGuard lock(State->Mutex);
+			LockGuard lock(State->Mutex);
 			const AccessibilityNode* node = State->bClosed ? nullptr : State->Snapshot.Find(Id);
 
 			if (!node)
@@ -2074,11 +2076,11 @@ namespace rox::os
 				return E_ACCESSDENIED;
 			}
 
-			core::uint32 byte = 0;
+			uint32 byte = 0;
 
 			if (node->Geometry)
 			{
-				core::Result<core::uint32> hit = node->Geometry->HitTest(point.x - State->Origin.x, point.y - State->Origin.y);
+				Result<uint32> hit = node->Geometry->HitTest(point.x - State->Origin.x, point.y - State->Origin.y);
 
 				if (!hit)
 				{
@@ -2088,14 +2090,14 @@ namespace rox::os
 				byte = hit.Value();
 			}
 
-			*output = core::CreateObject<AccessibilityRange>(getAccessibilityResource(), State, Id, node->ContentRevision, byte, byte);
+			*output = CreateObject<AccessibilityRange>(getAccessibilityResource(), State, Id, node->ContentRevision, byte, byte);
 
 			return *output ? S_OK : E_OUTOFMEMORY;
 		}
 	}
 
-	WindowsAccessibility::WindowsAccessibility(core::SharedPtr<WindowsAccessibilityState> state) noexcept
-		: m_State(rox::core::Move(state))
+	WindowsAccessibility::WindowsAccessibility(SharedPtr<WindowsAccessibilityState> state) noexcept
+		: m_State(Move(state))
 	{
 	}
 
@@ -2104,25 +2106,25 @@ namespace rox::os
 		Close();
 	}
 
-	core::Result<core::UniquePtr<WindowsAccessibility>> WindowsAccessibility::Create(void* window)
+	Result<UniquePtr<WindowsAccessibility>> WindowsAccessibility::Create(void* window)
 	{
-		using R = core::Result<core::UniquePtr<WindowsAccessibility>>;
-		core::SharedPtr<WindowsAccessibilityState> state;
+		using R = Result<UniquePtr<WindowsAccessibility>>;
+		SharedPtr<WindowsAccessibilityState> state;
 
-		if (!window || !core::SharedPtr<WindowsAccessibilityState>::CreateInto(getAccessibilityResource(), &state, static_cast<HWND>(window)) || !state->Queue.Reserve(64))
+		if (!window || !SharedPtr<WindowsAccessibilityState>::CreateInto(getAccessibilityResource(), &state, static_cast<HWND>(window)) || !state->Queue.Reserve(64))
 		{
-			return R::Failure(core::EErrorCode::ExternalFailure, "Platform.Accessibility", "Accessibility owner allocation failed.");
+			return R::Failure(EErrorCode::ExternalFailure, "Platform.Accessibility", "Accessibility owner allocation failed.");
 		}
 
 		const HRESULT apartment = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
 		if (FAILED(apartment))
 		{
-			return R::Failure(core::EErrorCode::ExternalFailure, "Platform.Accessibility", "Accessibility window owner requires a COM STA.");
+			return R::Failure(EErrorCode::ExternalFailure, "Platform.Accessibility", "Accessibility window owner requires a COM STA.");
 		}
 
 		state->bComInitialized = true;
-		core::UniquePtr<WindowsAccessibility> owner = core::MakeUnique<WindowsAccessibility>(getAccessibilityResource(), state);
+		UniquePtr<WindowsAccessibility> owner = MakeUnique<WindowsAccessibility>(getAccessibilityResource(), state);
 
 		if (!owner)
 		{
@@ -2132,13 +2134,13 @@ namespace rox::os
 
 		if (!owner)
 		{
-			return R::Failure(core::EErrorCode::ExternalFailure, "Platform.Accessibility", "Accessibility owner allocation failed.");
+			return R::Failure(EErrorCode::ExternalFailure, "Platform.Accessibility", "Accessibility owner allocation failed.");
 		}
 
-		return R::Success(rox::core::Move(owner));
+		return R::Success(Move(owner));
 	}
 
-	core::Result<void> WindowsAccessibility::Publish(const AccessibilitySnapshot& snapshot)
+	Result<void> WindowsAccessibility::Publish(const AccessibilitySnapshot& snapshot)
 	{
 		ASSERT(GetCurrentThreadId() == m_State->OwnerThread, "Accessibility publication requires the window owner thread.");
 
@@ -2146,12 +2148,12 @@ namespace rox::os
 		{
 			Close();
 
-			return core::Result<void>::Success();
+			return Result<void>::Success();
 		}
 
 		POINT origin{};
 		ClientToScreen(m_State->Window, &origin);
-		core::Array<AccessibilityProvider*> removed(getAccessibilityResource());
+		Array<AccessibilityProvider*> removed(getAccessibilityResource());
 		AccessibilityProvider* root = nullptr;
 		AccessibilityProvider* focus = nullptr;
 		bool bStructureChanged = false;
@@ -2167,21 +2169,21 @@ namespace rox::os
 		Notification notifications[128]{};
 		unsigned notificationCount = 0;
 		{
-			rox::core::LockGuard lock(m_State->Mutex);
+			LockGuard lock(m_State->Mutex);
 
 			if (m_State->bClosed)
 			{
-				return core::Result<void>::Failure(core::EErrorCode::Cancelled, "Platform.Accessibility", "Accessibility owner is closed.");
+				return Result<void>::Failure(EErrorCode::Cancelled, "Platform.Accessibility", "Accessibility owner is closed.");
 			}
 
 			if (!removed.Reserve(m_State->Providers.Size()))
 			{
-				return core::Result<void>::Failure(core::EErrorCode::ExternalFailure, "Platform.Accessibility",
+				return Result<void>::Failure(EErrorCode::ExternalFailure, "Platform.Accessibility",
 					"Accessibility retirement allocation failed.");
 			}
 
-			const core::Span<const AccessibilityNode> old = m_State->Snapshot.GetNodes();
-			const core::Span<const AccessibilityNode> next = snapshot.GetNodes();
+			const Span<const AccessibilityNode> old = m_State->Snapshot.GetNodes();
+			const Span<const AccessibilityNode> next = snapshot.GetNodes();
 			bStructureChanged = old.Size() != next.Size();
 			AccessibilityId oldFocus;
 			AccessibilityId newFocus;
@@ -2194,7 +2196,7 @@ namespace rox::os
 				}
 			}
 
-			for (rox::core::usize index = 0; index < next.Size(); ++index)
+			for (usize index = 0; index < next.Size(); ++index)
 			{
 				if (next[index].bFocused)
 				{
@@ -2245,7 +2247,7 @@ namespace rox::os
 						}
 					};
 
-				for (rox::core::usize index = 0; index < next.Size(); ++index)
+				for (usize index = 0; index < next.Size(); ++index)
 				{
 					const AccessibilityNode& before = old[index];
 					const AccessibilityNode& after = next[index];
@@ -2279,7 +2281,7 @@ namespace rox::os
 			m_State->Snapshot = snapshot;
 			m_State->Origin = origin;
 
-			for (rox::core::usize index = m_State->Providers.Size(); index; --index)
+			for (usize index = m_State->Providers.Size(); index; --index)
 			{
 				AccessibilityProvider* candidate = m_State->Providers[index - 1];
 
@@ -2337,30 +2339,30 @@ namespace rox::os
 			focus->Release();
 		}
 
-		return core::Result<void>::Success();
+		return Result<void>::Success();
 	}
 
 	AccessibilityRequest WindowsAccessibility::Poll()
 	{
 		ASSERT(GetCurrentThreadId() == m_State->OwnerThread, "Accessibility actions require the window owner thread.");
-		rox::core::LockGuard lock(m_State->Mutex);
+		LockGuard lock(m_State->Mutex);
 
 		if (m_State->bClosed || m_State->Queue.IsEmpty())
 		{
 			return {};
 		}
 
-		AccessibilityRequest request = WindowsAccessibilityAccess::Make(rox::core::Move(m_State->Queue[0]));
+		AccessibilityRequest request = WindowsAccessibilityAccess::Make(Move(m_State->Queue[0]));
 		m_State->Queue.RemoveAt(0);
 
 		return request;
 	}
 
-	core::int64 WindowsAccessibility::ReturnProvider(core::uint64 word, core::int64 data)
+	int64 WindowsAccessibility::ReturnProvider(uint64 word, int64 data)
 	{
 		AccessibilityProvider* root;
 		{
-			rox::core::LockGuard lock(m_State->Mutex);
+			LockGuard lock(m_State->Mutex);
 			root = findOrCreateProvider(m_State, {});
 		}
 
@@ -2369,7 +2371,7 @@ namespace rox::os
 			return 0;
 		}
 
-		const core::int64 result = UiaReturnRawElementProvider(m_State->Window, static_cast<WPARAM>(word), static_cast<LPARAM>(data), root);
+		const int64 result = UiaReturnRawElementProvider(m_State->Window, static_cast<WPARAM>(word), static_cast<LPARAM>(data), root);
 		root->Release();
 
 		return result;
@@ -2383,9 +2385,9 @@ namespace rox::os
 		}
 
 		ASSERT(GetCurrentThreadId() == m_State->OwnerThread, "Accessibility closure requires the window owner thread.");
-		core::Array<AccessibilityProvider*> providers(getAccessibilityResource());
+		Array<AccessibilityProvider*> providers(getAccessibilityResource());
 		{
-			rox::core::LockGuard lock(m_State->Mutex);
+			LockGuard lock(m_State->Mutex);
 
 			if (m_State->bClosed)
 			{
@@ -2397,13 +2399,13 @@ namespace rox::os
 			// on the UI owner, before application retirement. External COM objects retain only this empty system owner.
 			m_State->Snapshot = {};
 
-			for (core::SharedPtr<AccessibilityActionState>& action : m_State->Queue)
+			for (SharedPtr<AccessibilityActionState>& action : m_State->Queue)
 			{
-				WindowsAccessibilityAccess::Make(action).Complete(core::EErrorCode::Cancelled);
+				WindowsAccessibilityAccess::Make(action).Complete(EErrorCode::Cancelled);
 			}
 
 			m_State->Queue.Clear();
-			providers = rox::core::Move(m_State->Providers);
+			providers = Move(m_State->Providers);
 		}
 
 		for (AccessibilityProvider* candidate : providers)

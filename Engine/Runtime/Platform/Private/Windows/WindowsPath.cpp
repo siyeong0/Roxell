@@ -16,18 +16,20 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	namespace
 	{
-		core::Error pathAllocationError() noexcept
+		Error pathAllocationError() noexcept
 		{
-			return core::MakeError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PATH-ALLOCATION",
+			return MakeError(EErrorCode::ExternalFailure, "ROX-PLATFORM-PATH-ALLOCATION",
 				"The filesystem operation could not allocate temporary storage.",
 				"Release memory and retry the filesystem operation.");
 		}
 
-		void setError(rox::core::SystemErrorCode& error, const DWORD code) noexcept
+		void setError(SystemErrorCode& error, const DWORD code) noexcept
 		{
-			error = rox::core::SystemErrorCode(static_cast<int>(code), rox::core::SystemCategory());
+			error = SystemErrorCode(static_cast<int>(code), SystemCategory());
 		}
 
 		bool isMissing(const DWORD error) noexcept
@@ -36,12 +38,12 @@ namespace rox::os
 				error == ERROR_BAD_NETPATH || error == ERROR_DIRECTORY || error == ERROR_NETNAME_DELETED;
 		}
 
-		bool isDrive(const rox::core::WideStringView path) noexcept
+		bool isDrive(const WideStringView path) noexcept
 		{
 			return path.size() >= 2 && path[1] == L':' && ((path[0] >= L'A' && path[0] <= L'Z') || (path[0] >= L'a' && path[0] <= L'z'));
 		}
 
-		bool queryAttributes(const WindowsPath& path, WIN32_FILE_ATTRIBUTE_DATA& data, rox::core::SystemErrorCode& error) noexcept
+		bool queryAttributes(const WindowsPath& path, WIN32_FILE_ATTRIBUTE_DATA& data, SystemErrorCode& error) noexcept
 		{
 			if (GetFileAttributesExW(path.CStr(), GetFileExInfoStandard, &data))
 			{
@@ -101,7 +103,7 @@ namespace rox::os
 			PathHandle& operator=(const PathHandle&) = delete;
 		};
 
-		core::Result<WindowsPath> canonicalPath(const WindowsPath& input, rox::core::SystemErrorCode& error)
+		Result<WindowsPath> canonicalPath(const WindowsPath& input, SystemErrorCode& error)
 		{
 			WindowsPath result(input.Resource());
 			PathHandle handle(input.CStr());
@@ -110,13 +112,13 @@ namespace rox::os
 			{
 				setError(error, GetLastError());
 
-				return core::Result<WindowsPath>::Success(rox::core::Move(result));
+				return Result<WindowsPath>::Success(Move(result));
 			}
 
 			DWORD kind = VOLUME_NAME_DOS;
 			if (!result.Resize(MAX_PATH))
 			{
-				return core::Result<WindowsPath>::Failure(pathAllocationError());
+				return Result<WindowsPath>::Failure(pathAllocationError());
 			}
 
 			for (;;)
@@ -137,15 +139,15 @@ namespace rox::os
 					setError(error, code);
 					if (!result.Resize(0))
 					{
-						return core::Result<WindowsPath>::Failure(pathAllocationError());
+						return Result<WindowsPath>::Failure(pathAllocationError());
 					}
 
-					return core::Result<WindowsPath>::Success(rox::core::Move(result));
+					return Result<WindowsPath>::Success(Move(result));
 				}
 
 				if (!result.Resize(size))
 				{
-					return core::Result<WindowsPath>::Failure(pathAllocationError());
+					return Result<WindowsPath>::Failure(pathAllocationError());
 				}
 
 				if (size < capacity)
@@ -155,58 +157,58 @@ namespace rox::os
 			}
 
 			WindowsPath normalized(input.Resource());
-			const core::WideStringView text = result.View();
+			const WideStringView text = result.View();
 
 			if (kind == VOLUME_NAME_NT)
 			{
 				if (!normalized.Assign(L"\\\\?\\GLOBALROOT"))
 				{
-					return core::Result<WindowsPath>::Failure(pathAllocationError());
+					return Result<WindowsPath>::Failure(pathAllocationError());
 				}
 				if (!normalized.Append(text))
 				{
-					return core::Result<WindowsPath>::Failure(pathAllocationError());
+					return Result<WindowsPath>::Failure(pathAllocationError());
 				}
 			}
 			else if (text.starts_with(L"\\\\?\\") && isDrive(text.substr(4)))
 			{
 				if (!normalized.Assign(text.substr(4)))
 				{
-					return core::Result<WindowsPath>::Failure(pathAllocationError());
+					return Result<WindowsPath>::Failure(pathAllocationError());
 				}
 			}
 			else if (text.starts_with(L"\\\\?\\UNC\\"))
 			{
 				if (!normalized.Assign(L"\\\\"))
 				{
-					return core::Result<WindowsPath>::Failure(pathAllocationError());
+					return Result<WindowsPath>::Failure(pathAllocationError());
 				}
 				if (!normalized.Append(text.substr(8)))
 				{
-					return core::Result<WindowsPath>::Failure(pathAllocationError());
+					return Result<WindowsPath>::Failure(pathAllocationError());
 				}
 			}
 			else
 			{
-				normalized = rox::core::Move(result);
+				normalized = Move(result);
 			}
 
 			error.clear();
 
-			return core::Result<WindowsPath>::Success(rox::core::Move(normalized));
+			return Result<WindowsPath>::Success(Move(normalized));
 		}
 
-		core::Result<WindowsPath> lexicalNormal(const WindowsPath& input)
+		Result<WindowsPath> lexicalNormal(const WindowsPath& input)
 		{
-			const core::WideStringView text = input.View();
+			const WideStringView text = input.View();
 			WindowsPath result(input.Resource());
-			const rox::core::usize rootName = RootNameSize(text);
+			const usize rootName = RootNameSize(text);
 			if (!result.Assign(text.substr(0, rootName)))
 			{
-				return core::Result<WindowsPath>::Failure(pathAllocationError());
+				return Result<WindowsPath>::Failure(pathAllocationError());
 			}
 
-			for (rox::core::usize index = 0; index < result.Size(); ++index)
+			for (usize index = 0; index < result.Size(); ++index)
 			{
 				if (IsPathSeparator(result.Data()[index]))
 				{
@@ -214,29 +216,29 @@ namespace rox::os
 				}
 			}
 
-			const rox::core::usize relative = RootPathSize(text);
+			const usize relative = RootPathSize(text);
 			const bool bRooted = relative > rootName;
 
 			if (bRooted)
 			{
 				if (!result.Append(L"\\"))
 				{
-					return core::Result<WindowsPath>::Failure(pathAllocationError());
+					return Result<WindowsPath>::Failure(pathAllocationError());
 				}
 			}
 
-			rox::core::usize cursor = relative;
+			usize cursor = relative;
 
 			while (cursor < text.size())
 			{
-				const rox::core::usize start = cursor;
+				const usize start = cursor;
 
 				while (cursor < text.size() && !IsPathSeparator(text[cursor]))
 				{
 					++cursor;
 				}
 
-				const core::WideStringView component = text.substr(start, cursor - start);
+				const WideStringView component = text.substr(start, cursor - start);
 				const bool bTrailing = cursor < text.size();
 
 				while (cursor < text.size() && IsPathSeparator(text[cursor]))
@@ -250,7 +252,7 @@ namespace rox::os
 					{
 						if (!result.Append(L"\\"))
 						{
-							return core::Result<WindowsPath>::Failure(pathAllocationError());
+							return Result<WindowsPath>::Failure(pathAllocationError());
 						}
 					}
 
@@ -259,30 +261,30 @@ namespace rox::os
 
 				if (component == L"..")
 				{
-					const core::WideStringView current = result.View();
-					core::Result<WindowsPath> parentResult = result.Parent();
+					const WideStringView current = result.View();
+					Result<WindowsPath> parentResult = result.Parent();
 
 					if (!parentResult)
 					{
-						return core::Result<WindowsPath>::Failure(parentResult.GetError());
+						return Result<WindowsPath>::Failure(parentResult.GetError());
 					}
 
 					const WindowsPath& parent = parentResult.Value();
-					const core::WideStringView last =
+					const WideStringView last =
 						current.substr(parent.Size() + (parent.Size() < current.size() && IsPathSeparator(current[parent.Size()]) ? 1 : 0));
 
 					if (current.size() > RootPathSize(current) && last != L"..")
 					{
 						if (!result.Resize(parent.Size()))
 						{
-							return core::Result<WindowsPath>::Failure(pathAllocationError());
+							return Result<WindowsPath>::Failure(pathAllocationError());
 						}
 
 						if (cursor == text.size() && !result.IsEmpty() && !IsPathSeparator(result.View().back()))
 						{
 							if (!result.Append(L"\\"))
 							{
-								return core::Result<WindowsPath>::Failure(pathAllocationError());
+								return Result<WindowsPath>::Failure(pathAllocationError());
 							}
 						}
 					}
@@ -290,7 +292,7 @@ namespace rox::os
 					{
 						if (!result.AppendComponent(component))
 						{
-							return core::Result<WindowsPath>::Failure(pathAllocationError());
+							return Result<WindowsPath>::Failure(pathAllocationError());
 						}
 					}
 				}
@@ -298,7 +300,7 @@ namespace rox::os
 				{
 					if (!result.AppendComponent(component))
 					{
-						return core::Result<WindowsPath>::Failure(pathAllocationError());
+						return Result<WindowsPath>::Failure(pathAllocationError());
 					}
 				}
 
@@ -306,7 +308,7 @@ namespace rox::os
 				{
 					if (!result.Append(L"\\"))
 					{
-						return core::Result<WindowsPath>::Failure(pathAllocationError());
+						return Result<WindowsPath>::Failure(pathAllocationError());
 					}
 				}
 			}
@@ -315,25 +317,25 @@ namespace rox::os
 			{
 				if (!result.Assign(L"."))
 				{
-					return core::Result<WindowsPath>::Failure(pathAllocationError());
+					return Result<WindowsPath>::Failure(pathAllocationError());
 				}
 			}
 
-			return core::Result<WindowsPath>::Success(rox::core::Move(result));
+			return Result<WindowsPath>::Success(Move(result));
 		}
 	}
 
 	WindowsPath& WindowsPath::operator=(WindowsPath&& other) noexcept
 	{
 		ASSERT(&Resource() == &other.Resource(), "Path move assignment must retain the same scratch resource.");
-		m_Text = rox::core::Move(other.m_Text);
+		m_Text = Move(other.m_Text);
 
 		return *this;
 	}
 
-	bool WindowsPath::Resize(const rox::core::usize size)
+	bool WindowsPath::Resize(const usize size)
 	{
-		if (size >= (rox::core::NumericLimits<DWORD>::max)() || !m_Text.Resize(size + 1))
+		if (size >= (NumericLimits<DWORD>::max)() || !m_Text.Resize(size + 1))
 		{
 			return false;
 		}
@@ -343,7 +345,7 @@ namespace rox::os
 		return true;
 	}
 
-	bool WindowsPath::Assign(const rox::core::WideStringView text)
+	bool WindowsPath::Assign(const WideStringView text)
 	{
 		if (!Resize(text.size()))
 		{
@@ -352,17 +354,17 @@ namespace rox::os
 
 		if (!text.empty())
 		{
-			rox::core::CopyBytes(Data(), text.data(), text.size() * sizeof(wchar_t));
+			CopyBytes(Data(), text.data(), text.size() * sizeof(wchar_t));
 		}
 
 		return true;
 	}
 
-	bool WindowsPath::Append(const rox::core::WideStringView text)
+	bool WindowsPath::Append(const WideStringView text)
 	{
-		const rox::core::usize size = Size();
+		const usize size = Size();
 
-		if (text.size() > (rox::core::NumericLimits<DWORD>::max)() - size - 1)
+		if (text.size() > (NumericLimits<DWORD>::max)() - size - 1)
 		{
 			return false;
 		}
@@ -374,13 +376,13 @@ namespace rox::os
 
 		if (!text.empty())
 		{
-			rox::core::CopyBytes(Data() + size, text.data(), text.size() * sizeof(wchar_t));
+			CopyBytes(Data() + size, text.data(), text.size() * sizeof(wchar_t));
 		}
 
 		return true;
 	}
 
-	bool WindowsPath::AppendComponent(const rox::core::WideStringView text)
+	bool WindowsPath::AppendComponent(const WideStringView text)
 	{
 		if (!IsEmpty() && !IsPathSeparator(View().back()) && Size() > RootNameSize(View()))
 		{
@@ -393,11 +395,11 @@ namespace rox::os
 		return Append(text);
 	}
 
-	core::Result<WindowsPath> WindowsPath::Parent() const
+	Result<WindowsPath> WindowsPath::Parent() const
 	{
-		rox::core::usize end = Size();
-		const core::WideStringView text = View();
-		const core::usize root = RootPathSize(text);
+		usize end = Size();
+		const WideStringView text = View();
+		const usize root = RootPathSize(text);
 
 		while (end > root && !IsPathSeparator(text[end - 1]))
 		{
@@ -411,10 +413,10 @@ namespace rox::os
 		WindowsPath result(Resource());
 		if (!result.Assign(text.substr(0, end)))
 		{
-			return core::Result<WindowsPath>::Failure(pathAllocationError());
+			return Result<WindowsPath>::Failure(pathAllocationError());
 		}
 
-		return core::Result<WindowsPath>::Success(rox::core::Move(result));
+		return Result<WindowsPath>::Success(Move(result));
 	}
 
 	bool IsPathSeparator(const wchar_t character) noexcept
@@ -422,12 +424,12 @@ namespace rox::os
 		return character == L'\\' || character == L'/';
 	}
 
-	bool IsMissingPathError(const rox::core::SystemErrorCode& error) noexcept
+	bool IsMissingPathError(const SystemErrorCode& error) noexcept
 	{
-		return error.category() == rox::core::SystemCategory() && isMissing(static_cast<DWORD>(error.value()));
+		return error.category() == SystemCategory() && isMissing(static_cast<DWORD>(error.value()));
 	}
 
-	rox::core::usize RootNameSize(const rox::core::WideStringView path) noexcept
+	usize RootNameSize(const WideStringView path) noexcept
 	{
 		if (isDrive(path))
 		{
@@ -447,7 +449,7 @@ namespace rox::os
 
 		if (path.size() >= 3 && IsPathSeparator(path[1]) && !IsPathSeparator(path[2]))
 		{
-			rox::core::usize end = 3;
+			usize end = 3;
 
 			while (end < path.size() && !IsPathSeparator(path[end]))
 			{
@@ -460,9 +462,9 @@ namespace rox::os
 		return 0;
 	}
 
-	rox::core::usize RootPathSize(const rox::core::WideStringView path) noexcept
+	usize RootPathSize(const WideStringView path) noexcept
 	{
-		rox::core::usize end = RootNameSize(path);
+		usize end = RootNameSize(path);
 
 		while (end < path.size() && IsPathSeparator(path[end]))
 		{
@@ -472,7 +474,7 @@ namespace rox::os
 		return end;
 	}
 
-	bool IsAbsolutePath(const rox::core::WideStringView path) noexcept
+	bool IsAbsolutePath(const WideStringView path) noexcept
 	{
 		return isDrive(path) ? path.size() >= 3 && IsPathSeparator(path[2]) : RootNameSize(path) != 0;
 	}
@@ -480,15 +482,15 @@ namespace rox::os
 	bool IsWithinRoot(const WindowsPath& root, const WindowsPath& candidate, const bool bWindowsCase) noexcept
 	{
 		ASSERT(IsAbsolutePath(root.View()) && IsAbsolutePath(candidate.View()), "Containment requires absolute paths.");
-		const core::WideStringView a = root.View();
-		const core::WideStringView b = candidate.View();
-		rox::core::usize i = 0;
-		rox::core::usize j = 0;
+		const WideStringView a = root.View();
+		const WideStringView b = candidate.View();
+		usize i = 0;
+		usize j = 0;
 
 		while (i < a.size())
 		{
-			rox::core::usize ai = i;
-			rox::core::usize bj = j;
+			usize ai = i;
+			usize bj = j;
 
 			if (i == 0 && RootNameSize(a) != 0)
 			{
@@ -524,8 +526,8 @@ namespace rox::os
 				}
 			}
 
-			const core::WideStringView left = a.substr(ai, i - ai);
-			const core::WideStringView right = b.substr(bj, j - bj);
+			const WideStringView left = a.substr(ai, i - ai);
+			const WideStringView right = b.substr(bj, j - bj);
 
 			if (bWindowsCase ? CompareStringOrdinal(left.data(), static_cast<int>(left.size()), right.data(), static_cast<int>(right.size()),
 				TRUE) != CSTR_EQUAL
@@ -538,35 +540,35 @@ namespace rox::os
 		return true;
 	}
 
-	core::Result<WindowsPath> PathFromUtf8(const rox::core::StringView text, core::MemoryResource& resource)
+	Result<WindowsPath> PathFromUtf8(const StringView text, MemoryResource& resource)
 	{
-		ASSERT(!text.empty() && core::IsValidUtf8(core::StringView(text)), "Path conversion requires nonempty valid UTF-8.");
+		ASSERT(!text.empty() && IsValidUtf8(StringView(text)), "Path conversion requires nonempty valid UTF-8.");
 
-		if (text.size() > static_cast<rox::core::usize>((rox::core::NumericLimits<int>::max)()))
+		if (text.size() > static_cast<usize>((NumericLimits<int>::max)()))
 		{
-			return core::Result<WindowsPath>::Failure(pathAllocationError());
+			return Result<WindowsPath>::Failure(pathAllocationError());
 		}
 
 		const int length = static_cast<int>(text.size());
 		const int count = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text.data(), length, nullptr, 0);
 		ASSERT(count > 0, "Validated UTF-8 must have a positive UTF-16 length.");
 		WindowsPath path(resource);
-		if (!path.Resize(static_cast<rox::core::usize>(count)))
+		if (!path.Resize(static_cast<usize>(count)))
 		{
-			return core::Result<WindowsPath>::Failure(pathAllocationError());
+			return Result<WindowsPath>::Failure(pathAllocationError());
 		}
 		const int converted = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text.data(), length, path.Data(), count);
 		ASSERT(converted == count, "Validated UTF-8 conversion must fill the measured UTF-16 range.");
 
-		return core::Result<WindowsPath>::Success(rox::core::Move(path));
+		return Result<WindowsPath>::Success(Move(path));
 	}
 
-	core::Result<WindowsPath> AbsolutePath(const WindowsPath& input, rox::core::SystemErrorCode& error)
+	Result<WindowsPath> AbsolutePath(const WindowsPath& input, SystemErrorCode& error)
 	{
 		WindowsPath result(input.Resource());
 		if (!result.Resize(MAX_PATH))
 		{
-			return core::Result<WindowsPath>::Failure(pathAllocationError());
+			return Result<WindowsPath>::Failure(pathAllocationError());
 		}
 
 		for (;;)
@@ -579,61 +581,61 @@ namespace rox::os
 				setError(error, GetLastError());
 				if (!result.Resize(0))
 				{
-					return core::Result<WindowsPath>::Failure(pathAllocationError());
+					return Result<WindowsPath>::Failure(pathAllocationError());
 				}
 
-				return core::Result<WindowsPath>::Success(rox::core::Move(result));
+				return Result<WindowsPath>::Success(Move(result));
 			}
 
 			if (!result.Resize(size))
 			{
-				return core::Result<WindowsPath>::Failure(pathAllocationError());
+				return Result<WindowsPath>::Failure(pathAllocationError());
 			}
 
 			if (size < capacity)
 			{
 				error.clear();
 
-				return core::Result<WindowsPath>::Success(rox::core::Move(result));
+				return Result<WindowsPath>::Success(Move(result));
 			}
 		}
 	}
 
-	core::Result<WindowsPath> WeaklyCanonicalPath(const WindowsPath& input, rox::core::SystemErrorCode& error)
+	Result<WindowsPath> WeaklyCanonicalPath(const WindowsPath& input, SystemErrorCode& error)
 	{
-		core::Result<WindowsPath> initial = canonicalPath(input, error);
+		Result<WindowsPath> initial = canonicalPath(input, error);
 
 		if (!initial)
 		{
-			return core::Result<WindowsPath>::Failure(initial.GetError());
+			return Result<WindowsPath>::Failure(initial.GetError());
 		}
 
-		WindowsPath result = rox::core::Move(initial).TakeValue();
+		WindowsPath result = Move(initial).TakeValue();
 
 		if (!error || !isMissing(static_cast<DWORD>(error.value())))
 		{
-			return core::Result<WindowsPath>::Success(rox::core::Move(result));
+			return Result<WindowsPath>::Success(Move(result));
 		}
 
-		core::Result<WindowsPath> normal = lexicalNormal(input);
+		Result<WindowsPath> normal = lexicalNormal(input);
 
 		if (!normal)
 		{
-			return core::Result<WindowsPath>::Failure(normal.GetError());
+			return Result<WindowsPath>::Failure(normal.GetError());
 		}
 
 		const WindowsPath& normalized = normal.Value();
-		const core::WideStringView text = normalized.View();
-		rox::core::usize cursor = RootPathSize(text);
+		const WideStringView text = normalized.View();
+		usize cursor = RootPathSize(text);
 		if (!result.Assign(text.substr(0, cursor)))
 		{
-			return core::Result<WindowsPath>::Failure(pathAllocationError());
+			return Result<WindowsPath>::Failure(pathAllocationError());
 		}
 		bool bCanonicalize = true;
 
 		while (cursor < text.size())
 		{
-			const rox::core::usize start = cursor;
+			const usize start = cursor;
 
 			while (cursor < text.size() && !IsPathSeparator(text[cursor]))
 			{
@@ -642,23 +644,23 @@ namespace rox::os
 
 			if (!result.AppendComponent(text.substr(start, cursor - start)))
 			{
-				return core::Result<WindowsPath>::Failure(pathAllocationError());
+				return Result<WindowsPath>::Failure(pathAllocationError());
 			}
 
 			if (bCanonicalize)
 			{
-				core::Result<WindowsPath> resolvedResult = canonicalPath(result, error);
+				Result<WindowsPath> resolvedResult = canonicalPath(result, error);
 
 				if (!resolvedResult)
 				{
-					return core::Result<WindowsPath>::Failure(resolvedResult.GetError());
+					return Result<WindowsPath>::Failure(resolvedResult.GetError());
 				}
 
-				WindowsPath resolved = rox::core::Move(resolvedResult).TakeValue();
+				WindowsPath resolved = Move(resolvedResult).TakeValue();
 
 				if (!error)
 				{
-					result = rox::core::Move(resolved);
+					result = Move(resolved);
 				}
 				else if (isMissing(static_cast<DWORD>(error.value())))
 				{
@@ -667,7 +669,7 @@ namespace rox::os
 				}
 				else
 				{
-					return core::Result<WindowsPath>::Success(rox::core::Move(result));
+					return Result<WindowsPath>::Success(Move(result));
 				}
 			}
 			while (cursor < text.size() && IsPathSeparator(text[cursor]))
@@ -679,23 +681,23 @@ namespace rox::os
 			{
 				if (!result.AppendComponent({}))
 				{
-					return core::Result<WindowsPath>::Failure(pathAllocationError());
+					return Result<WindowsPath>::Failure(pathAllocationError());
 				}
 
 				if (bCanonicalize)
 				{
-					core::Result<WindowsPath> resolvedResult = canonicalPath(result, error);
+					Result<WindowsPath> resolvedResult = canonicalPath(result, error);
 
 					if (!resolvedResult)
 					{
-						return core::Result<WindowsPath>::Failure(resolvedResult.GetError());
+						return Result<WindowsPath>::Failure(resolvedResult.GetError());
 					}
 
-					WindowsPath resolved = rox::core::Move(resolvedResult).TakeValue();
+					WindowsPath resolved = Move(resolvedResult).TakeValue();
 
 					if (!error)
 					{
-						result = rox::core::Move(resolved);
+						result = Move(resolved);
 					}
 					else if (isMissing(static_cast<DWORD>(error.value())))
 					{
@@ -703,7 +705,7 @@ namespace rox::os
 					}
 					else
 					{
-						return core::Result<WindowsPath>::Success(rox::core::Move(result));
+						return Result<WindowsPath>::Success(Move(result));
 					}
 				}
 			}
@@ -711,14 +713,14 @@ namespace rox::os
 
 		error.clear();
 
-		return core::Result<WindowsPath>::Success(rox::core::Move(result));
+		return Result<WindowsPath>::Success(Move(result));
 	}
 
-	core::Result<void> CreatePathDirectories(const WindowsPath& path, rox::core::SystemErrorCode& error)
+	Result<void> CreatePathDirectories(const WindowsPath& path, SystemErrorCode& error)
 	{
 		WindowsPath prefix(path.Resource());
-		const core::WideStringView text = path.View();
-		rox::core::usize cursor = RootPathSize(text);
+		const WideStringView text = path.View();
+		usize cursor = RootPathSize(text);
 
 		if (cursor != 0 && isDrive(text.substr(cursor)) && text.size() >= cursor + 3 && IsPathSeparator(text[cursor + 2]))
 		{
@@ -727,13 +729,13 @@ namespace rox::os
 
 		if (!prefix.Assign(text.substr(0, cursor)))
 		{
-			return core::Result<void>::Failure(pathAllocationError());
+			return Result<void>::Failure(pathAllocationError());
 		}
 		DWORD last = ERROR_SUCCESS, meaningful = ERROR_SUCCESS;
 
 		while (cursor < text.size())
 		{
-			const rox::core::usize start = cursor;
+			const usize start = cursor;
 
 			while (cursor < text.size() && IsPathSeparator(text[cursor]))
 			{
@@ -746,13 +748,13 @@ namespace rox::os
 
 			if (!prefix.Append(text.substr(start, cursor - start)))
 			{
-				return core::Result<void>::Failure(pathAllocationError());
+				return Result<void>::Failure(pathAllocationError());
 			}
 			last = CreateDirectoryW(prefix.CStr(), nullptr) ? ERROR_SUCCESS : GetLastError();
 
 			if (last == ERROR_ALREADY_EXISTS)
 			{
-				rox::core::SystemErrorCode statusError;
+				SystemErrorCode statusError;
 				const DWORD attributes = PathAttributes(prefix, statusError);
 
 				if (statusError)
@@ -773,10 +775,10 @@ namespace rox::os
 
 		setError(error, last != ERROR_SUCCESS && meaningful != ERROR_SUCCESS ? meaningful : last);
 
-		return core::Result<void>::Success();
+		return Result<void>::Success();
 	}
 
-	unsigned long PathAttributes(const WindowsPath& path, rox::core::SystemErrorCode& error) noexcept
+	unsigned long PathAttributes(const WindowsPath& path, SystemErrorCode& error) noexcept
 	{
 		WIN32_FILE_ATTRIBUTE_DATA data{};
 
@@ -815,7 +817,7 @@ namespace rox::os
 		return attributes;
 	}
 
-	core::uint64 PathFileSize(const WindowsPath& path, rox::core::SystemErrorCode& error) noexcept
+	uint64 PathFileSize(const WindowsPath& path, SystemErrorCode& error) noexcept
 	{
 		WIN32_FILE_ATTRIBUTE_DATA data{};
 
@@ -838,11 +840,11 @@ namespace rox::os
 
 			error.clear();
 
-			return static_cast<core::uint64>(info.EndOfFile.QuadPart);
+			return static_cast<uint64>(info.EndOfFile.QuadPart);
 		}
 
 		error.clear();
 
-		return (static_cast<core::uint64>(data.nFileSizeHigh) << 32) | data.nFileSizeLow;
+		return (static_cast<uint64>(data.nFileSizeHigh) << 32) | data.nFileSizeLow;
 	}
 }

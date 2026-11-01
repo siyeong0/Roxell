@@ -14,46 +14,48 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	namespace
 	{
 		// The same path bound WindowsLogSink applies to the file it opens for append, so the reader can
 		// hold the converted path for the lifetime of the tail without a heap allocation of its own.
-		constexpr rox::core::usize MAXIMUM_FILE_TAIL_PATH_CHARACTERS = 1'024;
+		constexpr usize MAXIMUM_FILE_TAIL_PATH_CHARACTERS = 1'024;
 
 		// Refusal diagnostics allocate through the caller resource so its lifetime and allocation policy apply.
-		core::Error makeTailError(core::MemoryResource& resource, const core::EErrorCode code, const core::StringView diagnosticID, const core::StringView message, const core::StringView recoveryHint)
+		Error makeTailError(MemoryResource& resource, const EErrorCode code, const StringView diagnosticID, const StringView message, const StringView recoveryHint)
 		{
-			ASSERT(code != core::EErrorCode::None, "A file-tail failure requires a non-success error code.");
+			ASSERT(code != EErrorCode::None, "A file-tail failure requires a non-success error code.");
 			ASSERT(!diagnosticID.IsEmpty(), "A file-tail failure requires a diagnostic ID.");
 			ASSERT(!message.IsEmpty(), "A file-tail failure requires a message.");
 
-			return core::Error{ code, core::MakeLossyString(diagnosticID, resource), core::MakeLossyString(message, resource), core::MakeLossyString(recoveryHint, resource) };
+			return Error{ code, MakeLossyString(diagnosticID, resource), MakeLossyString(message, resource), MakeLossyString(recoveryHint, resource) };
 		}
 
-		core::Error makeTailError(const core::EErrorCode code, const core::StringView diagnosticID, const core::StringView message, const core::StringView recoveryHint)
+		Error makeTailError(const EErrorCode code, const StringView diagnosticID, const StringView message, const StringView recoveryHint)
 		{
-			ASSERT(code != core::EErrorCode::None, "A file-tail failure requires a non-success error code.");
+			ASSERT(code != EErrorCode::None, "A file-tail failure requires a non-success error code.");
 			ASSERT(!diagnosticID.IsEmpty(), "A file-tail failure requires a diagnostic ID.");
 			ASSERT(!message.IsEmpty(), "A file-tail failure requires a message.");
 
-			return core::MakeError(code, diagnosticID, message, recoveryHint);
+			return MakeError(code, diagnosticID, message, recoveryHint);
 		}
 
-		core::Error makeTailGoneError()
+		Error makeTailGoneError()
 		{
-			return makeTailError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-TAIL-GONE",
+			return makeTailError(EErrorCode::ExternalFailure, "ROX-PLATFORM-TAIL-GONE",
 				"The tailed file could not be read or shrank behind the reader, so this tail is over.",
 				"Create a new reader against the file; this reader is terminal.");
 		}
 
-		core::Error makeTailReplacedError()
+		Error makeTailReplacedError()
 		{
-			return makeTailError(core::EErrorCode::NotFound, "ROX-PLATFORM-TAIL-REPLACED",
+			return makeTailError(EErrorCode::NotFound, "ROX-PLATFORM-TAIL-REPLACED",
 				"The tailed path no longer names the file this reader holds open, so this tail is over.",
 				"Create a new reader against the path to follow the file that replaced it.");
 		}
 
-		[[nodiscard]] bool containsNull(const core::StringView text) noexcept
+		[[nodiscard]] bool containsNull(const StringView text) noexcept
 		{
 			for (const char character : text)
 			{
@@ -66,7 +68,7 @@ namespace rox::os
 			return false;
 		}
 
-		enum class EOpenResult : core::uint8
+		enum class EOpenResult : uint8
 		{
 			Success,
 			NotFound,
@@ -96,7 +98,7 @@ namespace rox::os
 	class WindowsFileTailReader::State final
 	{
 	public:
-		State(core::MemoryResource& resource, const WindowsFileTailReaderOptions options, const HANDLE file) noexcept
+		State(MemoryResource& resource, const WindowsFileTailReaderOptions options, const HANDLE file) noexcept
 			: m_MaximumBytesPerRead(options.MaximumBytesPerRead)
 			, m_BackfillBytes(options.BackfillBytes)
 			, m_File(file)
@@ -132,11 +134,11 @@ namespace rox::os
 
 		// Captures the start offset, the completion event, and the file identity. Called once, after the
 		// handle is already open, so a missing file has cost no allocation at all.
-		[[nodiscard]] bool TryBind(const wchar_t* const pathUtf16, const rox::core::usize pathLength) noexcept
+		[[nodiscard]] bool TryBind(const wchar_t* const pathUtf16, const usize pathLength) noexcept
 		{
 			ASSERT(pathLength < MAXIMUM_FILE_TAIL_PATH_CHARACTERS, "A bound tail path must fit the reader path buffer.");
 
-			for (rox::core::usize index = 0; index < pathLength; ++index)
+			for (usize index = 0; index < pathLength; ++index)
 			{
 				m_Path[index] = pathUtf16[index];
 			}
@@ -171,7 +173,7 @@ namespace rox::os
 				return false;
 			}
 
-			const core::uint64 endOffset = static_cast<core::uint64>(size.QuadPart);
+			const uint64 endOffset = static_cast<uint64>(size.QuadPart);
 			// Start within the backfill window to avoid replaying all earlier log data.
 			m_Offset = endOffset > m_BackfillBytes ? endOffset - m_BackfillBytes : 0;
 			m_bBeganMidFile = m_Offset != 0;
@@ -193,7 +195,7 @@ namespace rox::os
 			return m_bBacklogged;
 		}
 
-		[[nodiscard]] core::Result<core::Span<const core::Byte>> Read() noexcept
+		[[nodiscard]] Result<Span<const Byte>> Read() noexcept
 		{
 			ASSERT(IsOwnerThread(), "A file tail reader must be read on the thread that created it.");
 			// Apply an already published replacement immediately without further I/O.
@@ -201,7 +203,7 @@ namespace rox::os
 
 			if (m_bTerminal)
 			{
-				return core::Result<core::Span<const core::Byte>>::Failure(m_bReplaced ? makeTailReplacedError() : makeTailGoneError());
+				return Result<Span<const Byte>>::Failure(m_bReplaced ? makeTailReplacedError() : makeTailGoneError());
 			}
 
 			ASSERT(m_File != INVALID_HANDLE_VALUE, "A live file tail reader always holds an open handle.");
@@ -217,7 +219,7 @@ namespace rox::os
 
 				if (arm == EArmResult::Idle)
 				{
-					return core::Result<core::Span<const core::Byte>>::Success(core::Span<const core::Byte>());
+					return Result<Span<const Byte>>::Success(Span<const Byte>());
 				}
 			}
 
@@ -225,19 +227,19 @@ namespace rox::os
 		}
 
 	private:
-		enum class EArmResult : core::uint8
+		enum class EArmResult : uint8
 		{
 			Idle,
 			Armed,
 			Terminal
 		};
 
-		[[nodiscard]] core::Result<core::Span<const core::Byte>> terminalFailure() noexcept
+		[[nodiscard]] Result<Span<const Byte>> terminalFailure() noexcept
 		{
 			// Release terminal native state immediately so a deleted file is not kept alive.
 			closeNative();
 
-			return core::Result<core::Span<const core::Byte>>::Failure(m_bReplaced ? makeTailReplacedError() : makeTailGoneError());
+			return Result<Span<const Byte>>::Failure(m_bReplaced ? makeTailReplacedError() : makeTailGoneError());
 		}
 
 		void closeNative() noexcept
@@ -377,7 +379,7 @@ namespace rox::os
 				return EArmResult::Terminal;
 			}
 
-			const core::uint64 endOffset = static_cast<core::uint64>(size.QuadPart);
+			const uint64 endOffset = static_cast<uint64>(size.QuadPart);
 
 			if (endOffset < m_Offset)
 			{
@@ -387,7 +389,7 @@ namespace rox::os
 				return EArmResult::Terminal;
 			}
 
-			const core::uint64 available = endOffset - m_Offset;
+			const uint64 available = endOffset - m_Offset;
 
 			if (available == 0)
 			{
@@ -397,7 +399,7 @@ namespace rox::os
 				return EArmResult::Idle;
 			}
 
-			const rox::core::usize requested = available > m_MaximumBytesPerRead ? m_MaximumBytesPerRead : static_cast<rox::core::usize>(available);
+			const usize requested = available > m_MaximumBytesPerRead ? m_MaximumBytesPerRead : static_cast<usize>(available);
 			m_bBacklogged = requested < available;
 			const bool bSized = m_Pending.Resize(requested);
 			ASSERT(bSized, "A preallocated file-tail buffer must accept a bounded read length.");
@@ -424,7 +426,7 @@ namespace rox::os
 		}
 
 		// Pending reads return an empty view without waiting or disarming the read.
-		[[nodiscard]] core::Result<core::Span<const core::Byte>> harvest() noexcept
+		[[nodiscard]] Result<Span<const Byte>> harvest() noexcept
 		{
 			ASSERT(m_bArmed, "Harvesting a tail read requires a pending native read.");
 			DWORD transferred = 0;
@@ -433,7 +435,7 @@ namespace rox::os
 			{
 				if (GetLastError() == ERROR_IO_INCOMPLETE)
 				{
-					return core::Result<core::Span<const core::Byte>>::Success(core::Span<const core::Byte>());
+					return Result<Span<const Byte>>::Success(Span<const Byte>());
 				}
 
 				m_bArmed = false;
@@ -453,27 +455,27 @@ namespace rox::os
 			}
 
 			// Publish only after completion to preserve the previous borrowed view during I/O.
-			rox::core::Swap(m_Pending, m_Published);
+			Swap(m_Pending, m_Published);
 			const bool bSized = m_Published.Resize(transferred);
 			ASSERT(bSized, "A preallocated file-tail buffer must hold its own completed read.");
 			m_Offset += transferred;
 			// HasPendingBackfill compares the read offset with the end captured at attachment.
-			return core::Result<core::Span<const core::Byte>>::Success(m_Published.View());
+			return Result<Span<const Byte>>::Success(m_Published.View());
 		}
 
 	private:
 		// Captured where the reader is created, which is the thread the whole contract is written for.
 		const DWORD m_OwnerThreadId = GetCurrentThreadId();
-		rox::core::usize m_MaximumBytesPerRead = 0;
-		rox::core::usize m_BackfillBytes = 0;
-		rox::core::usize m_RequestedBytes = 0;
+		usize m_MaximumBytesPerRead = 0;
+		usize m_BackfillBytes = 0;
+		usize m_RequestedBytes = 0;
 
 		HANDLE m_File = INVALID_HANDLE_VALUE;
 		HANDLE m_Event = nullptr;
 		OVERLAPPED m_Overlapped = {};
 
-		core::uint64 m_Offset = 0;
-		core::uint64 m_BackfillEndOffset = 0;
+		uint64 m_Offset = 0;
+		uint64 m_BackfillEndOffset = 0;
 
 		DWORD m_VolumeSerial = 0;
 		DWORD m_FileIndexHigh = 0;
@@ -492,11 +494,11 @@ namespace rox::os
 		// is how a rename is told from a live file without opening the path.
 		wchar_t m_ResolvedPath[MAXIMUM_FILE_TAIL_PATH_CHARACTERS] = {};
 
-		core::Array<core::Byte> m_Pending;
-		core::Array<core::Byte> m_Published;
+		Array<Byte> m_Pending;
+		Array<Byte> m_Published;
 	};
 
-	WindowsFileTailReader::WindowsFileTailReader(core::MemoryResource& resource, State* const state) noexcept
+	WindowsFileTailReader::WindowsFileTailReader(MemoryResource& resource, State* const state) noexcept
 		: m_Resource(&resource)
 		, m_State(state)
 	{
@@ -509,7 +511,7 @@ namespace rox::os
 		{
 			ASSERT(m_Resource != nullptr, "A Windows file tail reader holding state must retain its resource.");
 			ASSERT(m_State->IsOwnerThread(), "A file tail reader must be destroyed on the thread that created it.");
-			core::DestroyObject(*m_Resource, m_State);
+			DestroyObject(*m_Resource, m_State);
 			m_State = nullptr;
 		}
 	}
@@ -534,7 +536,7 @@ namespace rox::os
 			{
 				ASSERT(m_Resource != nullptr, "A Windows file tail reader holding state must retain its resource.");
 				ASSERT(m_State->IsOwnerThread(), "A file tail reader must be destroyed on the thread that created it.");
-				core::DestroyObject(*m_Resource, m_State);
+				DestroyObject(*m_Resource, m_State);
 			}
 
 			m_Resource = other.m_Resource;
@@ -598,7 +600,7 @@ namespace rox::os
 		return m_State->IsBacklogged();
 	}
 
-	EFileTailCreateResult WindowsFileTailReader::TryCreate(core::MemoryResource& resource, const core::StringView pathUtf8,
+	EFileTailCreateResult WindowsFileTailReader::TryCreate(MemoryResource& resource, const StringView pathUtf8,
 		const WindowsFileTailReaderOptions options,
 		WindowsFileTailReader* const outReader) noexcept
 	{
@@ -606,7 +608,7 @@ namespace rox::os
 		// Every refusal below happens before the first allocation AND without building a core::Error, whose
 		// three owned strings would otherwise be allocated on every polling round by a caller waiting for a
 		// writer that has not started yet.
-		if (pathUtf8.IsEmpty() || containsNull(pathUtf8) || !core::IsValidUtf8(pathUtf8) || pathUtf8.Size() > static_cast<rox::core::usize>(rox::core::NumericLimits<int>::max()))
+		if (pathUtf8.IsEmpty() || containsNull(pathUtf8) || !IsValidUtf8(pathUtf8) || pathUtf8.Size() > static_cast<usize>(NumericLimits<int>::max()))
 		{
 			return EFileTailCreateResult::InvalidPath;
 		}
@@ -616,7 +618,7 @@ namespace rox::os
 			return EFileTailCreateResult::InvalidOptions;
 		}
 
-		rox::core::StaticArray<wchar_t, MAXIMUM_FILE_TAIL_PATH_CHARACTERS> pathUtf16 = {};
+		StaticArray<wchar_t, MAXIMUM_FILE_TAIL_PATH_CHARACTERS> pathUtf16 = {};
 		const int measured = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, pathUtf8.Data(), static_cast<int>(pathUtf8.Size()), pathUtf16.data(), static_cast<int>(pathUtf16.size() - 1));
 
 		if (measured <= 0)
@@ -624,7 +626,7 @@ namespace rox::os
 			return EFileTailCreateResult::InvalidPath;
 		}
 
-		pathUtf16[static_cast<rox::core::usize>(measured)] = L'\0';
+		pathUtf16[static_cast<usize>(measured)] = L'\0';
 
 		// FILE_SHARE_WRITE is the whole point: the file is open for append in another process and this
 		// reader must not stop it writing. FILE_SHARE_DELETE is deliberate for the same reason the
@@ -653,7 +655,7 @@ namespace rox::os
 			return EFileTailCreateResult::NativeFailure;
 		}
 
-		State* const state = core::CreateObject<State>(resource, resource, options, file);
+		State* const state = CreateObject<State>(resource, resource, options, file);
 
 		if (state == nullptr)
 		{
@@ -665,14 +667,14 @@ namespace rox::os
 
 		if (!state->TryReserveStorage())
 		{
-			core::DestroyObject(resource, state);
+			DestroyObject(resource, state);
 
 			return EFileTailCreateResult::Allocation;
 		}
 
-		if (!state->TryBind(pathUtf16.data(), static_cast<rox::core::usize>(measured)))
+		if (!state->TryBind(pathUtf16.data(), static_cast<usize>(measured)))
 		{
-			core::DestroyObject(resource, state);
+			DestroyObject(resource, state);
 
 			return EFileTailCreateResult::NativeFailure;
 		}
@@ -682,7 +684,7 @@ namespace rox::os
 		return EFileTailCreateResult::Created;
 	}
 
-	core::StringView GetFileTailCreateDiagnosticID(const EFileTailCreateResult result) noexcept
+	StringView GetFileTailCreateDiagnosticID(const EFileTailCreateResult result) noexcept
 	{
 		switch (result)
 		{
@@ -712,7 +714,7 @@ namespace rox::os
 		return "ROX-PLATFORM-TAIL-OPEN";
 	}
 
-	core::Result<WindowsFileTailReader> WindowsFileTailReader::Create(core::MemoryResource& resource, const core::StringView pathUtf8,
+	Result<WindowsFileTailReader> WindowsFileTailReader::Create(MemoryResource& resource, const StringView pathUtf8,
 		const WindowsFileTailReaderOptions options)
 	{
 		WindowsFileTailReader reader;
@@ -721,30 +723,30 @@ namespace rox::os
 		switch (created)
 		{
 		case EFileTailCreateResult::Created:
-			return core::Result<WindowsFileTailReader>::Success(rox::core::Move(reader));
+			return Result<WindowsFileTailReader>::Success(Move(reader));
 		case EFileTailCreateResult::Missing:
 			// Absent is not a failed tail: a caller that expects the writer to start later retries.
-			return core::Result<WindowsFileTailReader>::Failure(
-				makeTailError(resource, core::EErrorCode::NotFound, "ROX-PLATFORM-TAIL-MISSING", "The file to tail does not exist yet.",
+			return Result<WindowsFileTailReader>::Failure(
+				makeTailError(resource, EErrorCode::NotFound, "ROX-PLATFORM-TAIL-MISSING", "The file to tail does not exist yet.",
 					"Retry creation once the writing process has created the file."));
 		case EFileTailCreateResult::AccessDenied:
-			return core::Result<WindowsFileTailReader>::Failure(
-				makeTailError(resource, core::EErrorCode::PermissionDenied, "ROX-PLATFORM-TAIL-ACCESS",
+			return Result<WindowsFileTailReader>::Failure(
+				makeTailError(resource, EErrorCode::PermissionDenied, "ROX-PLATFORM-TAIL-ACCESS",
 					"The file exists but could not be opened for shared reading.",
 					"Grant read access, or close the owner that holds it without read sharing."));
 		case EFileTailCreateResult::InvalidPath:
-			return core::Result<WindowsFileTailReader>::Failure(
-				makeTailError(resource, core::EErrorCode::InvalidArgument, "ROX-PLATFORM-TAIL-PATH",
+			return Result<WindowsFileTailReader>::Failure(
+				makeTailError(resource, EErrorCode::InvalidArgument, "ROX-PLATFORM-TAIL-PATH",
 					"The file-tail path is empty, over-long, contains a null character, or is not UTF-8.",
 					"Provide a well-formed UTF-8 file path under one thousand twenty-three wide characters."));
 		case EFileTailCreateResult::InvalidOptions:
-			return core::Result<WindowsFileTailReader>::Failure(
-				makeTailError(resource, core::EErrorCode::InvalidArgument, "ROX-PLATFORM-TAIL-OPTIONS",
+			return Result<WindowsFileTailReader>::Failure(
+				makeTailError(resource, EErrorCode::InvalidArgument, "ROX-PLATFORM-TAIL-OPTIONS",
 					"The file-tail capacities are outside their supported bounds.",
 					"Use one through one mebibyte per read and a backfill window no larger than that."));
 		case EFileTailCreateResult::Allocation:
-			return core::Result<WindowsFileTailReader>::Failure(
-				makeTailError(resource, core::EErrorCode::ExternalFailure, "ROX-PLATFORM-TAIL-ALLOCATION",
+			return Result<WindowsFileTailReader>::Failure(
+				makeTailError(resource, EErrorCode::ExternalFailure, "ROX-PLATFORM-TAIL-ALLOCATION",
 					"Memory allocation for the file-tail reader failed.", "Release bounded service memory and retry creation."));
 		case EFileTailCreateResult::NativeFailure:
 			break;
@@ -755,13 +757,13 @@ namespace rox::os
 		}
 		}
 
-		return core::Result<WindowsFileTailReader>::Failure(
-			makeTailError(resource, core::EErrorCode::ExternalFailure, "ROX-PLATFORM-TAIL-OPEN",
+		return Result<WindowsFileTailReader>::Failure(
+			makeTailError(resource, EErrorCode::ExternalFailure, "ROX-PLATFORM-TAIL-OPEN",
 				"The native file handle, identity, or completion event could not be established.",
 				"Release bounded operating-system handles and retry creation."));
 	}
 
-	core::Result<core::Span<const core::Byte>> WindowsFileTailReader::Read()
+	Result<Span<const Byte>> WindowsFileTailReader::Read()
 	{
 		ASSERT(m_State != nullptr, "Reading requires a valid Windows file tail reader.");
 

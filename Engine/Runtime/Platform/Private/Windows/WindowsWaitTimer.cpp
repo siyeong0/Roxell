@@ -8,20 +8,22 @@
 
 namespace rox::os
 {
-	core::Result<WindowsWaitTimer> WindowsWaitTimer::Create()
+	using namespace core;
+
+	Result<WindowsWaitTimer> WindowsWaitTimer::Create()
 	{
 		HANDLE handle = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_MODIFY_STATE | SYNCHRONIZE);
 
 		if (!handle)
 		{
-			return core::Result<WindowsWaitTimer>::Failure(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WAIT-TIMER", "Windows could not create a high-resolution wait timer.");
+			return Result<WindowsWaitTimer>::Failure(EErrorCode::ExternalFailure, "ROX-PLATFORM-WAIT-TIMER", "Windows could not create a high-resolution wait timer.");
 		}
 
-		return core::Result<WindowsWaitTimer>::Success(WindowsWaitTimer(handle));
+		return Result<WindowsWaitTimer>::Success(WindowsWaitTimer(handle));
 	}
 
 	WindowsWaitTimer::WindowsWaitTimer(WindowsWaitTimer&& other) noexcept
-		: m_Handle(core::Exchange(other.m_Handle, nullptr))
+		: m_Handle(Exchange(other.m_Handle, nullptr))
 	{
 	}
 
@@ -33,13 +35,13 @@ namespace rox::os
 		}
 	}
 
-	core::Result<void> WindowsWaitTimer::Wait(core::uint32 milliseconds)
+	Result<void> WindowsWaitTimer::Wait(uint32 milliseconds)
 	{
 		ASSERT(m_Handle, "A wait timer must retain its native handle.");
 
 		if (milliseconds == 0)
 		{
-			return core::Result<void>::Success();
+			return Result<void>::Success();
 		}
 
 		LARGE_INTEGER due{};
@@ -48,9 +50,9 @@ namespace rox::os
 		if (!SetWaitableTimerEx(m_Handle, &due, 0, nullptr, nullptr, nullptr, 0) ||
 			WaitForSingleObject(m_Handle, INFINITE) != WAIT_OBJECT_0)
 		{
-			return core::Result<void>::Failure(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WAIT-TIMER", "Windows could not arm or wait on the pacing timer.");
+			return Result<void>::Failure(EErrorCode::ExternalFailure, "ROX-PLATFORM-WAIT-TIMER", "Windows could not arm or wait on the pacing timer.");
 		}
 
-		return core::Result<void>::Success();
+		return Result<void>::Success();
 	}
 }

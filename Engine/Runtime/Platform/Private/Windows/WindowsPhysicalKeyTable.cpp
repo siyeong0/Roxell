@@ -2,9 +2,11 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	namespace
 	{
-		constexpr core::uint32 WINDOWS_EXTENDED_SCAN_CODE_FLAG = 0x100;
+		constexpr uint32 WINDOWS_EXTENDED_SCAN_CODE_FLAG = 0x100;
 	} // namespace
 
 	EPhysicalKey PhysicalKeyFromScanCode(const WPARAM virtualKey, const LPARAM keyData) noexcept
@@ -14,7 +16,7 @@ namespace rox::os
 			return EPhysicalKey::Pause;
 		}
 
-		core::uint32 scanCode = static_cast<core::uint32>((keyData >> 16) & 0xFF);
+		uint32 scanCode = static_cast<uint32>((keyData >> 16) & 0xFF);
 		bool bExtended = (keyData & 0x01000000) != 0;
 
 		if (scanCode == 0 && virtualKey <= 0xFF)
@@ -63,7 +65,7 @@ namespace rox::os
 			bExtended = bExtended || (mapped & 0xFF00) == 0xE000;
 		}
 
-		const core::uint32 key = scanCode | (bExtended ? WINDOWS_EXTENDED_SCAN_CODE_FLAG : 0);
+		const uint32 key = scanCode | (bExtended ? WINDOWS_EXTENDED_SCAN_CODE_FLAG : 0);
 
 		switch (key)
 		{

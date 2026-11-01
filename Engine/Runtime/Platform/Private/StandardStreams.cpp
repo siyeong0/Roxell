@@ -3,13 +3,15 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	StandardStreamsOwner::~StandardStreamsOwner() noexcept
 	{
 		Reset();
 	}
 
 	StandardStreamsOwner::StandardStreamsOwner(StandardStreamsOwner&& other) noexcept
-		: m_Owner(rox::core::Move(other.m_Owner))
+		: m_Owner(Move(other.m_Owner))
 	{
 		if (m_Owner)
 		{
@@ -28,7 +30,7 @@ namespace rox::os
 				(void)other.m_Owner->IsClosed();
 			}
 
-			m_Owner = rox::core::Move(other.m_Owner);
+			m_Owner = Move(other.m_Owner);
 		}
 
 		return *this;
@@ -45,7 +47,7 @@ namespace rox::os
 		return m_Owner.Get();
 	}
 
-	core::MemoryResource* StandardStreamsOwner::GetResource() const noexcept
+	MemoryResource* StandardStreamsOwner::GetResource() const noexcept
 	{
 		return m_Owner.GetResource();
 	}

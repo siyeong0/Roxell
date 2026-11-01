@@ -10,6 +10,8 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	namespace
 	{
 		// The button mask this backend publishes is XInput's own wButtons, so the two
@@ -42,13 +44,13 @@ namespace rox::os
 		static_assert(XUSER_MAX_COUNT == MAXIMUM_GAMEPAD_SLOTS, "The slot bound must be the XInput user-index bound.");
 	} // namespace
 
-	core::Result<GamepadStateBatch> WindowsGamepadSource::Poll()
+	Result<GamepadStateBatch> WindowsGamepadSource::Poll()
 	{
 		// The batch is published only after every slot has answered, so a failure leaves
 		// the previously published states exactly as they were.
 		GamepadState sampled[MAXIMUM_GAMEPAD_SLOTS];
 
-		for (core::uint32 slot = 0; slot < MAXIMUM_GAMEPAD_SLOTS; ++slot)
+		for (uint32 slot = 0; slot < MAXIMUM_GAMEPAD_SLOTS; ++slot)
 		{
 			XINPUT_STATE native = {};
 			const DWORD status = ::XInputGetState(static_cast<DWORD>(slot), &native);
@@ -62,7 +64,7 @@ namespace rox::os
 
 			if (status != ERROR_SUCCESS)
 			{
-				return core::Result<GamepadStateBatch>::Failure(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-GAMEPAD-POLL",
+				return Result<GamepadStateBatch>::Failure(EErrorCode::ExternalFailure, "ROX-PLATFORM-GAMEPAD-POLL",
 					"The Windows gamepad service refused to report the state of a slot.",
 					"Poll the gamepad source again on the next iteration.");
 			}
@@ -71,26 +73,26 @@ namespace rox::os
 			state.bConnected = true;
 			// wButtons is published verbatim: EGamepadButton IS the bit position, which
 			// the static assertions above pin, so no remapping table exists to drift.
-			state.Buttons = static_cast<core::uint16>(native.Gamepad.wButtons);
-			state.LeftX = static_cast<core::int16>(native.Gamepad.sThumbLX);
-			state.LeftY = static_cast<core::int16>(native.Gamepad.sThumbLY);
-			state.RightX = static_cast<core::int16>(native.Gamepad.sThumbRX);
-			state.RightY = static_cast<core::int16>(native.Gamepad.sThumbRY);
-			state.LeftTrigger = static_cast<core::uint8>(native.Gamepad.bLeftTrigger);
-			state.RightTrigger = static_cast<core::uint8>(native.Gamepad.bRightTrigger);
+			state.Buttons = static_cast<uint16>(native.Gamepad.wButtons);
+			state.LeftX = static_cast<int16>(native.Gamepad.sThumbLX);
+			state.LeftY = static_cast<int16>(native.Gamepad.sThumbLY);
+			state.RightX = static_cast<int16>(native.Gamepad.sThumbRX);
+			state.RightY = static_cast<int16>(native.Gamepad.sThumbRY);
+			state.LeftTrigger = static_cast<uint8>(native.Gamepad.bLeftTrigger);
+			state.RightTrigger = static_cast<uint8>(native.Gamepad.bRightTrigger);
 			// dwPacketNumber is READ and discarded, and that is the decision rather than
 			// an omission: an edge is the consumer's comparison against its own held set,
 			// so a packet number would be a second and weaker copy of it.
 		}
 
-		for (core::uint32 slot = 0; slot < MAXIMUM_GAMEPAD_SLOTS; ++slot)
+		for (uint32 slot = 0; slot < MAXIMUM_GAMEPAD_SLOTS; ++slot)
 		{
 			m_States[slot] = sampled[slot];
 		}
 
 		GamepadStateBatch batch;
-		batch.States = core::Span<const GamepadState>(m_States, static_cast<rox::core::usize>(MAXIMUM_GAMEPAD_SLOTS));
-		ASSERT(batch.States.Size() == static_cast<rox::core::usize>(MAXIMUM_GAMEPAD_SLOTS), "A published gamepad batch must carry one state per slot.");
-		return core::Result<GamepadStateBatch>::Success(batch);
+		batch.States = Span<const GamepadState>(m_States, static_cast<usize>(MAXIMUM_GAMEPAD_SLOTS));
+		ASSERT(batch.States.Size() == static_cast<usize>(MAXIMUM_GAMEPAD_SLOTS), "A published gamepad batch must carry one state per slot.");
+		return Result<GamepadStateBatch>::Success(batch);
 	}
 } // namespace rox::os

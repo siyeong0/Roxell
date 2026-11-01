@@ -20,23 +20,25 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	namespace
 	{
-		constexpr rox::core::usize FILE_NOTIFY_HEADER_BYTES = offsetof(FILE_NOTIFY_INFORMATION, FileName);
+		constexpr usize FILE_NOTIFY_HEADER_BYTES = offsetof(FILE_NOTIFY_INFORMATION, FileName);
 		constexpr DWORD WATCH_NOTIFY_FILTER =
 			FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_LAST_WRITE;
 
-		core::Error makeWatchError(const core::EErrorCode code, const core::StringView diagnosticID, const core::StringView message,
-			const core::StringView recoveryHint)
+		Error makeWatchError(const EErrorCode code, const StringView diagnosticID, const StringView message,
+			const StringView recoveryHint)
 		{
-			ASSERT(code != core::EErrorCode::None, "A file-watch failure requires a non-success error code.");
+			ASSERT(code != EErrorCode::None, "A file-watch failure requires a non-success error code.");
 			ASSERT(!diagnosticID.IsEmpty(), "A file-watch failure requires a diagnostic ID.");
 			ASSERT(!message.IsEmpty(), "A file-watch failure requires a message.");
 
-			return core::MakeError(code, diagnosticID, message, recoveryHint);
+			return MakeError(code, diagnosticID, message, recoveryHint);
 		}
 
-		enum class ERootOpenResult : core::uint8
+		enum class ERootOpenResult : uint8
 		{
 			Success,
 			NotFound,
@@ -44,14 +46,14 @@ namespace rox::os
 			NativeFailure
 		};
 
-		core::Error makeRootGoneError()
+		Error makeRootGoneError()
 		{
-			return makeWatchError(core::EErrorCode::NotFound, "ROX-PLATFORM-WATCH-ROOT-GONE",
+			return makeWatchError(EErrorCode::NotFound, "ROX-PLATFORM-WATCH-ROOT-GONE",
 				"The watched directory root is gone or its native watch handle is no longer usable.",
 				"Create a new watcher once the root exists again; this watcher is terminal.");
 		}
 
-		[[nodiscard]] bool containsNull(const core::StringView text) noexcept
+		[[nodiscard]] bool containsNull(const StringView text) noexcept
 		{
 			for (const char character : text)
 			{
@@ -72,16 +74,16 @@ namespace rox::os
 		struct Record final
 		{
 		public:
-			core::uint32 PathOffset = 0;
-			core::uint32 PathLength = 0;
-			core::uint32 OldPathOffset = 0;
-			core::uint32 OldPathLength = 0;
+			uint32 PathOffset = 0;
+			uint32 PathLength = 0;
+			uint32 OldPathOffset = 0;
+			uint32 OldPathLength = 0;
 			EFileChangeKind Kind = EFileChangeKind::Created;
 		};
 
-		State(core::MemoryResource& resource, const WindowsFileWatcherOptions options) noexcept
+		State(MemoryResource& resource, const WindowsFileWatcherOptions options) noexcept
 			: m_MaximumChanges(options.MaximumChangesPerPoll)
-			, m_NativeBufferWords(options.NativeBufferBytes / sizeof(core::uint32))
+			, m_NativeBufferWords(options.NativeBufferBytes / sizeof(uint32))
 			, m_NativeBuffer(resource)
 			, m_Records(resource)
 			, m_PendingPaths(resource)
@@ -133,8 +135,8 @@ namespace rox::os
 		{
 			// Reserve fixed buffers from the supplied resource to keep borrowed views stable.
 			// Allow three UTF-8 bytes per UTF-16 code unit.
-			const rox::core::usize bufferBytes = m_NativeBufferWords * sizeof(core::uint32);
-			const rox::core::usize arenaBytes = bufferBytes * 3 / 2 + 8;
+			const usize bufferBytes = m_NativeBufferWords * sizeof(uint32);
+			const usize arenaBytes = bufferBytes * 3 / 2 + 8;
 
 			return m_NativeBuffer.Resize(m_NativeBufferWords) &&
 				   m_Records.Reserve(m_MaximumChanges) &&
@@ -144,7 +146,7 @@ namespace rox::os
 		}
 
 		// Report root-open and event-allocation failures separately.
-		[[nodiscard]] ERootOpenResult TryOpenRoot(const core::Array<wchar_t>& rootPathUtf16) noexcept
+		[[nodiscard]] ERootOpenResult TryOpenRoot(const Array<wchar_t>& rootPathUtf16) noexcept
 		{
 			ASSERT(m_Directory == INVALID_HANDLE_VALUE, "A watcher opens its directory root exactly once.");
 			// Allow root rename and removal; the watcher reports root loss.
@@ -183,19 +185,19 @@ namespace rox::os
 			m_Overlapped = OVERLAPPED{};
 			m_Overlapped.hEvent = m_Event;
 			DWORD ignoredImmediateBytes = 0;
-			const BOOL bStarted = ReadDirectoryChangesW(m_Directory, m_NativeBuffer.Data(), static_cast<DWORD>(m_NativeBufferWords * sizeof(core::uint32)), TRUE, WATCH_NOTIFY_FILTER, &ignoredImmediateBytes, &m_Overlapped, nullptr);
+			const BOOL bStarted = ReadDirectoryChangesW(m_Directory, m_NativeBuffer.Data(), static_cast<DWORD>(m_NativeBufferWords * sizeof(uint32)), TRUE, WATCH_NOTIFY_FILTER, &ignoredImmediateBytes, &m_Overlapped, nullptr);
 			m_bArmed = bStarted != FALSE;
 
 			return m_bArmed;
 		}
 
-		[[nodiscard]] core::Result<FileChangeBatch> Poll() noexcept
+		[[nodiscard]] Result<FileChangeBatch> Poll() noexcept
 		{
 			ASSERT(IsOwnerThread(), "A file watcher must be polled on the thread that created it.");
 
 			if (m_bTerminal)
 			{
-				return core::Result<FileChangeBatch>::Failure(makeRootGoneError());
+				return Result<FileChangeBatch>::Failure(makeRootGoneError());
 			}
 
 			ASSERT(m_bArmed, "A live file watcher always holds a pending native read between polls.");
@@ -210,7 +212,7 @@ namespace rox::os
 				if (error == ERROR_IO_INCOMPLETE)
 				{
 					// Nothing has completed. The read stays armed and the caller receives an empty batch.
-					return core::Result<FileChangeBatch>::Success(FileChangeBatch{ {}, false });
+					return Result<FileChangeBatch>::Success(FileChangeBatch{ {}, false });
 				}
 
 				m_bArmed = false;
@@ -219,7 +221,7 @@ namespace rox::os
 				{
 					m_bTerminal = true;
 
-					return core::Result<FileChangeBatch>::Failure(makeRootGoneError());
+					return Result<FileChangeBatch>::Failure(makeRootGoneError());
 				}
 				// Dropped records and zero-length results request a rescan without discarding this batch.
 				reportOverflow();
@@ -247,7 +249,7 @@ namespace rox::os
 				m_bTerminal = true;
 			}
 
-			return core::Result<FileChangeBatch>::Success(FileChangeBatch{ m_PublishedChanges.View(), bRescanRequired });
+			return Result<FileChangeBatch>::Success(FileChangeBatch{ m_PublishedChanges.View(), bRescanRequired });
 		}
 
 	private:
@@ -263,16 +265,16 @@ namespace rox::os
 		// Returns true when the batch is incomplete and the caller must rescan.
 		[[nodiscard]] bool parse(const DWORD transferred) noexcept
 		{
-			ASSERT(transferred <= m_NativeBufferWords * sizeof(core::uint32), "A completed directory read cannot report more bytes than its buffer holds.");
+			ASSERT(transferred <= m_NativeBufferWords * sizeof(uint32), "A completed directory read cannot report more bytes than its buffer holds.");
 			m_Records.Clear();
 			m_PendingPaths.Clear();
 
 			bool bRescanRequired = false;
 			bool bHasPendingOldName = false;
-			core::uint32 pendingOldOffset = 0;
-			core::uint32 pendingOldLength = 0;
+			uint32 pendingOldOffset = 0;
+			uint32 pendingOldLength = 0;
 			const unsigned char* const base = reinterpret_cast<const unsigned char*>(m_NativeBuffer.Data());
-			rox::core::usize offset = 0;
+			usize offset = 0;
 
 			for (;;)
 			{
@@ -283,8 +285,8 @@ namespace rox::os
 				}
 
 				FILE_NOTIFY_INFORMATION entry = {};
-				rox::core::CopyBytes(&entry, base + offset, FILE_NOTIFY_HEADER_BYTES);
-				const rox::core::usize nameBytes = entry.FileNameLength;
+				CopyBytes(&entry, base + offset, FILE_NOTIFY_HEADER_BYTES);
+				const usize nameBytes = entry.FileNameLength;
 
 				if (nameBytes == 0 || (nameBytes % sizeof(wchar_t)) != 0 || offset + FILE_NOTIFY_HEADER_BYTES + nameBytes > transferred)
 				{
@@ -295,8 +297,8 @@ namespace rox::os
 				const wchar_t* const nameData = reinterpret_cast<const wchar_t*>(base + offset + FILE_NOTIFY_HEADER_BYTES);
 				const int nameLength = static_cast<int>(nameBytes / sizeof(wchar_t));
 
-				core::uint32 pathOffset = 0;
-				core::uint32 pathLength = 0;
+				uint32 pathOffset = 0;
+				uint32 pathLength = 0;
 
 				if (!tryAppendPath(nameData, nameLength, &pathOffset, &pathLength))
 				{
@@ -385,7 +387,7 @@ namespace rox::os
 			return m_Records.Add(record);
 		}
 
-		[[nodiscard]] bool tryAppendPath(const wchar_t* const nameData, const int nameLength, core::uint32* const outOffset, core::uint32* const outLength) noexcept
+		[[nodiscard]] bool tryAppendPath(const wchar_t* const nameData, const int nameLength, uint32* const outOffset, uint32* const outLength) noexcept
 		{
 			const int measured = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, nameData, nameLength, nullptr, 0, nullptr, nullptr);
 
@@ -394,10 +396,10 @@ namespace rox::os
 				return false;
 			}
 
-			const rox::core::usize start = m_PendingPaths.Size();
-			const rox::core::usize required = start + static_cast<rox::core::usize>(measured);
+			const usize start = m_PendingPaths.Size();
+			const usize required = start + static_cast<usize>(measured);
 
-			if (required > m_PendingPaths.Capacity() || required > static_cast<rox::core::usize>(rox::core::NumericLimits<core::uint32>::max()))
+			if (required > m_PendingPaths.Capacity() || required > static_cast<usize>(NumericLimits<uint32>::max()))
 			{
 				return false;
 			}
@@ -417,7 +419,7 @@ namespace rox::os
 				return false;
 			}
 			// Normalize root-relative paths to forward slashes.
-			for (rox::core::usize index = start; index < required; ++index)
+			for (usize index = start; index < required; ++index)
 			{
 				if (m_PendingPaths[index] == static_cast<char>(0x5C))
 				{
@@ -425,8 +427,8 @@ namespace rox::os
 				}
 			}
 
-			*outOffset = static_cast<core::uint32>(start);
-			*outLength = static_cast<core::uint32>(measured);
+			*outOffset = static_cast<uint32>(start);
+			*outLength = static_cast<uint32>(measured);
 
 			return true;
 		}
@@ -436,8 +438,8 @@ namespace rox::os
 			const char* const arena = m_PendingPaths.Data();
 			const auto isOrderedBefore = [arena](const Record& left, const Record& right) noexcept
 				{
-					const rox::core::usize shared = left.PathLength < right.PathLength ? left.PathLength : right.PathLength;
-					const int order = shared == 0 ? 0 : rox::core::CompareBytes(arena + left.PathOffset, arena + right.PathOffset, shared);
+					const usize shared = left.PathLength < right.PathLength ? left.PathLength : right.PathLength;
+					const int order = shared == 0 ? 0 : CompareBytes(arena + left.PathOffset, arena + right.PathOffset, shared);
 
 					if (order != 0)
 					{
@@ -449,13 +451,13 @@ namespace rox::os
 						return left.PathLength < right.PathLength;
 					}
 
-					return static_cast<core::uint8>(left.Kind) < static_cast<core::uint8>(right.Kind);
+					return static_cast<uint8>(left.Kind) < static_cast<uint8>(right.Kind);
 				};
-			rox::core::Sort(m_Records.begin(), m_Records.end(), isOrderedBefore);
+			Sort(m_Records.begin(), m_Records.end(), isOrderedBefore);
 
-			rox::core::usize uniqueCount = 0;
+			usize uniqueCount = 0;
 
-			for (rox::core::usize index = 0; index < m_Records.Size(); ++index)
+			for (usize index = 0; index < m_Records.Size(); ++index)
 			{
 				const Record candidate = m_Records[index];
 
@@ -464,7 +466,7 @@ namespace rox::os
 					const Record& previous = m_Records[uniqueCount - 1];
 					const bool bSamePath =
 						previous.PathLength == candidate.PathLength &&
-						(candidate.PathLength == 0 || rox::core::CompareBytes(arena + previous.PathOffset, arena + candidate.PathOffset, candidate.PathLength) == 0);
+						(candidate.PathLength == 0 || CompareBytes(arena + previous.PathOffset, arena + candidate.PathOffset, candidate.PathLength) == 0);
 
 					if (bSamePath && previous.Kind == candidate.Kind)
 					{
@@ -484,15 +486,15 @@ namespace rox::os
 		{
 			// The recycled arena becomes the live one only here, so the batch published by the previous poll
 			// stays readable through the entire parse that replaces it.
-			rox::core::Swap(m_PendingPaths, m_PublishedPaths);
+			Swap(m_PendingPaths, m_PublishedPaths);
 			m_PublishedChanges.Clear();
 			const char* const arena = m_PublishedPaths.Data();
 
 			for (const Record& record : m_Records)
 			{
 				FileChange change;
-				change.RelativePath = core::StringView(arena + record.PathOffset, record.PathLength);
-				change.OldRelativePath = record.OldPathLength == 0 ? core::StringView() : core::StringView(arena + record.OldPathOffset, record.OldPathLength);
+				change.RelativePath = StringView(arena + record.PathOffset, record.PathLength);
+				change.OldRelativePath = record.OldPathLength == 0 ? StringView() : StringView(arena + record.OldPathOffset, record.OldPathLength);
 				change.Kind = record.Kind;
 				const bool bAdded = m_PublishedChanges.Add(change);
 				ASSERT(bAdded, "A preallocated published-change buffer must hold every parsed record.");
@@ -506,22 +508,22 @@ namespace rox::os
 		// is a handle plus one pending overlapped read and carries no synchronization at all, so a second
 		// thread reaching Poll is a programmer error and not a recoverable failure.
 		const DWORD m_OwnerThreadId = GetCurrentThreadId();
-		core::uint32 m_MaximumChanges = 0;
-		rox::core::usize m_NativeBufferWords = 0;
+		uint32 m_MaximumChanges = 0;
+		usize m_NativeBufferWords = 0;
 		HANDLE m_Directory = INVALID_HANDLE_VALUE;
 		HANDLE m_Event = nullptr;
 		OVERLAPPED m_Overlapped = {};
 		bool m_bArmed = false;
 		bool m_bTerminal = false;
 		bool m_bOverflowReported = false;
-		core::Array<core::uint32> m_NativeBuffer;
-		core::Array<Record> m_Records;
-		core::Array<char> m_PendingPaths;
-		core::Array<char> m_PublishedPaths;
-		core::Array<FileChange> m_PublishedChanges;
+		Array<uint32> m_NativeBuffer;
+		Array<Record> m_Records;
+		Array<char> m_PendingPaths;
+		Array<char> m_PublishedPaths;
+		Array<FileChange> m_PublishedChanges;
 	};
 
-	WindowsFileWatcher::WindowsFileWatcher(core::MemoryResource& resource, State* const state) noexcept
+	WindowsFileWatcher::WindowsFileWatcher(MemoryResource& resource, State* const state) noexcept
 		: m_Resource(&resource)
 		, m_State(state)
 	{
@@ -534,7 +536,7 @@ namespace rox::os
 		{
 			ASSERT(m_Resource != nullptr, "A Windows file watcher holding state must retain its resource.");
 			ASSERT(m_State->IsOwnerThread(), "A file watcher must be destroyed on the thread that created it.");
-			core::DestroyObject(*m_Resource, m_State);
+			DestroyObject(*m_Resource, m_State);
 			m_State = nullptr;
 		}
 	}
@@ -559,7 +561,7 @@ namespace rox::os
 			{
 				ASSERT(m_Resource != nullptr, "A Windows file watcher holding state must retain its resource.");
 				ASSERT(m_State->IsOwnerThread(), "A file watcher must be destroyed on the thread that created it.");
-				core::DestroyObject(*m_Resource, m_State);
+				DestroyObject(*m_Resource, m_State);
 			}
 
 			m_Resource = other.m_Resource;
@@ -576,24 +578,24 @@ namespace rox::os
 		return m_State != nullptr;
 	}
 
-	core::Result<WindowsFileWatcher> WindowsFileWatcher::Create(core::MemoryResource& resource, const core::StringView rootPathUtf8,
+	Result<WindowsFileWatcher> WindowsFileWatcher::Create(MemoryResource& resource, const StringView rootPathUtf8,
 		const WindowsFileWatcherOptions options)
 	{
-		if (rootPathUtf8.IsEmpty() || containsNull(rootPathUtf8) || !core::IsValidUtf8(rootPathUtf8) ||
-			rootPathUtf8.Size() > static_cast<rox::core::usize>(rox::core::NumericLimits<int>::max()))
+		if (rootPathUtf8.IsEmpty() || containsNull(rootPathUtf8) || !IsValidUtf8(rootPathUtf8) ||
+			rootPathUtf8.Size() > static_cast<usize>(NumericLimits<int>::max()))
 		{
-			return core::Result<WindowsFileWatcher>::Failure(
-				makeWatchError(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-WATCH-ROOT",
+			return Result<WindowsFileWatcher>::Failure(
+				makeWatchError(EErrorCode::InvalidArgument, "ROX-PLATFORM-WATCH-ROOT",
 					"The file-watch root is empty, contains a null character, or is not well-formed UTF-8.",
 					"Provide a non-empty well-formed UTF-8 directory path."));
 		}
 
 		if (options.MaximumChangesPerPoll == 0 || options.MaximumChangesPerPoll > MAXIMUM_FILE_CHANGE_COUNT ||
-			options.NativeBufferBytes < sizeof(core::uint32) || options.NativeBufferBytes > MAXIMUM_FILE_WATCH_BUFFER_BYTES ||
-			(options.NativeBufferBytes % sizeof(core::uint32)) != 0)
+			options.NativeBufferBytes < sizeof(uint32) || options.NativeBufferBytes > MAXIMUM_FILE_WATCH_BUFFER_BYTES ||
+			(options.NativeBufferBytes % sizeof(uint32)) != 0)
 		{
-			return core::Result<WindowsFileWatcher>::Failure(
-				makeWatchError(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-WATCH-OPTIONS",
+			return Result<WindowsFileWatcher>::Failure(
+				makeWatchError(EErrorCode::InvalidArgument, "ROX-PLATFORM-WATCH-OPTIONS",
 					"The file-watch capacities are outside their supported bounds.",
 					"Use one through 65,536 changes and a four-byte-aligned buffer up to one mebibyte."));
 		}
@@ -607,18 +609,18 @@ namespace rox::os
 
 		if (measured <= 0)
 		{
-			return core::Result<WindowsFileWatcher>::Failure(
-				makeWatchError(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-WATCH-ROOT",
+			return Result<WindowsFileWatcher>::Failure(
+				makeWatchError(EErrorCode::InvalidArgument, "ROX-PLATFORM-WATCH-ROOT",
 					"The file-watch root could not be converted to a native wide path.",
 					"Provide a non-empty well-formed UTF-8 directory path."));
 		}
 
-		core::Array<wchar_t> rootPathUtf16(resource);
+		Array<wchar_t> rootPathUtf16(resource);
 
-		if (!rootPathUtf16.Resize(static_cast<rox::core::usize>(measured) + 1))
+		if (!rootPathUtf16.Resize(static_cast<usize>(measured) + 1))
 		{
-			return core::Result<WindowsFileWatcher>::Failure(makeWatchError(
-				core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WATCH-ALLOCATION",
+			return Result<WindowsFileWatcher>::Failure(makeWatchError(
+				EErrorCode::ExternalFailure, "ROX-PLATFORM-WATCH-ALLOCATION",
 				"Memory allocation for the file-watch root path failed.", "Release bounded service memory and retry creation."));
 		}
 
@@ -627,22 +629,22 @@ namespace rox::os
 
 		if (converted != measured)
 		{
-			return core::Result<WindowsFileWatcher>::Failure(
-				makeWatchError(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-WATCH-ROOT",
+			return Result<WindowsFileWatcher>::Failure(
+				makeWatchError(EErrorCode::InvalidArgument, "ROX-PLATFORM-WATCH-ROOT",
 					"The file-watch root converted to a different length than it measured.",
 					"Provide a non-empty well-formed UTF-8 directory path."));
 		}
 
-		rootPathUtf16[static_cast<rox::core::usize>(measured)] = L'\0';
+		rootPathUtf16[static_cast<usize>(measured)] = L'\0';
 
-		State* const state = core::CreateObject<State>(resource, resource, options);
+		State* const state = CreateObject<State>(resource, resource, options);
 
 		if (state == nullptr || !state->TryReserveStorage())
 		{
-			core::DestroyObject(resource, state);
+			DestroyObject(resource, state);
 
-			return core::Result<WindowsFileWatcher>::Failure(makeWatchError(
-				core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WATCH-ALLOCATION", "Memory allocation for the file-watch buffers failed.",
+			return Result<WindowsFileWatcher>::Failure(makeWatchError(
+				EErrorCode::ExternalFailure, "ROX-PLATFORM-WATCH-ALLOCATION", "Memory allocation for the file-watch buffers failed.",
 				"Release bounded service memory and retry creation."));
 		}
 
@@ -650,42 +652,42 @@ namespace rox::os
 
 		if (openResult != ERootOpenResult::Success)
 		{
-			core::DestroyObject(resource, state);
+			DestroyObject(resource, state);
 
 			if (openResult == ERootOpenResult::NotFound)
 			{
-				return core::Result<WindowsFileWatcher>::Failure(makeRootGoneError());
+				return Result<WindowsFileWatcher>::Failure(makeRootGoneError());
 			}
 
 			if (openResult == ERootOpenResult::AccessDenied)
 			{
-				return core::Result<WindowsFileWatcher>::Failure(
-					makeWatchError(core::EErrorCode::PermissionDenied, "ROX-PLATFORM-WATCH-ROOT-ACCESS",
+				return Result<WindowsFileWatcher>::Failure(
+					makeWatchError(EErrorCode::PermissionDenied, "ROX-PLATFORM-WATCH-ROOT-ACCESS",
 						"The watched directory root exists but could not be opened for change notification.",
 						"Grant list-directory access to the root, or close the owner that holds it exclusively."));
 			}
 
-			return core::Result<WindowsFileWatcher>::Failure(
-				makeWatchError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WATCH-OPEN",
+			return Result<WindowsFileWatcher>::Failure(
+				makeWatchError(EErrorCode::ExternalFailure, "ROX-PLATFORM-WATCH-OPEN",
 					"The native watch handle or its completion event could not be created.",
 					"Release bounded operating-system handles and retry creation."));
 		}
 
 		if (!state->TryArm())
 		{
-			core::DestroyObject(resource, state);
+			DestroyObject(resource, state);
 
-			return core::Result<WindowsFileWatcher>::Failure(makeWatchError(
-				core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WATCH-ARM", "The initial directory-change read could not be started.",
+			return Result<WindowsFileWatcher>::Failure(makeWatchError(
+				EErrorCode::ExternalFailure, "ROX-PLATFORM-WATCH-ARM", "The initial directory-change read could not be started.",
 				"Verify the root is a local directory that supports change notification and retry."));
 		}
 
 		LOG_INFO("Platform.FileWatcher", "A recursive Windows directory watch started.");
 
-		return core::Result<WindowsFileWatcher>::Success(WindowsFileWatcher(resource, state));
+		return Result<WindowsFileWatcher>::Success(WindowsFileWatcher(resource, state));
 	}
 
-	core::Result<FileChangeBatch> WindowsFileWatcher::Poll()
+	Result<FileChangeBatch> WindowsFileWatcher::Poll()
 	{
 		ASSERT(m_State != nullptr, "Polling requires a valid Windows file watcher.");
 

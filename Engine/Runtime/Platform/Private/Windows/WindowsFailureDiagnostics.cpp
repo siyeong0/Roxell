@@ -10,13 +10,15 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	namespace
 	{
 		SRWLOCK s_CaptureLock = SRWLOCK_INIT;
 
-		void emit(const core::LogEvent& event, const char* message) noexcept
+		void emit(const LogEvent& event, const char* message) noexcept
 		{
-			core::WriteLog({ event.Record.Level, "FailureDiagnostics", message, {}, event.Record.Source });
+			WriteLog({ event.Record.Level, "FailureDiagnostics", message, {}, event.Record.Source });
 		}
 	} // namespace
 
@@ -25,7 +27,7 @@ namespace rox::os
 		Stop();
 	}
 
-	void WindowsFailureDiagnostics::Start(core::StringView logPath, bool bRelativeToExecutable) noexcept
+	void WindowsFailureDiagnostics::Start(StringView logPath, bool bRelativeToExecutable) noexcept
 	{
 		ASSERT(!m_bInstalled, "Failure diagnostics must be installed only once.");
 		m_DumpPrefix[0] = 0;
@@ -33,14 +35,14 @@ namespace rox::os
 		m_bFatalDumpAttempted = false;
 		char setting[16] = {};
 		const DWORD settingSize = GetEnvironmentVariableA("ROXELL_FAILURE_DIAGNOSTICS", setting, sizeof(setting));
-		bool bEnabled = core::IsFailureDiagnosticsEnabled();
+		bool bEnabled = IsFailureDiagnosticsEnabled();
 
 		if (settingSize == 1 && (setting[0] == '0' || setting[0] == '1'))
 		{
 			bEnabled = setting[0] == '1';
 		}
 
-		m_bPreviousEnabled = core::SetFailureDiagnosticsEnabled(bEnabled);
+		m_bPreviousEnabled = SetFailureDiagnosticsEnabled(bEnabled);
 		m_bFullMemory = GetEnvironmentVariableA("ROXELL_FULL_MEMORY_DUMPS", setting, sizeof(setting)) == 1 && setting[0] == '1';
 
 		wchar_t path[1024] = {};
@@ -88,7 +90,7 @@ namespace rox::os
 			}
 		}
 
-		core::IFailureDiagnostics* previous = core::SetFailureDiagnostics(this);
+		IFailureDiagnostics* previous = SetFailureDiagnostics(this);
 		ASSERT(previous == nullptr, "Only one host may own failure diagnostics.");
 		m_bInstalled = true;
 	}
@@ -111,9 +113,9 @@ namespace rox::os
 			return;
 		}
 
-		core::IFailureDiagnostics* previous = core::SetFailureDiagnostics(nullptr);
+		IFailureDiagnostics* previous = SetFailureDiagnostics(nullptr);
 		ASSERT(previous == this, "The host must remove its own failure diagnostics provider.");
-		core::SetFailureDiagnosticsEnabled(m_bPreviousEnabled);
+		SetFailureDiagnosticsEnabled(m_bPreviousEnabled);
 		AcquireSRWLockExclusive(&s_CaptureLock);
 
 		if (m_bSymbols)
@@ -132,20 +134,20 @@ namespace rox::os
 		ReleaseSRWLockExclusive(&s_CaptureLock);
 	}
 
-	void WindowsFailureDiagnostics::Capture(const core::LogEvent& event) noexcept
+	void WindowsFailureDiagnostics::Capture(const LogEvent& event) noexcept
 	{
 		char message[512] = {};
 
 		if (!TryAcquireSRWLockExclusive(&s_CaptureLock))
 		{
-			core::FormatText(message, sizeof(message), "event=%llu capture skipped: another capture is active.", event.Sequence);
+			FormatText(message, sizeof(message), "event=%llu capture skipped: another capture is active.", event.Sequence);
 			emit(event, message);
 			void* rawFrames[32] = {};
 			const USHORT count = CaptureStackBackTrace(1, 32, rawFrames, nullptr);
 
 			for (USHORT index = 0; index < count; ++index)
 			{
-				core::FormatText(message, sizeof(message), "event=%llu frame=%u address=%p symbol=busy", event.Sequence, index,
+				FormatText(message, sizeof(message), "event=%llu frame=%u address=%p symbol=busy", event.Sequence, index,
 					rawFrames[index]);
 				emit(event, message);
 			}
@@ -163,8 +165,8 @@ namespace rox::os
 
 		if (GetProcessMemoryInfo(GetCurrentProcess(), reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&memory), sizeof(memory)))
 		{
-			core::FormatText(message, sizeof(message), "event=%llu privateBytes=%llu workingSetBytes=%llu nativeThread=%lu", event.Sequence,
-				static_cast<core::uint64>(memory.PrivateUsage), static_cast<core::uint64>(memory.WorkingSetSize), GetCurrentThreadId());
+			FormatText(message, sizeof(message), "event=%llu privateBytes=%llu workingSetBytes=%llu nativeThread=%lu", event.Sequence,
+				static_cast<uint64>(memory.PrivateUsage), static_cast<uint64>(memory.WorkingSetSize), GetCurrentThreadId());
 			emit(event, message);
 		}
 
@@ -179,11 +181,11 @@ namespace rox::os
 			symbol->MaxNameLen = 255;
 			DWORD64 displacement = 0;
 			const bool bNamed = m_bSymbols && SymFromAddr(m_Process, reinterpret_cast<DWORD64>(frames[index]), &displacement, symbol);
-			core::FormatText(message, sizeof(message), "event=%llu frame=%u address=%p symbol=%s offset=%llu", event.Sequence, index, frames[index], bNamed ? symbol->Name : "unavailable", displacement);
+			FormatText(message, sizeof(message), "event=%llu frame=%u address=%p symbol=%s offset=%llu", event.Sequence, index, frames[index], bNamed ? symbol->Name : "unavailable", displacement);
 			emit(event, message);
 		}
 
-		const bool bFatal = event.Record.Level == core::ELogLevel::Critical;
+		const bool bFatal = event.Record.Level == ELogLevel::Critical;
 
 		if (bFatal ? !m_bFatalDumpAttempted : m_DumpCount < 2)
 		{
@@ -197,7 +199,7 @@ namespace rox::os
 			}
 
 			wchar_t path[1152] = {};
-			core::FormatWideText(path, 1152, L"%ls.%lu.%llu.%llu.dmp", m_DumpPrefix, GetCurrentProcessId(), GetTickCount64(), event.Sequence);
+			FormatWideText(path, 1152, L"%ls.%lu.%llu.%llu.dmp", m_DumpPrefix, GetCurrentProcessId(), GetTickCount64(), event.Sequence);
 			HANDLE file = m_DumpPrefix[0] == 0 ? INVALID_HANDLE_VALUE : CreateFileW(path, GENERIC_WRITE, 0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
 			bool bWritten = false;
 			DWORD error = m_DumpPrefix[0] == 0 ? ERROR_INVALID_NAME : file == INVALID_HANDLE_VALUE ? GetLastError() : ERROR_SUCCESS;
@@ -226,20 +228,20 @@ namespace rox::os
 
 			if (WideCharToMultiByte(CP_UTF8, 0, path, -1, utf8, sizeof(utf8), nullptr, nullptr) == 0)
 			{
-				core::FormatText(utf8, sizeof(utf8), "path exceeds log field; see the configured log directory");
+				FormatText(utf8, sizeof(utf8), "path exceeds log field; see the configured log directory");
 			}
 
-			core::FormatText(message, sizeof(message), "event=%llu dump=%s win32Error=%lu path=%.350s", event.Sequence,
+			FormatText(message, sizeof(message), "event=%llu dump=%s win32Error=%lu path=%.350s", event.Sequence,
 				bWritten ? "written" : "failed", error, utf8);
 			emit(event, message);
 		}
 		else
 		{
-			core::FormatText(message, sizeof(message), "event=%llu dump skipped: per-session limit reached.", event.Sequence);
+			FormatText(message, sizeof(message), "event=%llu dump skipped: per-session limit reached.", event.Sequence);
 			emit(event, message);
 		}
 
 		ReleaseSRWLockExclusive(&s_CaptureLock);
-		core::FlushLog();
+		FlushLog();
 	}
 } // namespace rox::os

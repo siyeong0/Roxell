@@ -16,16 +16,18 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	namespace
 	{
-		constexpr core::uint32 MAX_TEXT_BYTES = 1'048'576;
-		core::Error textError(HRESULT result, core::StringView operation)
+		constexpr uint32 MAX_TEXT_BYTES = 1'048'576;
+		Error textError(HRESULT result, StringView operation)
 		{
 			char detail[256];
-			rox::core::FormatText(detail, sizeof(detail), "%.*s (HRESULT 0x%08lx).", static_cast<int>(operation.Size()), operation.Data(), static_cast<unsigned long>(result));
+			FormatText(detail, sizeof(detail), "%.*s (HRESULT 0x%08lx).", static_cast<int>(operation.Size()), operation.Data(), static_cast<unsigned long>(result));
 
-			return core::MakeError(result == RPC_E_CHANGED_MODE ? core::EErrorCode::Conflict : core::EErrorCode::ExternalFailure,
-				"platform.window.tsf", core::StringView(detail, rox::core::CStringLength(detail)),
+			return MakeError(result == RPC_E_CHANGED_MODE ? EErrorCode::Conflict : EErrorCode::ExternalFailure,
+				"platform.window.tsf", StringView(detail, CStringLength(detail)),
 				"Use the owning STA UI thread and resynchronize the focused text document.");
 		}
 
@@ -38,23 +40,23 @@ namespace rox::os
 			}
 		}
 
-		bool boundary(const core::Array<wchar_t>& text, LONG position) noexcept
+		bool boundary(const Array<wchar_t>& text, LONG position) noexcept
 		{
-			return position >= 0 && static_cast<rox::core::usize>(position) <= text.Size() &&
-				(position == 0 || static_cast<rox::core::usize>(position) == text.Size() || !(text[position] >= 0xdc00 && text[position] <= 0xdfff));
+			return position >= 0 && static_cast<usize>(position) <= text.Size() &&
+				(position == 0 || static_cast<usize>(position) == text.Size() || !(text[position] >= 0xdc00 && text[position] <= 0xdfff));
 		}
 
-		core::uint32 bytePosition(const core::Array<wchar_t>& text, LONG position) noexcept
+		uint32 bytePosition(const Array<wchar_t>& text, LONG position) noexcept
 		{
 			if (position == 0)
 			{
 				return 0;
 			}
 
-			return static_cast<core::uint32>(WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, text.Data(), position, nullptr, 0, nullptr, nullptr));
+			return static_cast<uint32>(WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, text.Data(), position, nullptr, 0, nullptr, nullptr));
 		}
 
-		LONG acpPosition(const core::Array<wchar_t>& text, core::uint32 bytes) noexcept
+		LONG acpPosition(const Array<wchar_t>& text, uint32 bytes) noexcept
 		{
 			LONG first = 0;
 			LONG last = static_cast<LONG>(text.Size());
@@ -86,7 +88,7 @@ namespace rox::os
 			return first;
 		}
 
-		bool copy(const core::Array<wchar_t>& source, core::Array<wchar_t>& destination) noexcept
+		bool copy(const Array<wchar_t>& source, Array<wchar_t>& destination) noexcept
 		{
 			if (!destination.Resize(source.Size()))
 			{
@@ -95,7 +97,7 @@ namespace rox::os
 
 			if (!source.IsEmpty())
 			{
-				rox::core::CopyBytes(destination.Data(), source.Data(), source.Size() * sizeof(wchar_t));
+				CopyBytes(destination.Data(), source.Data(), source.Size() * sizeof(wchar_t));
 			}
 
 			return true;
@@ -105,7 +107,7 @@ namespace rox::os
 	class WindowsTextInput::State final : public ITextStoreACP, public ITfContextOwnerCompositionSink
 	{
 	public:
-		State(core::MemoryResource& memory, HWND window, WindowId id, Emit emit, void* context) noexcept
+		State(MemoryResource& memory, HWND window, WindowId id, Emit emit, void* context) noexcept
 			: m_Memory(memory)
 			, m_Text(memory)
 			, m_LockBefore(memory)
@@ -195,7 +197,7 @@ namespace rox::os
 				document.Revision == 0 ||
 				document.bPassword ||
 				document.Text.Size() > MAX_TEXT_BYTES ||
-				!core::IsValidUtf8(document.Text) ||
+				!IsValidUtf8(document.Text) ||
 				document.Text.Contains('\0') ||
 				document.AnchorByte > document.Text.Size() ||
 				document.CaretByte > document.Text.Size())
@@ -203,7 +205,7 @@ namespace rox::os
 				return E_INVALIDARG;
 			}
 
-			const auto scalarBoundary = [&](core::uint32 value)
+			const auto scalarBoundary = [&](uint32 value)
 				{
 					return value == document.Text.Size() || (static_cast<unsigned char>(document.Text[value]) & 0xc0) != 0x80;
 				};
@@ -221,7 +223,7 @@ namespace rox::os
 			if (m_Session != document.Session || m_Revision != document.Revision || m_bFailed)
 			{
 				const int units = document.Text.IsEmpty() ? 0 : MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, document.Text.Data(), static_cast<int>(document.Text.Size()), nullptr, 0);
-				core::Array<wchar_t> next(m_Memory);
+				Array<wchar_t> next(m_Memory);
 
 				if (!next.Resize(units))
 				{
@@ -235,7 +237,7 @@ namespace rox::os
 				}
 
 				Cancel();
-				m_Text = rox::core::Move(next);
+				m_Text = Move(next);
 				m_Session = document.Session;
 				m_Revision = document.Revision;
 				m_bFailed = false;
@@ -251,7 +253,7 @@ namespace rox::os
 			{
 				const LONG anchor = acpPosition(m_Text, document.AnchorByte);
 				const LONG caret = acpPosition(m_Text, document.CaretByte);
-				const TS_SELECTION_ACP selection{rox::core::Min(anchor, caret), rox::core::Max(anchor, caret), {anchor > caret ? TS_AE_START : TS_AE_END, FALSE} };
+				const TS_SELECTION_ACP selection{Min(anchor, caret), Max(anchor, caret), {anchor > caret ? TS_AE_START : TS_AE_END, FALSE} };
 				bSelectionChanged = m_Selection.acpStart != selection.acpStart || m_Selection.acpEnd != selection.acpEnd || m_Selection.style.ase != selection.style.ase;
 				m_Selection = selection;
 			}
@@ -280,18 +282,18 @@ namespace rox::os
 			return S_OK;
 		}
 
-		core::Result<void> SetInputState(const WindowTextInputState& state)
+		Result<void> SetInputState(const WindowTextInputState& state)
 		{
 			ASSERT(m_Thread == GetCurrentThreadId(), "TSF state requires its owning thread.");
 
 			if (m_bClosed)
 			{
-				return core::Result<void>::Failure(textError(TF_E_DISCONNECTED, "TSF owner is closed."));
+				return Result<void>::Failure(textError(TF_E_DISCONNECTED, "TSF owner is closed."));
 			}
 
 			if (state.bEnabled && state.Session != m_Session)
 			{
-				return core::Result<void>::Failure(textError(E_INVALIDARG, "TSF activation requires its published document session."));
+				return Result<void>::Failure(textError(E_INVALIDARG, "TSF activation requires its published document session."));
 			}
 
 			if (state.bCancelComposition || m_Session != state.Session || !state.bEnabled)
@@ -309,7 +311,7 @@ namespace rox::os
 
 			Focus(state.bEnabled && GetFocus() == m_Window);
 
-			return core::Result<void>::Success();
+			return Result<void>::Success();
 		}
 
 		void SetWindowFocus(bool bFocused) noexcept
@@ -480,7 +482,7 @@ namespace rox::os
 
 			if (!remaining)
 			{
-				core::DestroyObject(m_Memory, this);
+				DestroyObject(m_Memory, this);
 			}
 
 			return remaining;
@@ -736,20 +738,20 @@ namespace rox::os
 				last = static_cast<LONG>(m_Text.Size());
 			}
 
-			if (first < 0 || first > last || static_cast<rox::core::usize>(last) > m_Text.Size())
+			if (first < 0 || first > last || static_cast<usize>(last) > m_Text.Size())
 			{
 				return TS_E_INVALIDPOS;
 			}
 
 			const ULONG available = static_cast<ULONG>(last - first);
-			const unsigned long count = plainMaximum ? rox::core::Min<ULONG>(available, plainMaximum) : (runMaximum ? available : 0);
+			const unsigned long count = plainMaximum ? Min<ULONG>(available, plainMaximum) : (runMaximum ? available : 0);
 			*plainCount = plainMaximum ? count : 0;
 			*runCount = 0;
 			*next = first + static_cast<LONG>(count);
 
 			if (plainMaximum && count)
 			{
-				rox::core::CopyBytes(plain, m_Text.Data() + first, count * sizeof(wchar_t));
+				CopyBytes(plain, m_Text.Data() + first, count * sizeof(wchar_t));
 			}
 
 			if (runMaximum && count)
@@ -787,7 +789,7 @@ namespace rox::os
 				return E_INVALIDARG;
 			}
 
-			if (!m_bMultiline && count != 0 && (rox::core::Find(text, text + count, L'\r') != text + count || rox::core::Find(text, text + count, L'\n') != text + count))
+			if (!m_bMultiline && count != 0 && (Find(text, text + count, L'\r') != text + count || Find(text, text + count, L'\n') != text + count))
 			{
 				return E_INVALIDARG;
 			}
@@ -802,9 +804,9 @@ namespace rox::os
 				return TS_E_INVALIDPOS;
 			}
 
-			core::Array<wchar_t> replacement(m_Memory);
+			Array<wchar_t> replacement(m_Memory);
 
-			if (!replacement.Reserve(rox::core::Max<rox::core::usize>(m_CompositionBefore.Size(), m_Text.Size() - (last - first) + count)))
+			if (!replacement.Reserve(Max<usize>(m_CompositionBefore.Size(), m_Text.Size() - (last - first) + count)))
 			{
 				return E_OUTOFMEMORY;
 			}
@@ -816,22 +818,22 @@ namespace rox::os
 
 			if (first)
 			{
-				rox::core::CopyBytes(replacement.Data(), m_Text.Data(), first * sizeof(wchar_t));
+				CopyBytes(replacement.Data(), m_Text.Data(), first * sizeof(wchar_t));
 			}
 
 			if (count)
 			{
-				rox::core::CopyBytes(replacement.Data() + first, text, count * sizeof(wchar_t));
+				CopyBytes(replacement.Data() + first, text, count * sizeof(wchar_t));
 			}
 
-			const core::usize tail = m_Text.Size() - last;
+			const usize tail = m_Text.Size() - last;
 
 			if (tail)
 			{
-				rox::core::CopyBytes(replacement.Data() + first + count, m_Text.Data() + last, tail * sizeof(wchar_t));
+				CopyBytes(replacement.Data() + first + count, m_Text.Data() + last, tail * sizeof(wchar_t));
 			}
 
-			m_Text = rox::core::Move(replacement);
+			m_Text = Move(replacement);
 			*change = { first, last, first + static_cast<LONG>(count) };
 			m_Selection = { change->acpNewEnd, change->acpNewEnd, {TS_AE_END, FALSE} };
 
@@ -1043,7 +1045,7 @@ namespace rox::os
 				return E_FAIL;
 			}
 
-			core::Result<WindowTextHit> hit = m_Geometry->Native->HitTest(client.x, client.y);
+			Result<WindowTextHit> hit = m_Geometry->Native->HitTest(client.x, client.y);
 
 			if (!hit)
 			{
@@ -1055,7 +1057,7 @@ namespace rox::os
 				return TS_E_INVALIDPOINT;
 			}
 
-			const core::uint32 byte = (!hit.Value().bInside || (flags & GXFPF_ROUND_NEAREST)) ? hit.Value().NearestByte : hit.Value().CharacterByte; *acp = acpPosition(m_Text, byte);
+			const uint32 byte = (!hit.Value().bInside || (flags & GXFPF_ROUND_NEAREST)) ? hit.Value().NearestByte : hit.Value().CharacterByte; *acp = acpPosition(m_Text, byte);
 
 			return S_OK;
 		}
@@ -1079,7 +1081,7 @@ namespace rox::os
 				return TS_E_NOLAYOUT;
 			}
 
-			core::Result<WindowTextRect> extent = m_Geometry->Native->GetExtent(bytePosition(m_Text, first), bytePosition(m_Text, last));
+			Result<WindowTextRect> extent = m_Geometry->Native->GetExtent(bytePosition(m_Text, first), bytePosition(m_Text, last));
 
 			if (!extent)
 			{
@@ -1199,7 +1201,7 @@ namespace rox::os
 				return queried;
 			}
 
-			if (start < 0 || length < 0 || static_cast<rox::core::usize>(start) > m_Text.Size() || static_cast<rox::core::usize>(length) > m_Text.Size() - start || !isValidRange(start, start + length))
+			if (start < 0 || length < 0 || static_cast<usize>(start) > m_Text.Size() || static_cast<usize>(length) > m_Text.Size() - start || !isValidRange(start, start + length))
 			{
 				return TS_E_INVALIDPOS;
 			}
@@ -1213,7 +1215,7 @@ namespace rox::os
 			m_CompositionLast = start + length;
 			m_bComposing = true;
 			*accepted = TRUE;
-			const bool bChangedInLock = m_Lock && (m_LockBefore.Size() != m_Text.Size() || (!m_Text.IsEmpty() && rox::core::CompareBytes(m_LockBefore.Data(), m_Text.Data(), m_Text.Size() * sizeof(wchar_t)) != 0));
+			const bool bChangedInLock = m_Lock && (m_LockBefore.Size() != m_Text.Size() || (!m_Text.IsEmpty() && CompareBytes(m_LockBefore.Data(), m_Text.Data(), m_Text.Size() * sizeof(wchar_t)) != 0));
 			m_CompositionSelection = bChangedInLock ? m_LockSelection : TS_SELECTION_ACP{ start, start + length, {TS_AE_END, FALSE} };
 			WindowEvent event;
 			event.Kind = EWindowEventKind::CompositionStart;
@@ -1255,7 +1257,7 @@ namespace rox::os
 				return result;
 			}
 
-			if (start < 0 || count < 0 || static_cast<rox::core::usize>(start) > m_Text.Size() || static_cast<rox::core::usize>(count) > m_Text.Size() - start || !isValidRange(start, start + count))
+			if (start < 0 || count < 0 || static_cast<usize>(start) > m_Text.Size() || static_cast<usize>(count) > m_Text.Size() - start || !isValidRange(start, start + count))
 			{
 				return TS_E_INVALIDPOS;
 			}
@@ -1342,13 +1344,13 @@ namespace rox::os
 			}
 		}
 
-		void emitDifference(EWindowEventKind kind, const core::Array<wchar_t>& before, bool bCommit) noexcept
+		void emitDifference(EWindowEventKind kind, const Array<wchar_t>& before, bool bCommit) noexcept
 		{
 			LONG first = 0;
 			const LONG oldSize = static_cast<LONG>(before.Size());
 			const LONG newSize = static_cast<LONG>(m_Text.Size());
 
-			while (first < rox::core::Min(oldSize, newSize) && before[first] == m_Text[first])
+			while (first < Min(oldSize, newSize) && before[first] == m_Text[first])
 			{
 				++first;
 			}
@@ -1384,7 +1386,7 @@ namespace rox::os
 			const int count = newEnd - first;
 			const int bytes = count ? WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, m_Text.Data() + first, count, nullptr, 0, nullptr, nullptr) : 0;
 
-			if (bytes > static_cast<int>(WindowCompositionEvent::MAX_BYTES) || (count && bytes == 0) || m_Revision == rox::core::NumericLimits<core::uint64>::max())
+			if (bytes > static_cast<int>(WindowCompositionEvent::MAX_BYTES) || (count && bytes == 0) || m_Revision == NumericLimits<uint64>::max())
 			{
 				event.Composition.ByteCount = WindowCompositionEvent::MAX_BYTES + 1;
 				emitEvent(event);
@@ -1394,14 +1396,14 @@ namespace rox::os
 				return;
 			}
 
-			event.Composition.ByteCount = static_cast<core::uint32>(bytes);
+			event.Composition.ByteCount = static_cast<uint32>(bytes);
 
 			if (bytes)
 			{
 				WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, m_Text.Data() + first, count, event.Composition.Utf8, bytes, nullptr, nullptr);
 			}
 
-			event.Composition.CaretByte = bytePosition(m_Text, rox::core::ClampValue<LONG>(m_Selection.acpEnd, first, newEnd)) - bytePosition(m_Text, first);
+			event.Composition.CaretByte = bytePosition(m_Text, ClampValue<LONG>(m_Selection.acpEnd, first, newEnd)) - bytePosition(m_Text, first);
 			emitEvent(event);
 
 			if (bCommit && (first != oldEnd || first != newEnd))
@@ -1425,7 +1427,7 @@ namespace rox::os
 			}
 			else
 			{
-				const bool bSame = m_CompositionBefore.Size() == m_Text.Size() && (m_Text.IsEmpty() || rox::core::CompareBytes(m_CompositionBefore.Data(), m_Text.Data(), m_Text.Size() * sizeof(wchar_t)) == 0);
+				const bool bSame = m_CompositionBefore.Size() == m_Text.Size() && (m_Text.IsEmpty() || CompareBytes(m_CompositionBefore.Data(), m_Text.Data(), m_Text.Size() * sizeof(wchar_t)) == 0);
 
 				if (bSame)
 				{
@@ -1447,18 +1449,18 @@ namespace rox::os
 		}
 
 	private:
-		core::MemoryResource& m_Memory;
-		core::Array<wchar_t> m_Text;
-		core::Array<wchar_t> m_LockBefore;
-		core::Array<wchar_t> m_CompositionBefore;
-		core::SharedPtr<const WindowTextGeometry> m_Geometry;
+		MemoryResource& m_Memory;
+		Array<wchar_t> m_Text;
+		Array<wchar_t> m_LockBefore;
+		Array<wchar_t> m_CompositionBefore;
+		SharedPtr<const WindowTextGeometry> m_Geometry;
 
 		HWND m_Window;
 		WindowId m_Id;
 		Emit m_Callback;
 		void* m_Context;
 		DWORD m_Thread;
-		rox::core::Atomic<ULONG> m_References{ 1 };
+		Atomic<ULONG> m_References{ 1 };
 
 		ITfThreadMgr* m_Manager = nullptr;
 		ITfDocumentMgr* m_Document = nullptr;
@@ -1474,8 +1476,8 @@ namespace rox::os
 		DWORD m_SinkMask = 0;
 		DWORD m_Lock = 0;
 		DWORD m_PendingLock = 0;
-		core::uint64 m_Session = 0;
-		core::uint64 m_Revision = 0;
+		uint64 m_Session = 0;
+		uint64 m_Revision = 0;
 		LONG m_CompositionFirst = 0;
 		LONG m_CompositionLast = 0;
 		bool m_bApartment = false;
@@ -1494,7 +1496,7 @@ namespace rox::os
 
 	};
 
-	WindowsTextInput::WindowsTextInput(core::MemoryResource& memory, HWND window, WindowId id, Emit emit, void* context) noexcept
+	WindowsTextInput::WindowsTextInput(MemoryResource& memory, HWND window, WindowId id, Emit emit, void* context) noexcept
 		: m_Memory(memory)
 		, m_Window(window)
 		, m_Id(id)
@@ -1514,14 +1516,14 @@ namespace rox::os
 		}
 	}
 
-	core::Result<void> WindowsTextInput::Initialize()
+	Result<void> WindowsTextInput::Initialize()
 	{
 		ASSERT(!m_State, "TSF owner initializes once.");
-		m_State = core::CreateObject<State>(m_Memory, m_Memory, m_Window, m_Id, m_Emit, m_Context);
+		m_State = CreateObject<State>(m_Memory, m_Memory, m_Window, m_Id, m_Emit, m_Context);
 
 		if (!m_State)
 		{
-			return core::Result<void>::Failure(textError(E_OUTOFMEMORY, "TSF text store allocation failed."));
+			return Result<void>::Failure(textError(E_OUTOFMEMORY, "TSF text store allocation failed."));
 		}
 
 		const HRESULT result = m_State->Initialize();
@@ -1530,24 +1532,24 @@ namespace rox::os
 		{
 			Close();
 
-			return core::Result<void>::Failure(textError(result, "TSF thread manager/context initialization failed."));
+			return Result<void>::Failure(textError(result, "TSF thread manager/context initialization failed."));
 		}
 
-		return core::Result<void>::Success();
+		return Result<void>::Success();
 	}
 
-	core::Result<void> WindowsTextInput::Publish(const WindowTextDocument& document)
+	Result<void> WindowsTextInput::Publish(const WindowTextDocument& document)
 	{
 		const HRESULT result = m_State ? m_State->Publish(document) : TF_E_DISCONNECTED;
 
-		return SUCCEEDED(result) ? core::Result<void>::Success() : core::Result<void>::Failure(textError(result, "TSF document publication failed."));
+		return SUCCEEDED(result) ? Result<void>::Success() : Result<void>::Failure(textError(result, "TSF document publication failed."));
 	}
 
-	core::Result<void> WindowsTextInput::SetState(const WindowTextInputState& state)
+	Result<void> WindowsTextInput::SetState(const WindowTextInputState& state)
 	{
 		if (!m_State)
 		{
-			return core::Result<void>::Failure(textError(TF_E_DISCONNECTED, "TSF owner is disconnected."));
+			return Result<void>::Failure(textError(TF_E_DISCONNECTED, "TSF owner is disconnected."));
 		}
 
 		return m_State->SetInputState(state);
