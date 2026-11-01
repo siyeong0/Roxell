@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "name": "Platform",
+  "path": "Engine/Runtime/Platform",
+  "status": "implementation-baseline",
+  "summary": "Operating system services for windows, input, files, processes, threads, and native libraries.",
+  "dependencies": [
+    "Core"
+  ],
+  "targets": [
+    {
+      "name": "Runtime-Platform",
+      "kind": "STATIC",
+      "dependencies": [
+        "Runtime-Core"
+      ]
+    }
+  ],
+  "publicHeaders": [
+    "Public/Accessibility.h",
+    "Public/DynamicLibraryOwner.h",
+    "Public/FileSystem.h",
+    "Public/IClock.h",
+    "Public/IFileTailReader.h",
+    "Public/IFileWatcher.h",
+    "Public/IGamepadSource.h",
+    "Public/IProcessService.h",
+    "Public/ITerminalSession.h",
+    "Public/IWindowSystem.h",
+    "Public/NativeWindowHandle.h",
+    "Public/PlatformThreadBackend.h",
+    "Public/StandardStreams.h",
+    "Public/WindowTextDocument.h",
+    "Public/WindowTypes.h",
+    "Public/Windows/WindowsClock.h",
+    "Public/Windows/WindowsComApartment.h",
+    "Public/Windows/WindowsConsoleCancellation.h",
+    "Public/Windows/WindowsDynamicLibrary.h",
+    "Public/Windows/WindowsExecutionEnvironment.h",
+    "Public/Windows/WindowsFailureDiagnostics.h",
+    "Public/Windows/WindowsFileSystem.h",
+    "Public/Windows/WindowsFileTailReader.h",
+    "Public/Windows/WindowsFileWatcher.h",
+    "Public/Windows/WindowsGamepadSource.h",
+    "Public/Windows/WindowsLogSink.h",
+    "Public/Windows/WindowsProcessService.h",
+    "Public/Windows/WindowsRandom.h",
+    "Public/Windows/WindowsStandardStreams.h",
+    "Public/Windows/WindowsTerminalSession.h",
+    "Public/Windows/WindowsThreadBackend.h",
+    "Public/Windows/WindowsWaitTimer.h",
+    "Public/Windows/WindowsWindowSystem.h"
+  ]
+}
