@@ -21,17 +21,17 @@ namespace rox::core
 	template <typename TValue> 
 	class RingBuffer final
 	{
-		static_assert(rox::core::IsNothrowMoveConstructible<TValue>);
-		static_assert(rox::core::IsNothrowDestructible<TValue>);
+		static_assert(IsNothrowMoveConstructible<TValue>);
+		static_assert(IsNothrowDestructible<TValue>);
 
 	public:
-		[[nodiscard]] TValue& At(rox::core::usize index) noexcept;
-		[[nodiscard]] const TValue& At(rox::core::usize index) const noexcept;
+		[[nodiscard]] TValue& At(usize index) noexcept;
+		[[nodiscard]] const TValue& At(usize index) const noexcept;
 
-		explicit RingBuffer(MemoryResource& resource, const rox::core::usize capacity = 0) noexcept;
+		explicit RingBuffer(MemoryResource& resource, const usize capacity = 0) noexcept;
 
 		RingBuffer(const RingBuffer& other) noexcept
-		    requires rox::core::IsNothrowCopyConstructible<TValue>;
+		    requires IsNothrowCopyConstructible<TValue>;
 
 		RingBuffer(RingBuffer&& other) noexcept;
 
@@ -39,12 +39,12 @@ namespace rox::core
 
 		// Assignment keeps the destination resource and invalidates its references; moving invalidates source references.
 		RingBuffer& operator=(const RingBuffer& other) noexcept
-		    requires rox::core::IsNothrowCopyConstructible<TValue>;
+		    requires IsNothrowCopyConstructible<TValue>;
 
 		RingBuffer& operator=(RingBuffer&& other) noexcept;
 
-		[[nodiscard]] rox::core::usize Size() const noexcept;
-		[[nodiscard]] rox::core::usize Capacity() const noexcept;
+		[[nodiscard]] usize Size() const noexcept;
+		[[nodiscard]] usize Capacity() const noexcept;
 
 		[[nodiscard]] bool IsEmpty() const noexcept;
 		[[nodiscard]] bool IsFull() const noexcept;
@@ -52,7 +52,7 @@ namespace rox::core
 		[[nodiscard]] MemoryResource& GetResource() const noexcept;
 
 		// Requires zero capacity (including after a move). Failure is retryable; no live values are replaced.
-		[[nodiscard]] bool Initialize(const rox::core::usize capacity) noexcept;
+		[[nodiscard]] bool Initialize(const usize capacity) noexcept;
 
 		[[nodiscard]] TValue& Front() noexcept;
 		[[nodiscard]] const TValue& Front() const noexcept;
@@ -60,26 +60,26 @@ namespace rox::core
 		[[nodiscard]] TValue& Back() noexcept;
 		[[nodiscard]] const TValue& Back() const noexcept;
 
-		[[nodiscard]] TValue& operator[](const rox::core::usize logicalIndex) noexcept;
-		[[nodiscard]] const TValue& operator[](const rox::core::usize logicalIndex) const noexcept;
+		[[nodiscard]] TValue& operator[](const usize logicalIndex) noexcept;
+		[[nodiscard]] const TValue& operator[](const usize logicalIndex) const noexcept;
 
 		// Live slot addresses survive unrelated pushes and pops; full admission never overwrites an element.
 		template <typename... TArguments>
 		TValue& EmplaceRequired(TArguments&&... arguments) noexcept
-		    requires rox::core::IsNothrowConstructible<TValue, TArguments&&...>;
+		    requires IsNothrowConstructible<TValue, TArguments&&...>;
 
 		TValue& PushRequired(const TValue& value) noexcept
-		    requires rox::core::IsNothrowCopyConstructible<TValue>;
+		    requires IsNothrowCopyConstructible<TValue>;
 
 		TValue& PushRequired(TValue&& value) noexcept;
 
 		// Saturation is an ordinary refusal; supplied arguments are not consumed on that path.
 		template <typename... TArguments>
 		[[nodiscard]] TValue* Emplace(TArguments&&... arguments) noexcept
-		    requires rox::core::IsNothrowConstructible<TValue, TArguments&&...>;
+		    requires IsNothrowConstructible<TValue, TArguments&&...>;
 
 		[[nodiscard]] bool Push(const TValue& value) noexcept
-		    requires rox::core::IsNothrowCopyConstructible<TValue>;
+		    requires IsNothrowCopyConstructible<TValue>;
 
 		[[nodiscard]] bool Push(TValue&& value) noexcept;
 
@@ -89,22 +89,22 @@ namespace rox::core
 
 		// Success replaces output with the same capacity and FIFO values; failure preserves output.
 		[[nodiscard]] bool CloneTo(MemoryResource& resource, RingBuffer* outQueue) const noexcept
-		    requires rox::core::IsNothrowCopyConstructible<TValue>;
+		    requires IsNothrowCopyConstructible<TValue>;
 
 	private:
-		[[nodiscard]] rox::core::usize physicalIndex(const rox::core::usize logicalIndex) const noexcept;
+		[[nodiscard]] usize physicalIndex(const usize logicalIndex) const noexcept;
 
 		void copyFrom(const RingBuffer& other) noexcept
-		    requires rox::core::IsNothrowCopyConstructible<TValue>;
+		    requires IsNothrowCopyConstructible<TValue>;
 
 		void releaseStorage() noexcept;
 		void stealStorage(RingBuffer& other) noexcept;
 
 	private:
 		TValue* m_Data = nullptr;
-		rox::core::usize m_Size = 0;
-		rox::core::usize m_Capacity = 0;
-		rox::core::usize m_Head = 0;
+		usize m_Size = 0;
+		usize m_Capacity = 0;
+		usize m_Head = 0;
 		MemoryResource* m_Resource;
 	};
 }
@@ -112,23 +112,23 @@ namespace rox::core
 namespace rox::core
 {
 	template <typename TValue>
-	TValue& RingBuffer<TValue>::At(rox::core::usize index) noexcept
+	TValue& RingBuffer<TValue>::At(usize index) noexcept
 	{
 		return (*this)[index];
 	}
 
 	template <typename TValue>
-	const TValue& RingBuffer<TValue>::At(rox::core::usize index) const noexcept
+	const TValue& RingBuffer<TValue>::At(usize index) const noexcept
 	{
 		return (*this)[index];
 	}
 
 	template <typename TValue>
-	RingBuffer<TValue>::RingBuffer(MemoryResource& resource, const rox::core::usize capacity) noexcept
+	RingBuffer<TValue>::RingBuffer(MemoryResource& resource, const usize capacity) noexcept
 	    : m_Capacity(capacity)
 	    , m_Resource(&resource)
 	{
-		ASSERT(capacity <= rox::core::NumericLimits<rox::core::usize>::max() / sizeof(TValue),
+		ASSERT(capacity <= NumericLimits<usize>::max() / sizeof(TValue),
 		       "RingBuffer capacity must fit its representable allocation size.");
 
 		if (capacity != 0)
@@ -139,7 +139,7 @@ namespace rox::core
 
 	template <typename TValue>
 	RingBuffer<TValue>::RingBuffer(const RingBuffer& other) noexcept
-	    requires rox::core::IsNothrowCopyConstructible<TValue>
+	    requires IsNothrowCopyConstructible<TValue>
 	    : RingBuffer(*other.m_Resource, other.m_Capacity)
 	{
 		copyFrom(other);
@@ -160,7 +160,7 @@ namespace rox::core
 
 	template <typename TValue>
 	RingBuffer<TValue>& RingBuffer<TValue>::operator=(const RingBuffer& other) noexcept
-	    requires rox::core::IsNothrowCopyConstructible<TValue>
+	    requires IsNothrowCopyConstructible<TValue>
 	{
 		if (this != &other)
 		{
@@ -189,9 +189,9 @@ namespace rox::core
 		}
 		RingBuffer replacement(*m_Resource, other.m_Capacity);
 
-		for (rox::core::usize index = 0; index < other.m_Size; ++index)
+		for (usize index = 0; index < other.m_Size; ++index)
 		{
-			replacement.EmplaceRequired(rox::core::Move(other[index]));
+			replacement.EmplaceRequired(core::Move(other[index]));
 		}
 		releaseStorage();
 		stealStorage(replacement);
@@ -200,13 +200,13 @@ namespace rox::core
 	}
 
 	template <typename TValue>
-	rox::core::usize RingBuffer<TValue>::Size() const noexcept
+	usize RingBuffer<TValue>::Size() const noexcept
 	{
 		return m_Size;
 	}
 
 	template <typename TValue>
-	rox::core::usize RingBuffer<TValue>::Capacity() const noexcept
+	usize RingBuffer<TValue>::Capacity() const noexcept
 	{
 		return m_Capacity;
 	}
@@ -230,10 +230,10 @@ namespace rox::core
 	}
 
 	template <typename TValue>
-	bool RingBuffer<TValue>::Initialize(const rox::core::usize capacity) noexcept
+	bool RingBuffer<TValue>::Initialize(const usize capacity) noexcept
 	{
 		ASSERT(m_Capacity == 0, "RingBuffer::Initialize requires zero capacity.");
-		if (capacity > rox::core::NumericLimits<rox::core::usize>::max() / sizeof(TValue))
+		if (capacity > NumericLimits<usize>::max() / sizeof(TValue))
 		{
 			return false;
 		}
@@ -276,14 +276,14 @@ namespace rox::core
 	}
 
 	template <typename TValue>
-	TValue& RingBuffer<TValue>::operator[](const rox::core::usize logicalIndex) noexcept
+	TValue& RingBuffer<TValue>::operator[](const usize logicalIndex) noexcept
 	{
 		ASSERT(logicalIndex < m_Size, "RingBuffer index must address a live element.");
 		return m_Data[physicalIndex(logicalIndex)];
 	}
 
 	template <typename TValue>
-	const TValue& RingBuffer<TValue>::operator[](const rox::core::usize logicalIndex) const noexcept
+	const TValue& RingBuffer<TValue>::operator[](const usize logicalIndex) const noexcept
 	{
 		ASSERT(logicalIndex < m_Size, "RingBuffer index must address a live element.");
 		return m_Data[physicalIndex(logicalIndex)];
@@ -292,18 +292,18 @@ namespace rox::core
 	template <typename TValue>
 	template <typename... TArguments>
 	TValue& RingBuffer<TValue>::EmplaceRequired(TArguments&&... arguments) noexcept
-	    requires rox::core::IsNothrowConstructible<TValue, TArguments&&...>
+	    requires IsNothrowConstructible<TValue, TArguments&&...>
 	{
 		ASSERT(m_Size < m_Capacity, "RingBuffer::EmplaceRequired requires available capacity.");
 		TValue* const destination = m_Data + physicalIndex(m_Size);
-		rox::core::ConstructAt(destination, rox::core::Forward<TArguments>(arguments)...);
+		core::ConstructAt(destination, core::Forward<TArguments>(arguments)...);
 		++m_Size;
 		return *destination;
 	}
 
 	template <typename TValue>
 	TValue& RingBuffer<TValue>::PushRequired(const TValue& value) noexcept
-	    requires rox::core::IsNothrowCopyConstructible<TValue>
+	    requires IsNothrowCopyConstructible<TValue>
 	{
 		return EmplaceRequired(value);
 	}
@@ -311,25 +311,25 @@ namespace rox::core
 	template <typename TValue>
 	TValue& RingBuffer<TValue>::PushRequired(TValue&& value) noexcept
 	{
-		return EmplaceRequired(rox::core::Move(value));
+		return EmplaceRequired(core::Move(value));
 	}
 
 	template <typename TValue>
 	template <typename... TArguments>
 	TValue* RingBuffer<TValue>::Emplace(TArguments&&... arguments) noexcept
-	    requires rox::core::IsNothrowConstructible<TValue, TArguments&&...>
+	    requires IsNothrowConstructible<TValue, TArguments&&...>
 	{
 		if (IsFull())
 		{
 			return nullptr;
 		}
 
-		return rox::core::AddressOf(EmplaceRequired(rox::core::Forward<TArguments>(arguments)...));
+		return core::AddressOf(EmplaceRequired(core::Forward<TArguments>(arguments)...));
 	}
 
 	template <typename TValue>
 	bool RingBuffer<TValue>::Push(const TValue& value) noexcept
-	    requires rox::core::IsNothrowCopyConstructible<TValue>
+	    requires IsNothrowCopyConstructible<TValue>
 	{
 		return Emplace(value) != nullptr;
 	}
@@ -337,14 +337,14 @@ namespace rox::core
 	template <typename TValue>
 	bool RingBuffer<TValue>::Push(TValue&& value) noexcept
 	{
-		return Emplace(rox::core::Move(value)) != nullptr;
+		return Emplace(core::Move(value)) != nullptr;
 	}
 
 	template <typename TValue>
 	void RingBuffer<TValue>::Pop() noexcept
 	{
 		ASSERT(m_Size != 0, "RingBuffer::Pop requires a live element.");
-		rox::core::DestroyAt(m_Data + m_Head);
+		core::DestroyAt(m_Data + m_Head);
 		--m_Size;
 		++m_Head;
 
@@ -357,7 +357,7 @@ namespace rox::core
 	template <typename TValue>
 	void RingBuffer<TValue>::Clear() noexcept
 	{
-		if constexpr (rox::core::IsTriviallyDestructible<TValue>)
+		if constexpr (IsTriviallyDestructible<TValue>)
 		{
 			m_Size = 0;
 			m_Head = 0;
@@ -373,7 +373,7 @@ namespace rox::core
 
 	template <typename TValue>
 	bool RingBuffer<TValue>::CloneTo(MemoryResource& resource, RingBuffer* outQueue) const noexcept
-	    requires rox::core::IsNothrowCopyConstructible<TValue>
+	    requires IsNothrowCopyConstructible<TValue>
 	{
 		ASSERT(outQueue != nullptr && &outQueue->GetResource() == &resource, "RingBuffer::CloneTo output must use the requested resource.");
 		RingBuffer replacement(resource);
@@ -382,32 +382,32 @@ namespace rox::core
 			return false;
 		}
 		replacement.copyFrom(*this);
-		*outQueue = rox::core::Move(replacement);
+		*outQueue = core::Move(replacement);
 		return true;
 	}
 
 	template <typename TValue>
-	rox::core::usize RingBuffer<TValue>::physicalIndex(const rox::core::usize logicalIndex) const noexcept
+	usize RingBuffer<TValue>::physicalIndex(const usize logicalIndex) const noexcept
 	{
-		const rox::core::usize remainingSlots = m_Capacity - m_Head;
+		const usize remainingSlots = m_Capacity - m_Head;
 		return logicalIndex < remainingSlots ? m_Head + logicalIndex : logicalIndex - remainingSlots;
 	}
 
 	template <typename TValue>
 	void RingBuffer<TValue>::copyFrom(const RingBuffer& other) noexcept
-	    requires rox::core::IsNothrowCopyConstructible<TValue>
+	    requires IsNothrowCopyConstructible<TValue>
 	{
-		if constexpr (rox::core::IsTriviallyCopyable<TValue>)
+		if constexpr (IsTriviallyCopyable<TValue>)
 		{
 			if (other.m_Size != 0)
 			{
-				const rox::core::usize contiguousCount = other.m_Capacity - other.m_Head;
-				const rox::core::usize firstCount =
+				const usize contiguousCount = other.m_Capacity - other.m_Head;
+				const usize firstCount =
 				    other.m_Size < contiguousCount ? other.m_Size : contiguousCount;
-				rox::core::CopyBytes(m_Data, other.m_Data + other.m_Head, firstCount * sizeof(TValue));
+				core::CopyBytes(m_Data, other.m_Data + other.m_Head, firstCount * sizeof(TValue));
 				if (firstCount != other.m_Size)
 				{
-					rox::core::CopyBytes(m_Data + firstCount, other.m_Data,
+					core::CopyBytes(m_Data + firstCount, other.m_Data,
 					                     (other.m_Size - firstCount) * sizeof(TValue));
 				}
 			}
@@ -415,7 +415,7 @@ namespace rox::core
 		}
 		else
 		{
-			for (rox::core::usize index = 0; index < other.m_Size; ++index)
+			for (usize index = 0; index < other.m_Size; ++index)
 			{
 				EmplaceRequired(other[index]);
 			}
@@ -439,9 +439,9 @@ namespace rox::core
 	template <typename TValue>
 	void RingBuffer<TValue>::stealStorage(RingBuffer& other) noexcept
 	{
-		m_Data = rox::core::Exchange(other.m_Data, nullptr);
-		m_Size = rox::core::Exchange(other.m_Size, 0);
-		m_Capacity = rox::core::Exchange(other.m_Capacity, 0);
-		m_Head = rox::core::Exchange(other.m_Head, 0);
+		m_Data = core::Exchange(other.m_Data, nullptr);
+		m_Size = core::Exchange(other.m_Size, 0);
+		m_Capacity = core::Exchange(other.m_Capacity, 0);
+		m_Head = core::Exchange(other.m_Head, 0);
 	}
 }

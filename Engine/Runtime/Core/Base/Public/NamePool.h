@@ -19,14 +19,14 @@ namespace rox::core
 		Name Intern(StringView text) noexcept;
 		Name Find(StringView text) const noexcept;
 
-		void Reserve(rox::core::usize count) noexcept;
-		rox::core::usize Size() const noexcept;
+		void Reserve(usize count) noexcept;
+		usize Size() const noexcept;
 
 		MemoryResource& GetResource() const noexcept { return m_Names.GetResource(); }
 
 	private:
 		HashSet<String> m_Names;
 
-		mutable rox::core::Mutex m_Mutex;
+		mutable core::Mutex m_Mutex;
 	};
 }

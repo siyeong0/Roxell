@@ -51,7 +51,7 @@ namespace rox::core
 	namespace detail
 	{
 		[[nodiscard]] SchemaFieldDescriptor NestedArrayField(const SchemaFieldDescriptor& field) noexcept;
-		[[nodiscard]] StringView ToStringView(const rox::core::StringView text) noexcept;
+		[[nodiscard]] StringView ToStringView(const StringView text) noexcept;
 
 		[[nodiscard]] Result<void> Failure(EErrorCode code, StringView diagnosticId, StringView message, StringView recoveryHint);
 		[[nodiscard]] Result<void> AllocationFailure(const StringView message);

@@ -53,7 +53,7 @@ namespace rox::core
 		lockState();
 		const bool bShouldDelegate = m_AllocationAttemptCount < m_AllocationAttemptsBeforeFailure;
 
-		if (m_AllocationAttemptCount != rox::core::NumericLimits<usize>::max())
+		if (m_AllocationAttemptCount != NumericLimits<usize>::max())
 		{
 			++m_AllocationAttemptCount;
 		}

@@ -34,6 +34,6 @@ namespace rox::math
 		}
 	};
 
-	static_assert(rox::core::IsStandardLayout<Circle<float32>> && rox::core::IsTriviallyCopyable<Circle<float32>>);
-	static_assert(rox::core::IsStandardLayout<Circle<float64>> && rox::core::IsTriviallyCopyable<Circle<float64>>);
+	static_assert(core::IsStandardLayout<Circle<float32>> && core::IsTriviallyCopyable<Circle<float32>>);
+	static_assert(core::IsStandardLayout<Circle<float64>> && core::IsTriviallyCopyable<Circle<float64>>);
 } // namespace rox::math

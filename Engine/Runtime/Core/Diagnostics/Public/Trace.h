@@ -10,26 +10,26 @@ namespace rox::core
 	// The borrowed sink must outlive callbacks and scopes. Replace it only when tracing is quiescent and no scopes live.
 	ITraceSink* SetTraceSink(ITraceSink* sink) noexcept;
 	bool IsTracingEnabled() noexcept;
-	rox::core::uint64 GetTraceCaptureId() noexcept;
-	rox::core::uint64 GetTraceFrameId() noexcept;
+	uint64 GetTraceCaptureId() noexcept;
+	uint64 GetTraceFrameId() noexcept;
 
 	// Labels must be valid UTF-8. Sink callbacks suppress recursive tracing, including frame updates.
 
 #if ROXELL_ENABLE_PROFILING
-	void TraceCounter(rox::core::DiagnosticText category, rox::core::DiagnosticText name, double value) noexcept;
-	void TraceAllocation(const void* resource, const void* address, rox::core::usize bytes) noexcept;
-	void TraceDeallocation(const void* resource, const void* address, rox::core::usize bytes) noexcept;
-	void TraceFrame(rox::core::uint64 frameId) noexcept;
+	void TraceCounter(DiagnosticText category, DiagnosticText name, double value) noexcept;
+	void TraceAllocation(const void* resource, const void* address, usize bytes) noexcept;
+	void TraceDeallocation(const void* resource, const void* address, usize bytes) noexcept;
+	void TraceFrame(uint64 frameId) noexcept;
 
 	// GPU duration has no position on the CPU clock; queue intervals may overlap.
-	void TraceGpuDuration(rox::core::DiagnosticText category, rox::core::DiagnosticText name, rox::core::uint64 frameId,
-	                      rox::core::uint32 queue, rox::core::uint64 durationNanoseconds, rox::core::uint64 captureId = 0) noexcept;
+	void TraceGpuDuration(DiagnosticText category, DiagnosticText name, uint64 frameId,
+	                      uint32 queue, uint64 durationNanoseconds, uint64 captureId = 0) noexcept;
 #else
-	inline void TraceCounter(rox::core::DiagnosticText, rox::core::DiagnosticText, double) noexcept {}
-	inline void TraceAllocation(const void*, const void*, rox::core::usize) noexcept {}
-	inline void TraceDeallocation(const void*, const void*, rox::core::usize) noexcept {}
-	inline void TraceFrame(rox::core::uint64) noexcept {}
-	inline void TraceGpuDuration(rox::core::DiagnosticText, rox::core::DiagnosticText, rox::core::uint64, rox::core::uint32, rox::core::uint64, rox::core::uint64 = 0) noexcept {}
+	inline void TraceCounter(DiagnosticText, DiagnosticText, double) noexcept {}
+	inline void TraceAllocation(const void*, const void*, usize) noexcept {}
+	inline void TraceDeallocation(const void*, const void*, usize) noexcept {}
+	inline void TraceFrame(uint64) noexcept {}
+	inline void TraceGpuDuration(DiagnosticText, DiagnosticText, uint64, uint32, uint64, uint64 = 0) noexcept {}
 #endif
 }
 

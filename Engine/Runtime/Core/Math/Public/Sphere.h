@@ -39,6 +39,6 @@ namespace rox::math
 	static_assert(sizeof(Sphere<float64>) == sizeof(float64) * 4);
 	static_assert(offsetof(Sphere<float32>, Radius) == sizeof(float32) * 3);
 	static_assert(offsetof(Sphere<float64>, Radius) == sizeof(float64) * 3);
-	static_assert(rox::core::IsStandardLayout<Sphere<float32>> && rox::core::IsTriviallyCopyable<Sphere<float32>>);
-	static_assert(rox::core::IsStandardLayout<Sphere<float64>> && rox::core::IsTriviallyCopyable<Sphere<float64>>);
+	static_assert(core::IsStandardLayout<Sphere<float32>> && core::IsTriviallyCopyable<Sphere<float32>>);
+	static_assert(core::IsStandardLayout<Sphere<float64>> && core::IsTriviallyCopyable<Sphere<float64>>);
 } // namespace rox::math

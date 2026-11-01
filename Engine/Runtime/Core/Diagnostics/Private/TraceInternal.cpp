@@ -8,49 +8,49 @@
 #if ROXELL_ENABLE_PROFILING
 namespace rox::core
 {
-	thread_local rox::core::uint64 s_ParentScope = 0;
-	thread_local rox::core::uint64 s_ParentCapture = 0;
+	thread_local uint64 s_ParentScope = 0;
+	thread_local uint64 s_ParentCapture = 0;
 
 	namespace
 	{
-		using Clock = rox::core::MonotonicClock;
-		rox::core::Atomic<ITraceSink*> s_Sink = nullptr;
+		using Clock = core::MonotonicClock;
+		Atomic<ITraceSink*> s_Sink = nullptr;
 		thread_local bool s_bInSink = false;
-		rox::core::Atomic<rox::core::uint64> s_ScopeSequence = 0;
-		rox::core::Atomic<rox::core::uint64> s_Frame = 0;
+		Atomic<uint64> s_ScopeSequence = 0;
+		Atomic<uint64> s_Frame = 0;
 	}
 
-	rox::core::uint64 nextScopeId() noexcept
+	uint64 nextScopeId() noexcept
 	{
-		const rox::core::uint64 id = s_ScopeSequence.fetch_add(1, rox::core::MemoryOrderRelaxed);
-		ASSERT(id != rox::core::NumericLimits<rox::core::uint64>::max(), "Trace scope IDs must remain representable.");
+		const uint64 id = s_ScopeSequence.fetch_add(1, core::MemoryOrderRelaxed);
+		ASSERT(id != NumericLimits<uint64>::max(), "Trace scope IDs must remain representable.");
 		return id + 1;
 	}
 
-	rox::core::uint64 currentFrame() noexcept { return s_Frame.load(rox::core::MemoryOrderRelaxed); }
+	uint64 currentFrame() noexcept { return s_Frame.load(core::MemoryOrderRelaxed); }
 
-	rox::core::uint64 timestamp() noexcept
+	uint64 timestamp() noexcept
 	{
 		static const Clock::time_point s_Epoch = Clock::now();
-		return static_cast<rox::core::uint64>(
-		    rox::core::DurationCast<rox::core::Nanoseconds>(Clock::now() - s_Epoch).count());
+		return static_cast<uint64>(
+		    core::DurationCast<core::Nanoseconds>(Clock::now() - s_Epoch).count());
 	}
 
 	bool isInSink() noexcept { return s_bInSink; }
 
 	ITraceSink* exchangeSink(ITraceSink* sink) noexcept
 	{
-		return s_Sink.exchange(sink, rox::core::MemoryOrderAcqRel);
+		return s_Sink.exchange(sink, core::MemoryOrderAcqRel);
 	}
 
-	void setCurrentFrame(rox::core::uint64 frameId) noexcept
+	void setCurrentFrame(uint64 frameId) noexcept
 	{
-		s_Frame.store(frameId, rox::core::MemoryOrderRelaxed);
+		s_Frame.store(frameId, core::MemoryOrderRelaxed);
 	}
 
 	ITraceSink* activeSink() noexcept
 	{
-		return s_bInSink ? nullptr : s_Sink.load(rox::core::MemoryOrderAcquire);
+		return s_bInSink ? nullptr : s_Sink.load(core::MemoryOrderAcquire);
 	}
 
 	namespace
@@ -71,7 +71,7 @@ namespace rox::core
 		};
 	}
 
-	rox::core::uint64 queryCaptureId(ITraceSink& sink) noexcept
+	uint64 queryCaptureId(ITraceSink& sink) noexcept
 	{
 		const SinkCallbackScope callback;
 		return sink.GetCaptureId();

@@ -52,7 +52,7 @@ namespace rox::core
 	{
 		ASSERT(CurrentJobExecution() == nullptr, "Job scheduler start is forbidden from job execution or target destruction.");
 		ASSERT(!m_State, "Job scheduler start requires empty ownership.");
-		ASSERT(config.WorkerScratchBytes > 0 && config.QueueCapacity > 0 && config.QueueCapacity <= rox::core::NumericLimits<rox::core::usize>::max() / sizeof(TaskHandle), "Job scheduler configuration requires positive representable storage capacities.");
+		ASSERT(config.WorkerScratchBytes > 0 && config.QueueCapacity > 0 && config.QueueCapacity <= NumericLimits<usize>::max() / sizeof(TaskHandle), "Job scheduler configuration requires positive representable storage capacities.");
 
 		if (config.WorkerCount > 0)
 		{
@@ -74,7 +74,7 @@ namespace rox::core
 			}
 		}
 
-		m_State = rox::core::Move(state);
+		m_State = core::Move(state);
 
 		if (m_State->Workers)
 		{
@@ -160,7 +160,7 @@ namespace rox::core
 		if (state.Queue)
 		{
 			TaskHandle accepted;
-			if (!state.Queue->TrySubmit(&accepted, name, rox::core::Move(target), prerequisites, options.Priority, options.Cancellation, options.ExecutionContext))
+			if (!state.Queue->TrySubmit(&accepted, name, core::Move(target), prerequisites, options.Priority, options.Cancellation, options.ExecutionContext))
 			{
 				return {};
 			}
@@ -349,14 +349,14 @@ namespace rox::core
 		}
 	}
 
-	rox::core::usize JobScheduler::PumpMainThread(rox::core::usize maxJobs) noexcept
+	usize JobScheduler::PumpMainThread(usize maxJobs) noexcept
 	{
 		ASSERT(CurrentJobExecution() == nullptr, "Job waits and shutdown are forbidden from job execution or target destruction.");
 
 		JobSchedulerState& state = requireRunning();
 		ASSERT(m_Backend->CurrentThreadId() == state.OwnerId, "Main-thread job dispatch requires the initialization thread.");
 
-		rox::core::usize executed = 0;
+		usize executed = 0;
 
 		if (state.Queue)
 		{

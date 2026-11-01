@@ -45,7 +45,7 @@ namespace rox::math::detail
 		}
 
 		const ProjectionVector3<T> value{p.X / p.W, p.Y / p.W, p.Z / p.W};
-		if (!rox::core::IsFinite(value.X) || !rox::core::IsFinite(value.Y) || !rox::core::IsFinite(value.Z))
+		if (!core::IsFinite(value.X) || !core::IsFinite(value.Y) || !core::IsFinite(value.Z))
 		{
 			return false;
 		}
@@ -57,10 +57,10 @@ namespace rox::math::detail
 	template <MathScalar T>
 	inline bool ProjectionNarrow(const ProjectionVector3<T>& p, Vector3<T>& out) noexcept
 	{
-		constexpr T MAXIMUM = rox::core::NumericLimits<T>::max();
+		constexpr T MAXIMUM = core::NumericLimits<T>::max();
 
-		if (!rox::core::IsFinite(p.X) || !rox::core::IsFinite(p.Y) || !rox::core::IsFinite(p.Z) ||
-		    rox::core::Abs(p.X) > MAXIMUM || rox::core::Abs(p.Y) > MAXIMUM || rox::core::Abs(p.Z) > MAXIMUM)
+		if (!core::IsFinite(p.X) || !core::IsFinite(p.Y) || !core::IsFinite(p.Z) ||
+		    core::Abs(p.X) > MAXIMUM || core::Abs(p.Y) > MAXIMUM || core::Abs(p.Z) > MAXIMUM)
 		{
 			return false;
 		}

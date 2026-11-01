@@ -33,8 +33,8 @@ namespace rox::core
 	template <typename T>
 	class SharedPtr final
 	{
-		static_assert(rox::core::IsObject<T>, "SharedPtr requires an object type.");
-		static_assert(!rox::core::IsArray<T>, "SharedPtr does not support arrays.");
+		static_assert(IsObject<T>, "SharedPtr requires an object type.");
+		static_assert(!IsArray<T>, "SharedPtr does not support arrays.");
 
 		class ControlBlock final
 		{
@@ -46,7 +46,7 @@ namespace rox::core
 			}
 
 		public:
-			rox::core::Atomic<rox::core::usize> m_OwnerCount;
+			Atomic<usize> m_OwnerCount;
 			MemoryResource& m_Resource;
 		};
 
@@ -54,12 +54,12 @@ namespace rox::core
 		// recursive immutable values declare their owner before defining its payload.
 		struct AllocationLayout final
 		{
-			static_assert(rox::core::IsNothrowDestructible<T>, "SharedPtr requires nothrow destruction.");
-			static_assert(sizeof(ControlBlock) <= rox::core::NumericLimits<rox::core::usize>::max() - (alignof(T) - 1), "SharedPtr control-block alignment calculation cannot overflow.");
-			static constexpr rox::core::usize OBJECT_OFFSET = (sizeof(ControlBlock) + alignof(T) - 1) & ~(alignof(T) - 1);
-			static_assert(sizeof(T) <= rox::core::NumericLimits<rox::core::usize>::max() - OBJECT_OFFSET, "SharedPtr allocation size cannot overflow.");
-			static constexpr rox::core::usize ALLOCATION_BYTE_COUNT = OBJECT_OFFSET + sizeof(T);
-			static constexpr rox::core::usize ALLOCATION_ALIGNMENT = alignof(ControlBlock) > alignof(T) ? alignof(ControlBlock) : alignof(T);
+			static_assert(IsNothrowDestructible<T>, "SharedPtr requires nothrow destruction.");
+			static_assert(sizeof(ControlBlock) <= NumericLimits<usize>::max() - (alignof(T) - 1), "SharedPtr control-block alignment calculation cannot overflow.");
+			static constexpr usize OBJECT_OFFSET = (sizeof(ControlBlock) + alignof(T) - 1) & ~(alignof(T) - 1);
+			static_assert(sizeof(T) <= NumericLimits<usize>::max() - OBJECT_OFFSET, "SharedPtr allocation size cannot overflow.");
+			static constexpr usize ALLOCATION_BYTE_COUNT = OBJECT_OFFSET + sizeof(T);
+			static constexpr usize ALLOCATION_ALIGNMENT = alignof(ControlBlock) > alignof(T) ? alignof(ControlBlock) : alignof(T);
 		};
 
 	public:
@@ -67,7 +67,7 @@ namespace rox::core
 		[[nodiscard]] static SharedPtr Create(MemoryResource& resource, ArgumentTypes&&... arguments) noexcept
 		{
 			SharedPtr owner;
-			(void)CreateInto(resource, &owner, rox::core::Forward<ArgumentTypes>(arguments)...);
+			(void)CreateInto(resource, &owner, core::Forward<ArgumentTypes>(arguments)...);
 			return owner;
 		}
 
@@ -75,7 +75,7 @@ namespace rox::core
 		[[nodiscard]] static bool CreateInto(MemoryResource& resource, SharedPtr* const outOwner, ArgumentTypes&&... arguments) noexcept
 		{
 			ASSERT(outOwner != nullptr, "SharedPtr::CreateInto requires a valid output pointer.");
-			static_assert(rox::core::IsNothrowConstructible<T, ArgumentTypes...>, "SharedPtr::CreateInto requires nothrow object construction.");
+			static_assert(IsNothrowConstructible<T, ArgumentTypes...>, "SharedPtr::CreateInto requires nothrow object construction.");
 
 			void* const memory = resource.Allocate({AllocationLayout::ALLOCATION_BYTE_COUNT, AllocationLayout::ALLOCATION_ALIGNMENT});
 			if (memory == nullptr)
@@ -84,23 +84,23 @@ namespace rox::core
 			}
 
 			ControlBlock* const controlBlock = ::new (memory) ControlBlock(resource);
-			void* const objectStorage = static_cast<rox::core::Byte*>(memory) + AllocationLayout::OBJECT_OFFSET;
-			::new (objectStorage) T(rox::core::Forward<ArgumentTypes>(arguments)...);
+			void* const objectStorage = static_cast<Byte*>(memory) + AllocationLayout::OBJECT_OFFSET;
+			::new (objectStorage) T(core::Forward<ArgumentTypes>(arguments)...);
 
 			SharedPtr replacement(controlBlock);
-			*outOwner = rox::core::Move(replacement);
+			*outOwner = core::Move(replacement);
 			return true;
 		}
 
 		template <typename... ArgumentTypes>
 		[[nodiscard]] static SharedPtr CreateRequired(MemoryResource& resource, ArgumentTypes&&... arguments) noexcept
 		{
-			static_assert(rox::core::IsNothrowConstructible<T, ArgumentTypes...>, "SharedPtr::CreateRequired requires nothrow object construction.");
+			static_assert(IsNothrowConstructible<T, ArgumentTypes...>, "SharedPtr::CreateRequired requires nothrow object construction.");
 
 			void* const memory = resource.AllocateRequired({AllocationLayout::ALLOCATION_BYTE_COUNT, AllocationLayout::ALLOCATION_ALIGNMENT});
 			ControlBlock* const controlBlock = ::new (memory) ControlBlock(resource);
-			void* const objectStorage = static_cast<rox::core::Byte*>(memory) + AllocationLayout::OBJECT_OFFSET;
-			::new (objectStorage) T(rox::core::Forward<ArgumentTypes>(arguments)...);
+			void* const objectStorage = static_cast<Byte*>(memory) + AllocationLayout::OBJECT_OFFSET;
+			::new (objectStorage) T(core::Forward<ArgumentTypes>(arguments)...);
 
 			return SharedPtr(controlBlock);
 		}
@@ -124,7 +124,7 @@ namespace rox::core
 			{
 				ControlBlock* const replacement = other.m_ControlBlock;
 				retain(replacement);
-				SharedPtr previous(rox::core::Move(*this));
+				SharedPtr previous(core::Move(*this));
 				m_ControlBlock = replacement;
 			}
 
@@ -141,7 +141,7 @@ namespace rox::core
 		{
 			if (this != &other)
 			{
-				SharedPtr previous(rox::core::Move(*this));
+				SharedPtr previous(core::Move(*this));
 				m_ControlBlock = other.m_ControlBlock;
 				other.m_ControlBlock = nullptr;
 			}
@@ -164,9 +164,9 @@ namespace rox::core
 			return m_ControlBlock == nullptr ? nullptr : &m_ControlBlock->m_Resource;
 		}
 
-		[[nodiscard]] rox::core::usize UseCount() const noexcept
+		[[nodiscard]] usize UseCount() const noexcept
 		{
-			return m_ControlBlock == nullptr ? 0 : m_ControlBlock->m_OwnerCount.load(rox::core::MemoryOrderAcquire);
+			return m_ControlBlock == nullptr ? 0 : m_ControlBlock->m_OwnerCount.load(core::MemoryOrderAcquire);
 		}
 
 		T& operator*() noexcept
@@ -210,8 +210,8 @@ namespace rox::core
 				return nullptr;
 			}
 
-			rox::core::Byte* const objectStorage = reinterpret_cast<rox::core::Byte*>(controlBlock) + AllocationLayout::OBJECT_OFFSET;
-			return rox::core::Launder(reinterpret_cast<T*>(objectStorage));
+			Byte* const objectStorage = reinterpret_cast<Byte*>(controlBlock) + AllocationLayout::OBJECT_OFFSET;
+			return core::Launder(reinterpret_cast<T*>(objectStorage));
 		}
 
 		static void retain(ControlBlock* const controlBlock) noexcept
@@ -221,14 +221,14 @@ namespace rox::core
 				return;
 			}
 
-			rox::core::usize ownerCount = controlBlock->m_OwnerCount.load(rox::core::MemoryOrderRelaxed);
+			usize ownerCount = controlBlock->m_OwnerCount.load(core::MemoryOrderRelaxed);
 
 			for (;;)
 			{
 				ASSERT(ownerCount != 0, "SharedPtr cannot retain a released control block.");
-				ASSERT(ownerCount != rox::core::NumericLimits<rox::core::usize>::max(), "SharedPtr owner count cannot overflow.");
+				ASSERT(ownerCount != NumericLimits<usize>::max(), "SharedPtr owner count cannot overflow.");
 
-				if (controlBlock->m_OwnerCount.compare_exchange_weak(ownerCount, ownerCount + 1, rox::core::MemoryOrderRelaxed, rox::core::MemoryOrderRelaxed))
+				if (controlBlock->m_OwnerCount.compare_exchange_weak(ownerCount, ownerCount + 1, core::MemoryOrderRelaxed, core::MemoryOrderRelaxed))
 				{
 					return;
 				}
@@ -242,7 +242,7 @@ namespace rox::core
 				return;
 			}
 
-			const rox::core::usize previousOwnerCount = controlBlock->m_OwnerCount.fetch_sub(1, rox::core::MemoryOrderAcqRel);
+			const usize previousOwnerCount = controlBlock->m_OwnerCount.fetch_sub(1, core::MemoryOrderAcqRel);
 			ASSERT(previousOwnerCount != 0, "SharedPtr owner count cannot underflow.");
 
 			if (previousOwnerCount != 1)
@@ -264,18 +264,18 @@ namespace rox::core
 	template <typename T, typename... ArgumentTypes>
 	bool MakeSharedInto(MemoryResource& resource, SharedPtr<T>* const outOwner, ArgumentTypes&&... arguments) noexcept
 	{
-		return SharedPtr<T>::CreateInto(resource, outOwner, rox::core::Forward<ArgumentTypes>(arguments)...);
+		return SharedPtr<T>::CreateInto(resource, outOwner, core::Forward<ArgumentTypes>(arguments)...);
 	}
 
 	template <typename T, typename... ArgumentTypes>
 	SharedPtr<T> MakeSharedRequired(MemoryResource& resource, ArgumentTypes&&... arguments) noexcept
 	{
-		return SharedPtr<T>::CreateRequired(resource, rox::core::Forward<ArgumentTypes>(arguments)...);
+		return SharedPtr<T>::CreateRequired(resource, core::Forward<ArgumentTypes>(arguments)...);
 	}
 
 	template <typename T, typename... ArgumentTypes>
 	[[nodiscard]] SharedPtr<T> MakeShared(MemoryResource& resource, ArgumentTypes&&... arguments) noexcept
 	{
-		return SharedPtr<T>::Create(resource, rox::core::Forward<ArgumentTypes>(arguments)...);
+		return SharedPtr<T>::Create(resource, core::Forward<ArgumentTypes>(arguments)...);
 	}
 } // namespace rox::core

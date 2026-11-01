@@ -26,13 +26,13 @@ namespace rox::core
 		}
 
 		{
-			rox::core::LockGuard lock(m_Mutex);
+			core::LockGuard lock(m_Mutex);
 
 			if (m_Free != nullptr)
 			{
 				FreeBlock* const block = m_Free;
 				m_Free = block->Next;
-				rox::core::DestroyAt(block);
+				core::DestroyAt(block);
 
 				return block;
 			}
@@ -49,7 +49,7 @@ namespace rox::core
 			return;
 		}
 
-		rox::core::LockGuard lock(m_Mutex);
-		m_Free = rox::core::ConstructAt(static_cast<FreeBlock*>(storage), FreeBlock{m_Free});
+		core::LockGuard lock(m_Mutex);
+		m_Free = core::ConstructAt(static_cast<FreeBlock*>(storage), FreeBlock{m_Free});
 	}
 }

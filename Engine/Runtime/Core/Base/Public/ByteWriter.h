@@ -21,9 +21,9 @@ namespace rox::core
 		ByteWriter& operator=(const ByteWriter&) noexcept = default;
 		ByteWriter& operator=(ByteWriter&&) noexcept = default;
 
-		[[nodiscard]] rox::core::usize GetOffset() const noexcept { return m_Offset; }
-		[[nodiscard]] rox::core::usize GetRemaining() const noexcept { return m_Bytes.Size() - m_Offset; }
-		[[nodiscard]] bool CanWrite(rox::core::usize byteCount) const noexcept { return byteCount <= GetRemaining(); }
+		[[nodiscard]] usize GetOffset() const noexcept { return m_Offset; }
+		[[nodiscard]] usize GetRemaining() const noexcept { return m_Bytes.Size() - m_Offset; }
+		[[nodiscard]] bool CanWrite(usize byteCount) const noexcept { return byteCount <= GetRemaining(); }
 
 		void WriteU8(uint8 value) noexcept;
 		void WriteU16LE(uint16 value) noexcept;
@@ -35,10 +35,10 @@ namespace rox::core
 		void WriteBytes(Span<const Byte> bytes) noexcept;
 
 	private:
-		void writeUnsigned(uint64 value, rox::core::usize byteCount, bool bLittleEndian) noexcept;
+		void writeUnsigned(uint64 value, usize byteCount, bool bLittleEndian) noexcept;
 
 	private:
 		Span<Byte> m_Bytes;
-		rox::core::usize m_Offset = 0;
+		usize m_Offset = 0;
 	};
 }

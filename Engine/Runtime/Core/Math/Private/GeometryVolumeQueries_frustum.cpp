@@ -92,10 +92,10 @@ namespace rox::math
 			    (y.Cross(z) * -static_cast<T>(xPlane.Distance) + z.Cross(x) * -static_cast<T>(yPlane.Distance) +
 			     x.Cross(y) * -static_cast<T>(zPlane.Distance)) *
 			    (1 / determinant);
-			const T limit = rox::core::NumericLimits<T>::max();
+			const T limit = core::NumericLimits<T>::max();
 
-			if (!rox::core::IsFinite(point.X) || !rox::core::IsFinite(point.Y) || !rox::core::IsFinite(point.Z) ||
-			    rox::core::Abs(point.X) > limit || rox::core::Abs(point.Y) > limit || rox::core::Abs(point.Z) > limit)
+			if (!core::IsFinite(point.X) || !core::IsFinite(point.Y) || !core::IsFinite(point.Z) ||
+			    core::Abs(point.X) > limit || core::Abs(point.Y) > limit || core::Abs(point.Z) > limit)
 			{
 				return false;
 			}
@@ -110,7 +110,7 @@ namespace rox::math
 	template <MathScalar T>
 	static bool volumePlaneValid(const Plane<T>& plane) noexcept
 	{
-		return plane.Normal.IsFinite() && rox::core::IsFinite(plane.Distance) && (plane.Normal.X != 0 || plane.Normal.Y != 0 || plane.Normal.Z != 0);
+		return plane.Normal.IsFinite() && core::IsFinite(plane.Distance) && (plane.Normal.X != 0 || plane.Normal.Y != 0 || plane.Normal.Z != 0);
 	}
 
 	template <MathScalar T>
@@ -189,9 +189,9 @@ namespace rox::math
 		const detail::VolumeFrame<T> frame = detail::VolumeRotation<T>(box.Rotation);
 		const detail::GeometryVector<T> normal(plane.Normal);
 		const T distance = volumePlaneDistance<T>(plane, detail::GeometryVector<T>(box.Center));
-		const T support = rox::core::Abs(normal.Dot(frame.Axes[0])) * box.HalfExtents.X +
-		                  rox::core::Abs(normal.Dot(frame.Axes[1])) * box.HalfExtents.Y +
-		                  rox::core::Abs(normal.Dot(frame.Axes[2])) * box.HalfExtents.Z;
+		const T support = core::Abs(normal.Dot(frame.Axes[0])) * box.HalfExtents.X +
+		                  core::Abs(normal.Dot(frame.Axes[1])) * box.HalfExtents.Y +
+		                  core::Abs(normal.Dot(frame.Axes[2])) * box.HalfExtents.Z;
 		return volumePlaneSide<T>(distance - support, distance + support);
 	}
 

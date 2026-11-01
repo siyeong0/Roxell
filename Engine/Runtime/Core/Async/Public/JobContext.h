@@ -19,9 +19,9 @@ namespace rox::core
 	// The scratch resource and its allocations are borrowed only within the current execution scope.
 	struct JobContext final
 	{
-		static constexpr rox::core::usize INLINE_WORKER_INDEX = rox::core::NumericLimits<rox::core::usize>::max();
+		static constexpr usize INLINE_WORKER_INDEX = NumericLimits<usize>::max();
 		MemoryResource& Scratch;
-		rox::core::usize WorkerIndex;
+		usize WorkerIndex;
 		CancellationToken Cancellation;
 		EJobExecutionContext ExecutionContext = EJobExecutionContext::AnyThread;
 	};

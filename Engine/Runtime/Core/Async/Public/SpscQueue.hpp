@@ -20,10 +20,10 @@ namespace rox::core
 	template <typename TValue> 
 	class SpscQueue final
 	{
-		static_assert(rox::core::IsNothrowDestructible<TValue>);
+		static_assert(IsNothrowDestructible<TValue>);
 
 	public:
-		explicit SpscQueue(MemoryResource& resource, rox::core::usize capacity) noexcept
+		explicit SpscQueue(MemoryResource& resource, usize capacity) noexcept
 		    : m_Storage(MemoryBlock::CreateRequired(resource, storageSize(capacity)))
 		    , m_SlotCount(capacity + 1)
 		{
@@ -36,74 +36,74 @@ namespace rox::core
 
 		~SpscQueue() noexcept
 		{
-			usize head = m_Head.load(rox::core::MemoryOrderRelaxed);
-			const usize tail = m_Tail.load(rox::core::MemoryOrderRelaxed);
+			usize head = m_Head.load(core::MemoryOrderRelaxed);
+			const usize tail = m_Tail.load(core::MemoryOrderRelaxed);
 
 			while (head != tail)
 			{
-				rox::core::DestroyAt(data() + head);
+				core::DestroyAt(data() + head);
 				head = next(head);
 			}
 		}
 
-		rox::core::usize Capacity() const noexcept { return m_SlotCount - 1; }
+		usize Capacity() const noexcept { return m_SlotCount - 1; }
 
 		MemoryResource& GetResource() const noexcept { return *m_Storage.GetResource(); }
 
 		// Full admission leaves arguments untouched. Payload operations must not reenter this queue.
 		template <typename... TArguments>
 		[[nodiscard]] bool Emplace(TArguments&&... arguments) noexcept
-		    requires rox::core::IsNothrowConstructible<TValue, TArguments&&...>
+		    requires IsNothrowConstructible<TValue, TArguments&&...>
 		{
-			const usize tail = m_Tail.load(rox::core::MemoryOrderRelaxed);
+			const usize tail = m_Tail.load(core::MemoryOrderRelaxed);
 			const usize following = next(tail);
 
-			if (following == m_Head.load(rox::core::MemoryOrderAcquire))
+			if (following == m_Head.load(core::MemoryOrderAcquire))
 			{
 				return false;
 			}
 
-			rox::core::ConstructAt(data() + tail, rox::core::Forward<TArguments>(arguments)...);
-			m_Tail.store(following, rox::core::MemoryOrderRelease);
+			core::ConstructAt(data() + tail, core::Forward<TArguments>(arguments)...);
+			m_Tail.store(following, core::MemoryOrderRelease);
 
 			return true;
 		}
 
 		[[nodiscard]] bool Push(TValue&& value) noexcept
-		    requires rox::core::IsNothrowMoveConstructible<TValue>
+		    requires IsNothrowMoveConstructible<TValue>
 		{
-			return Emplace(rox::core::Move(value));
+			return Emplace(core::Move(value));
 		}
 
 		[[nodiscard]] bool Push(const TValue& value) noexcept
-		    requires rox::core::IsNothrowCopyConstructible<TValue>
+		    requires IsNothrowCopyConstructible<TValue>
 		{
 			return Emplace(value);
 		}
 
 		[[nodiscard]] bool Pop(TValue* out) noexcept
-		    requires rox::core::IsNothrowMoveAssignable<TValue>
+		    requires IsNothrowMoveAssignable<TValue>
 		{
 			ASSERT(out != nullptr, "Pop requires a valid output pointer.");
 
-			const usize head = m_Head.load(rox::core::MemoryOrderRelaxed);
+			const usize head = m_Head.load(core::MemoryOrderRelaxed);
 
-			if (head == m_Tail.load(rox::core::MemoryOrderAcquire))
+			if (head == m_Tail.load(core::MemoryOrderAcquire))
 			{
 				return false;
 			}
 
-			(*out) = rox::core::Move(data()[head]);
-			rox::core::DestroyAt(data() + head);
-			m_Head.store(next(head), rox::core::MemoryOrderRelease);
+			(*out) = core::Move(data()[head]);
+			core::DestroyAt(data() + head);
+			m_Head.store(next(head), core::MemoryOrderRelease);
 
 			return true;
 		}
 
 	private:
-		static MemoryAllocationRequest storageSize(rox::core::usize capacity) noexcept
+		static MemoryAllocationRequest storageSize(usize capacity) noexcept
 		{
-			ASSERT(capacity > 0 && capacity < rox::core::NumericLimits<rox::core::usize>::max() / sizeof(TValue),
+			ASSERT(capacity > 0 && capacity < NumericLimits<usize>::max() / sizeof(TValue),
 			       "SpscQueue capacity requires positive representable slot storage.");
 
 			return {(capacity + 1) * sizeof(TValue), alignof(TValue)};
@@ -111,12 +111,12 @@ namespace rox::core
 
 		TValue* data() noexcept { return static_cast<TValue*>(m_Storage.GetData()); }
 
-		rox::core::usize next(rox::core::usize index) const noexcept { return index + 1 == m_SlotCount ? 0 : index + 1; }
+		usize next(usize index) const noexcept { return index + 1 == m_SlotCount ? 0 : index + 1; }
 
 	private:
 		MemoryBlock m_Storage;
-		const rox::core::usize m_SlotCount;
-		rox::core::Atomic<rox::core::usize> m_Head = 0;
-		rox::core::Atomic<rox::core::usize> m_Tail = 0;
+		const usize m_SlotCount;
+		Atomic<usize> m_Head = 0;
+		Atomic<usize> m_Tail = 0;
 	};
 }

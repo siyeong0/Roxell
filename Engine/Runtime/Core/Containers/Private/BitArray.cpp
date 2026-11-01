@@ -22,8 +22,8 @@ namespace rox::core
 	}
 
 	BitArray::BitArray(BitArray&& other) noexcept
-	    : m_Words(rox::core::Move(other.m_Words))
-	    , m_Size(rox::core::Exchange(other.m_Size, 0))
+	    : m_Words(core::Move(other.m_Words))
+	    , m_Size(core::Exchange(other.m_Size, 0))
 	{
 	}
 
@@ -42,19 +42,19 @@ namespace rox::core
 	{
 		if (this != &other)
 		{
-			m_Words = rox::core::Move(other.m_Words);
-			m_Size = rox::core::Exchange(other.m_Size, 0);
+			m_Words = core::Move(other.m_Words);
+			m_Size = core::Exchange(other.m_Size, 0);
 		}
 
 		return *this;
 	}
 
-	rox::core::usize BitArray::Size() const noexcept
+	usize BitArray::Size() const noexcept
 	{
 		return m_Size;
 	}
 
-	rox::core::usize BitArray::Capacity() const noexcept
+	usize BitArray::Capacity() const noexcept
 	{
 		return m_Words.Capacity() * BITS_PER_WORD;
 	}
@@ -69,34 +69,34 @@ namespace rox::core
 		return m_Words.GetResource();
 	}
 
-	void BitArray::ReserveRequired(const rox::core::usize minimumBits) noexcept
+	void BitArray::ReserveRequired(const usize minimumBits) noexcept
 	{
 		ASSERT(minimumBits <= MAXIMUM_BITS, "BitArray::ReserveRequired bit capacity must fit its representable limit.");
 		m_Words.ReserveRequired(wordCount(minimumBits));
 	}
 
-	void BitArray::ResizeRequired(const rox::core::usize bits, const bool bValue) noexcept
+	void BitArray::ResizeRequired(const usize bits, const bool bValue) noexcept
 	{
 		ASSERT(bits <= MAXIMUM_BITS, "BitArray::ResizeRequired bit size must fit its representable limit.");
 		if (!Resize(bits, bValue))
 		{
-			ReportMemoryFailure({EMemoryFailureReason::AllocationFailed, &GetResource(), GetResource().GetName(), {wordCount(bits) * sizeof(rox::core::uint64), alignof(rox::core::uint64)}});
+			ReportMemoryFailure({EMemoryFailureReason::AllocationFailed, &GetResource(), GetResource().GetName(), {wordCount(bits) * sizeof(uint64), alignof(uint64)}});
 		}
 	}
 
-	bool BitArray::Reserve(const rox::core::usize minimumBits) noexcept
+	bool BitArray::Reserve(const usize minimumBits) noexcept
 	{
 		return minimumBits <= MAXIMUM_BITS && m_Words.Reserve(wordCount(minimumBits));
 	}
 
-	bool BitArray::Resize(const rox::core::usize bits, const bool bValue) noexcept
+	bool BitArray::Resize(const usize bits, const bool bValue) noexcept
 	{
 		if (bits > MAXIMUM_BITS)
 		{
 			return false;
 		}
 		// True growth writes every new word below, without first zero-initializing it.
-		const rox::core::usize words = wordCount(bits);
+		const usize words = wordCount(bits);
 		const bool bResized = bValue ? m_Words.ResizeUninitialized(words) : m_Words.Resize(words);
 		if (!bResized)
 		{
@@ -105,19 +105,19 @@ namespace rox::core
 
 		if (bits > m_Size && bValue)
 		{
-			rox::core::usize firstWord = m_Size / BITS_PER_WORD;
-			const rox::core::usize firstBit = m_Size % BITS_PER_WORD;
+			usize firstWord = m_Size / BITS_PER_WORD;
+			const usize firstBit = m_Size % BITS_PER_WORD;
 
 			if (firstBit != 0)
 			{
-				m_Words[firstWord] |= rox::core::NumericLimits<rox::core::uint64>::max() << firstBit;
+				m_Words[firstWord] |= NumericLimits<uint64>::max() << firstBit;
 				++firstWord;
 			}
 
 			if (firstWord < words)
 			{
-				rox::core::SetBytes(m_Words.Data() + firstWord, 0xff,
-				                    (words - firstWord) * sizeof(rox::core::uint64));
+				core::SetBytes(m_Words.Data() + firstWord, 0xff,
+				                    (words - firstWord) * sizeof(uint64));
 			}
 		}
 
@@ -141,7 +141,7 @@ namespace rox::core
 	{
 		for (auto& word : m_Words)
 		{
-			word = rox::core::NumericLimits<rox::core::uint64>::max();
+			word = NumericLimits<uint64>::max();
 		}
 		maskTail();
 	}
@@ -166,13 +166,13 @@ namespace rox::core
 		m_Size = 0;
 	}
 
-	rox::core::usize BitArray::Count() const noexcept
+	usize BitArray::Count() const noexcept
 	{
-		rox::core::usize count = 0;
+		usize count = 0;
 
 		for (const auto word : m_Words)
 		{
-			count += static_cast<rox::core::usize>(rox::core::PopCount(word));
+			count += static_cast<usize>(core::PopCount(word));
 		}
 
 		return count;
@@ -198,24 +198,24 @@ namespace rox::core
 
 	bool BitArray::All() const noexcept
 	{
-		const rox::core::usize fullWords = m_Size / BITS_PER_WORD;
-		for (rox::core::usize index = 0; index < fullWords; ++index)
+		const usize fullWords = m_Size / BITS_PER_WORD;
+		for (usize index = 0; index < fullWords; ++index)
 		{
-			if (m_Words[index] != rox::core::NumericLimits<rox::core::uint64>::max())
+			if (m_Words[index] != NumericLimits<uint64>::max())
 			{
 				return false;
 			}
 		}
-		const rox::core::usize tailBits = m_Size % BITS_PER_WORD;
-		return tailBits == 0 || m_Words[fullWords] == (rox::core::uint64{1} << tailBits) - 1;
+		const usize tailBits = m_Size % BITS_PER_WORD;
+		return tailBits == 0 || m_Words[fullWords] == (uint64{1} << tailBits) - 1;
 	}
 
-	rox::core::usize BitArray::FindFirstSet(const rox::core::usize start) const noexcept
+	usize BitArray::FindFirstSet(const usize start) const noexcept
 	{
 		return findFirst(start, true);
 	}
 
-	rox::core::usize BitArray::FindFirstClear(const rox::core::usize start) const noexcept
+	usize BitArray::FindFirstClear(const usize start) const noexcept
 	{
 		return findFirst(start, false);
 	}
@@ -224,7 +224,7 @@ namespace rox::core
 	{
 		ASSERT(m_Size == other.m_Size, "BitArray::operator&= requires equal bit sizes.");
 
-		for (rox::core::usize index = 0; index < m_Words.Size(); ++index)
+		for (usize index = 0; index < m_Words.Size(); ++index)
 		{
 			m_Words[index] &= other.m_Words[index];
 		}
@@ -236,7 +236,7 @@ namespace rox::core
 	{
 		ASSERT(m_Size == other.m_Size, "BitArray::operator|= requires equal bit sizes.");
 
-		for (rox::core::usize index = 0; index < m_Words.Size(); ++index)
+		for (usize index = 0; index < m_Words.Size(); ++index)
 		{
 			m_Words[index] |= other.m_Words[index];
 		}
@@ -248,7 +248,7 @@ namespace rox::core
 	{
 		ASSERT(m_Size == other.m_Size, "BitArray::operator^= requires equal bit sizes.");
 
-		for (rox::core::usize index = 0; index < m_Words.Size(); ++index)
+		for (usize index = 0; index < m_Words.Size(); ++index)
 		{
 			m_Words[index] ^= other.m_Words[index];
 		}
@@ -263,45 +263,45 @@ namespace rox::core
 			return false;
 		}
 
-		return m_Size == 0 || rox::core::CompareBytes(m_Words.Data(), other.m_Words.Data(), m_Words.Size() * sizeof(rox::core::uint64)) == 0;
+		return m_Size == 0 || core::CompareBytes(m_Words.Data(), other.m_Words.Data(), m_Words.Size() * sizeof(uint64)) == 0;
 	}
 
-	rox::core::usize BitArray::wordCount(const rox::core::usize bits) noexcept
+	usize BitArray::wordCount(const usize bits) noexcept
 	{
-		return bits / BITS_PER_WORD + static_cast<rox::core::usize>(bits % BITS_PER_WORD != 0);
+		return bits / BITS_PER_WORD + static_cast<usize>(bits % BITS_PER_WORD != 0);
 	}
 
 	void BitArray::maskTail() noexcept
 	{
-		const rox::core::usize remainingBits = m_Size % BITS_PER_WORD;
+		const usize remainingBits = m_Size % BITS_PER_WORD;
 
 		if (remainingBits != 0)
 		{
-			m_Words[m_Words.Size() - 1] &= (rox::core::uint64{1} << remainingBits) - 1;
+			m_Words[m_Words.Size() - 1] &= (uint64{1} << remainingBits) - 1;
 		}
 	}
 
-	rox::core::usize BitArray::findFirst(const rox::core::usize start, const bool bValue) const noexcept
+	usize BitArray::findFirst(const usize start, const bool bValue) const noexcept
 	{
 		if (start >= m_Size)
 		{
 			return m_Size;
 		}
 
-		rox::core::usize wordIndex = start / BITS_PER_WORD;
-		rox::core::uint64 allowedBits = rox::core::NumericLimits<rox::core::uint64>::max() << (start % BITS_PER_WORD);
+		usize wordIndex = start / BITS_PER_WORD;
+		uint64 allowedBits = NumericLimits<uint64>::max() << (start % BITS_PER_WORD);
 
 		for (; wordIndex < m_Words.Size(); ++wordIndex)
 		{
-			const rox::core::uint64 candidates = (bValue ? m_Words[wordIndex] : ~m_Words[wordIndex]) & allowedBits;
+			const uint64 candidates = (bValue ? m_Words[wordIndex] : ~m_Words[wordIndex]) & allowedBits;
 
 			if (candidates != 0)
 			{
-				const rox::core::usize found =
-				    wordIndex * BITS_PER_WORD + static_cast<rox::core::usize>(rox::core::CountTrailingZeros(candidates));
+				const usize found =
+				    wordIndex * BITS_PER_WORD + static_cast<usize>(core::CountTrailingZeros(candidates));
 				return found < m_Size ? found : m_Size;
 			}
-			allowedBits = rox::core::NumericLimits<rox::core::uint64>::max();
+			allowedBits = NumericLimits<uint64>::max();
 		}
 
 		return m_Size;

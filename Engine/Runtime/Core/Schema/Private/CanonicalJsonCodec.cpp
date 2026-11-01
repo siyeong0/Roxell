@@ -170,7 +170,7 @@ namespace rox::core
 			return Result<void>::Success();
 		}
 
-		[[nodiscard]] Result<void> checkLexicalDepth(rox::core::Span<const Byte> bytes, const JsonReadLimits& limits)
+		[[nodiscard]] Result<void> checkLexicalDepth(Span<const Byte> bytes, const JsonReadLimits& limits)
 		{
 			uint32 depth = 0;
 			bool bInString = false;
@@ -178,7 +178,7 @@ namespace rox::core
 
 			for (const Byte byte : bytes)
 			{
-				const char character = static_cast<char>(rox::core::ToInteger<uint8>(byte));
+				const char character = static_cast<char>(core::ToInteger<uint8>(byte));
 
 				if (bInString)
 				{
@@ -261,7 +261,7 @@ namespace rox::core
 			return Result<void>::Success();
 		}
 
-		[[nodiscard]] Result<void> countEscapedString(const rox::core::StringView text, WriteLimitContext* const context)
+		[[nodiscard]] Result<void> countEscapedString(const StringView text, WriteLimitContext* const context)
 		{
 			Result<void> result = addMinimumBytes(context, 2);
 
@@ -296,14 +296,14 @@ namespace rox::core
 			struct Frame final
 			{
 				const Value* Node = nullptr;
-				rox::core::usize ArrayIndex = 0;
+				usize ArrayIndex = 0;
 				Value::FieldMap::ConstIterator Known;
 				Value::UnknownFieldMap::ConstIterator Unknown;
 				bool bEntered = false;
 			};
 
-			rox::core::StaticArray<Frame, ValueCloneLimits::HARD_MAXIMUM_DEPTH> frames{};
-			rox::core::usize frameCount = 1;
+			StaticArray<Frame, ValueCloneLimits::HARD_MAXIMUM_DEPTH> frames{};
+			usize frameCount = 1;
 			frames[0].Node = &value;
 			Result<void> result = Result<void>::Success();
 
@@ -369,7 +369,7 @@ namespace rox::core
 
 						for (const Byte byte : *bytes)
 						{
-							const uint8 valueByte = rox::core::ToInteger<uint8>(byte);
+							const uint8 valueByte = core::ToInteger<uint8>(byte);
 							result = addMinimumBytes(context, valueByte >= 100 ? 3 : valueByte >= 10 ? 2 : 1);
 
 							if (!result)
@@ -489,7 +489,7 @@ namespace rox::core
 			return checkWriteValue(value, 1, &context);
 		}
 
-		[[nodiscard]] const SchemaFieldDescriptor* findFieldByName(const SchemaDescriptor& schema, rox::core::StringView name) noexcept
+		[[nodiscard]] const SchemaFieldDescriptor* findFieldByName(const SchemaDescriptor& schema, StringView name) noexcept
 		{
 			for (const SchemaFieldDescriptor& field : schema.Fields)
 			{
@@ -517,21 +517,21 @@ namespace rox::core
 				const SchemaDescriptor* Schema = nullptr;
 				TypeId ObjectType;
 				TypeId ElementType;
-				rox::core::Span<const SchemaArrayDescriptor> NestedArrays;
+				Span<const SchemaArrayDescriptor> NestedArrays;
 				ESchemaValueKind Kind = ESchemaValueKind::Null;
 				ESchemaValueKind ElementKind = ESchemaValueKind::Null;
-				rox::core::usize Index = 0;
+				usize Index = 0;
 				Value::UnknownFieldMap::ConstIterator Unknown;
 				uint64 Emitted = 0;
 				bool bGeneric = false;
 				bool bEntered = false;
 			};
 
-			rox::core::StaticArray<Frame, ValueCloneLimits::HARD_MAXIMUM_DEPTH> frames{};
+			StaticArray<Frame, ValueCloneLimits::HARD_MAXIMUM_DEPTH> frames{};
 			frames[0].Node = &value;
 			frames[0].Schema = &schema;
 			frames[0].Kind = ESchemaValueKind::Object;
-			rox::core::usize count = 1;
+			usize count = 1;
 			WriteLimitContext context{limits};
 			while (count != 0)
 			{
@@ -639,7 +639,7 @@ namespace rox::core
 				{
 					const Value::Object* const object = frame.Node->GetObject();
 					ASSERT(object != nullptr, "An entered object frame must retain object storage.");
-					rox::core::StringView name;
+					StringView name;
 
 					if (frame.Schema != nullptr)
 					{
@@ -724,7 +724,7 @@ namespace rox::core
 		}
 
 		template <typename Integer>
-		[[nodiscard]] Result<Value> readIntegerText(rox::core::StringView text)
+		[[nodiscard]] Result<Value> readIntegerText(StringView text)
 		{
 			const StringView digits = !text.empty() && text.front() == '-' ? text.substr(1) : text;
 			bool canonical = !digits.empty() && (digits.size() == 1 || digits.front() != '0') && text != "-0";
@@ -733,8 +733,8 @@ namespace rox::core
 				canonical = canonical && digit >= '0' && digit <= '9';
 			}
 			Integer value{};
-			const FromCharsResult parsed = canonical ? rox::core::FromChars(text.data(), text.data() + text.size(), value) : rox::core::FromCharsResult{text.data(), rox::core::EErrorCondition::invalid_argument};
-			if (!canonical || parsed.ec != rox::core::EErrorCondition{} || parsed.ptr != text.data() + text.size())
+			const FromCharsResult parsed = canonical ? core::FromChars(text.data(), text.data() + text.size(), value) : core::FromCharsResult{text.data(), core::EErrorCondition::invalid_argument};
+			if (!canonical || parsed.ec != core::EErrorCondition{} || parsed.ptr != text.data() + text.size())
 				return failure<Value>(EErrorCode::InvalidArgument, "ROX-CORE-JSON-INTEGER-TEXT", "An integer string must be canonical decimal text within the declared signed or unsigned range.", "Use decimal digits without whitespace, a plus sign, leading zeroes, fraction, or exponent.");
 			return Result<Value>::Success(Value(value));
 		}
@@ -764,7 +764,7 @@ namespace rox::core
 				{
 					const uint64 value = json.GetUnsignedInteger();
 
-					if (value <= static_cast<uint64>(rox::core::NumericLimits<int64>::max()))
+					if (value <= static_cast<uint64>(NumericLimits<int64>::max()))
 					{
 						return Result<Value>::Success(Value(static_cast<int64>(value)));
 					}
@@ -799,7 +799,7 @@ namespace rox::core
 				{
 					const float64 value = json.GetNumber();
 
-					if (rox::core::IsFinite(value))
+					if (core::IsFinite(value))
 					{
 						return Result<Value>::Success(Value(value == 0.0 ? 0.0 : value));
 					}
@@ -815,7 +815,7 @@ namespace rox::core
 				if (json.IsString())
 				{
 					StableValueId id;
-					const rox::core::StringView text = json.GetString();
+					const StringView text = json.GetString();
 
 					if (TryParseStrongId(text, &id))
 					{
@@ -866,7 +866,7 @@ namespace rox::core
 
 					if (bytes.Size() == json.Size())
 					{
-						return Value::CreateBytes(rox::core::Move(bytes));
+						return Value::CreateBytes(core::Move(bytes));
 					}
 				}
 				break;
@@ -915,7 +915,7 @@ namespace rox::core
 			{
 				const float64 value = json.GetNumber();
 
-				if (!rox::core::IsFinite(value))
+				if (!core::IsFinite(value))
 				{
 					return failure<Value>(EErrorCode::InvalidArgument, "ROX-CORE-JSON-NON-FINITE",
 					                      "Authored JSON cannot contain NaN or infinity.", "Provide a finite number.");
@@ -966,7 +966,7 @@ namespace rox::core
 					{
 						return failure<void>(copied.GetError());
 					}
-					object.Fields.InsertRequired(field.ID, rox::core::Move(copied).TakeValue());
+					object.Fields.InsertRequired(field.ID, core::Move(copied).TakeValue());
 				}
 				else if (!hasFlag(field.Flags, ESchemaFieldFlags::Optional))
 				{
@@ -992,17 +992,17 @@ namespace rox::core
 				}
 
 				CanonicalJsonView Json;
-				rox::core::Optional<CanonicalJsonView::Iterator> Next;
+				core::Optional<CanonicalJsonView::Iterator> Next;
 
 				const SchemaDescriptor* Schema = nullptr;
 				TypeId ObjectType;
 				TypeId ElementType;
-				rox::core::Span<const SchemaArrayDescriptor> NestedArrays;
+				Span<const SchemaArrayDescriptor> NestedArrays;
 				ESchemaValueKind Kind = ESchemaValueKind::Null;
 				ESchemaValueKind ElementKind = ESchemaValueKind::Null;
 
-				rox::core::Optional<Value::Array> Array;
-				rox::core::Optional<Value::Object> Object;
+				core::Optional<Value::Array> Array;
+				core::Optional<Value::Object> Object;
 
 				uint32 Depth = 1;
 				bool bGeneric = false;
@@ -1010,16 +1010,16 @@ namespace rox::core
 			};
 
 			// The read limit counts containers; a final scalar may add one Value level.
-			rox::core::StaticArray<rox::core::Optional<Frame>, ValueCloneLimits::HARD_MAXIMUM_DEPTH + 1> frames{};
+			StaticArray<core::Optional<Frame>, ValueCloneLimits::HARD_MAXIMUM_DEPTH + 1> frames{};
 			Frame& root = frames[0].emplace(json);
 			root.Schema = &schema;
 			root.Kind = ESchemaValueKind::Object;
-			rox::core::usize count = 1;
+			usize count = 1;
 
 			while (count != 0)
 			{
 				Frame& frame = *frames[count - 1];
-				rox::core::Optional<Value> completed;
+				core::Optional<Value> completed;
 
 				if (!frame.bEntered)
 				{
@@ -1075,7 +1075,7 @@ namespace rox::core
 						{
 							return failure<Value>(scalar.GetError());
 						}
-						completed.emplace(rox::core::Move(scalar).TakeValue());
+						completed.emplace(core::Move(scalar).TakeValue());
 					}
 
 					frame.bEntered = true;
@@ -1135,22 +1135,22 @@ namespace rox::core
 					}
 
 					ASSERT(frame.Array || frame.Object, "An unfinished frame must retain a container builder.");
-					Result<Value> finished = frame.Array ? Value::CreateArray(rox::core::Move(*frame.Array))
-					                            : Value::CreateObject(rox::core::Move(*frame.Object), context->Resource);
+					Result<Value> finished = frame.Array ? Value::CreateArray(core::Move(*frame.Array))
+					                            : Value::CreateObject(core::Move(*frame.Object), context->Resource);
 
 					if (!finished)
 					{
 						return failure<Value>(finished.GetError());
 					}
-					completed.emplace(rox::core::Move(finished).TakeValue());
+					completed.emplace(core::Move(finished).TakeValue());
 				}
 
-				const rox::core::StringView childName = frame.Json.GetKey();
+				const StringView childName = frame.Json.GetKey();
 				frames[--count].reset();
 
 				if (count == 0)
 				{
-					return Result<Value>::Success(rox::core::Move(*completed));
+					return Result<Value>::Success(core::Move(*completed));
 				}
 				Frame& parent = *frames[count - 1];
 
@@ -1163,7 +1163,7 @@ namespace rox::core
 						                      "Correct the array element type in the authored document.");
 					}
 
-					parent.Array->AddRequired(rox::core::Move(*completed));
+					parent.Array->AddRequired(core::Move(*completed));
 				}
 				else
 				{
@@ -1173,7 +1173,7 @@ namespace rox::core
 
 					if (field != nullptr)
 					{
-						parent.Object->Fields.InsertRequired(field->ID, rox::core::Move(*completed));
+						parent.Object->Fields.InsertRequired(field->ID, core::Move(*completed));
 					}
 					else
 					{
@@ -1184,7 +1184,7 @@ namespace rox::core
 							return readAllocationFailure();
 						}
 
-						parent.Object->UnknownFields.InsertRequired(rox::core::Move(copiedName).TakeValue(), rox::core::Move(*completed));
+						parent.Object->UnknownFields.InsertRequired(core::Move(copiedName).TakeValue(), core::Move(*completed));
 					}
 				}
 			}
@@ -1192,7 +1192,7 @@ namespace rox::core
 			ASSERT(false, "Root JSON conversion must return a completed value or a typed error.");
 		}
 
-		[[nodiscard]] Result<Value> readDocument(rox::core::Span<const Byte> bytes, const SchemaDescriptor& schema,
+		[[nodiscard]] Result<Value> readDocument(Span<const Byte> bytes, const SchemaDescriptor& schema,
 		                                         const SchemaRegistry& registry, const JsonReadLimits& limits,
 		                                         MemoryResource& resource)
 		{
@@ -1296,13 +1296,13 @@ namespace rox::core
 		}
 	} // namespace
 
-	Result<Value> ReadCanonicalJson(rox::core::Span<const Byte> bytes, const SchemaDescriptor& schema,
+	Result<Value> ReadCanonicalJson(Span<const Byte> bytes, const SchemaDescriptor& schema,
 	                                const JsonReadLimits& limits)
 	{
 		return ReadCanonicalJson(bytes, schema, SystemMemoryResource::Get(), limits);
 	}
 
-	Result<Value> ReadCanonicalJson(rox::core::Span<const Byte> bytes, const SchemaDescriptor& schema,
+	Result<Value> ReadCanonicalJson(Span<const Byte> bytes, const SchemaDescriptor& schema,
 	                                MemoryResource& resource, const JsonReadLimits& limits)
 	{
 		try
@@ -1328,7 +1328,7 @@ namespace rox::core
 			       "Successful schema registration must make its type available for canonical JSON reading.");
 			return normalizeReadAllocation(readDocument(bytes, *storedSchema, registry, limits, resource));
 		}
-		catch (const rox::core::AllocationException&)
+		catch (const core::AllocationException&)
 		{
 			return failure<Value>(EErrorCode::ExternalFailure, "ROX-CORE-JSON-READ-ALLOCATION",
 			                      "Canonical JSON reading could not allocate its temporary state.",
@@ -1336,13 +1336,13 @@ namespace rox::core
 		}
 	}
 
-	Result<Value> ReadCanonicalJson(rox::core::Span<const Byte> bytes, TypeId rootType, const SchemaRegistry& registry,
+	Result<Value> ReadCanonicalJson(Span<const Byte> bytes, TypeId rootType, const SchemaRegistry& registry,
 	                                const JsonReadLimits& limits)
 	{
 		return ReadCanonicalJson(bytes, rootType, registry, SystemMemoryResource::Get(), limits);
 	}
 
-	Result<Value> ReadCanonicalJson(rox::core::Span<const Byte> bytes, TypeId rootType, const SchemaRegistry& registry,
+	Result<Value> ReadCanonicalJson(Span<const Byte> bytes, TypeId rootType, const SchemaRegistry& registry,
 	                                MemoryResource& resource, const JsonReadLimits& limits)
 	{
 		try
@@ -1360,7 +1360,7 @@ namespace rox::core
 
 			return normalizeReadAllocation(readDocument(bytes, *schema, registry, limits, resource));
 		}
-		catch (const rox::core::AllocationException&)
+		catch (const core::AllocationException&)
 		{
 			return failure<Value>(EErrorCode::ExternalFailure, "ROX-CORE-JSON-READ-ALLOCATION",
 			                      "Canonical JSON reading could not allocate its temporary state.",
@@ -1397,7 +1397,7 @@ namespace rox::core
 			       "Successful schema registration must make its type available for canonical JSON writing.");
 			return writeDocument(value, *storedSchema, registry, resource, limits);
 		}
-		catch (const rox::core::AllocationException&)
+		catch (const core::AllocationException&)
 		{
 			return failure<Array<Byte>>(EErrorCode::ExternalFailure, "ROX-CORE-JSON-WRITE-ALLOCATION",
 			                            "Canonical JSON serialization could not allocate its bounded temporary state.",

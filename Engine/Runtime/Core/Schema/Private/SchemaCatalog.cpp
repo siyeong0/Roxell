@@ -71,9 +71,9 @@ namespace rox::core
 			return true;
 		}
 
-		bool unsignedStringLess(const rox::core::StringView left, const rox::core::StringView right) noexcept
+		bool unsignedStringLess(const StringView left, const StringView right) noexcept
 		{
-			return rox::core::LexicographicalCompare(left.begin(), left.end(), right.begin(), right.end(),
+			return core::LexicographicalCompare(left.begin(), left.end(), right.begin(), right.end(),
 				[](const char leftCharacter, const char rightCharacter)
 				{
 					return static_cast<unsigned char>(leftCharacter) < static_cast<unsigned char>(rightCharacter);
@@ -115,7 +115,7 @@ namespace rox::core
 				WriteUint64(id.Low);
 			}
 
-			void WriteString(const rox::core::StringView text) noexcept
+			void WriteString(const StringView text) noexcept
 			{
 				WriteUint64(static_cast<uint64>(text.size()));
 				m_Writer.WriteBytes({reinterpret_cast<const Byte*>(text.data()), text.size()});
@@ -127,7 +127,7 @@ namespace rox::core
 			}
 
 		private:
-			rox::core::ByteWriter m_Writer;
+			core::ByteWriter m_Writer;
 		};
 
 		class CatalogByteReader final
@@ -165,7 +165,7 @@ namespace rox::core
 				return ReadUint64(&outID->High) && ReadUint64(&outID->Low);
 			}
 
-			[[nodiscard]] bool ReadString(rox::core::StringView* const outText, const uint64 maximumBytes) noexcept
+			[[nodiscard]] bool ReadString(StringView* const outText, const uint64 maximumBytes) noexcept
 			{
 				ASSERT(outText != nullptr, "Schema catalog string decoding requires a valid output view.");
 				uint64 size = 0;
@@ -175,8 +175,8 @@ namespace rox::core
 					return false;
 				}
 
-				const Span<const Byte> text = m_Reader.ReadBytes(static_cast<rox::core::usize>(size));
-				*outText = rox::core::StringView(reinterpret_cast<const char*>(text.Data()), text.Size());
+				const Span<const Byte> text = m_Reader.ReadBytes(static_cast<usize>(size));
+				*outText = StringView(reinterpret_cast<const char*>(text.Data()), text.Size());
 				return true;
 			}
 
@@ -196,7 +196,7 @@ namespace rox::core
 			}
 
 		private:
-			rox::core::ByteReader m_Reader;
+			core::ByteReader m_Reader;
 		};
 
 		struct ValueContext final
@@ -223,7 +223,7 @@ namespace rox::core
 			return Result<void>::Success();
 		}
 
-		Result<void> measureString(const rox::core::StringView text, const SchemaCatalogLimits& limits, uint64* const total)
+		Result<void> measureString(const StringView text, const SchemaCatalogLimits& limits, uint64* const total)
 		{
 			if (text.size() > limits.MaximumStringBytes || !addBytes(8, limits.MaximumBytes, total) || !addBytes(static_cast<uint64>(text.size()), limits.MaximumBytes, total))
 			{
@@ -262,7 +262,7 @@ namespace rox::core
 			case ESchemaValueKind::SignedInteger:
 			case ESchemaValueKind::UnsignedInteger:
 			case ESchemaValueKind::FloatingPoint:
-				if (value.GetKind() == ESchemaValueKind::FloatingPoint && !rox::core::IsFinite(*value.GetFloatingPoint()))
+				if (value.GetKind() == ESchemaValueKind::FloatingPoint && !core::IsFinite(*value.GetFloatingPoint()))
 				{
 					return failure<void>(EErrorCode::InvalidArgument, "ROX-CORE-SCHEMA-CATALOG-NON-FINITE", "A schema catalog contains a non-finite floating-point value.", "Use only finite schema defaults and constraints.");
 				}
@@ -335,7 +335,7 @@ namespace rox::core
 
 				for (const Value::UnknownFieldMap::Entry& entry : object.UnknownFields)
 				{
-					const rox::core::StringView& name = entry.GetKey().View();
+					const StringView& name = entry.GetKey().View();
 					const Value& fieldValue = entry.Value;
 					const Result<void> nameResult = measureString(name, context->Limits, total);
 
@@ -362,12 +362,12 @@ namespace rox::core
 		struct RankedSchema
 		{
 			const SchemaDescriptor* Schema;
-			rox::core::usize Pass = 0;
+			usize Pass = 0;
 		};
 
 		RankedSchema* findRankedSchema(Array<RankedSchema>& schemas, const TypeId type) noexcept
 		{
-			auto* found = rox::core::LowerBound(schemas.begin(), schemas.end(), type,
+			auto* found = core::LowerBound(schemas.begin(), schemas.end(), type,
 				[](const RankedSchema& candidate, TypeId key) noexcept
 				{
 					return candidate.Schema->Type < key;
@@ -379,7 +379,7 @@ namespace rox::core
 
 		Result<Array<const SchemaDescriptor*>> buildSchemaOrder(const SchemaRegistry& registry, MemoryResource& scratchResource, const SchemaCatalogLimits& limits)
 		{
-			const rox::core::usize count = registry.GetSchemaCount();
+			const usize count = registry.GetSchemaCount();
 
 			if (count > limits.MaximumSchemas)
 			{
@@ -397,19 +397,19 @@ namespace rox::core
 				return allocationFailure<Array<const SchemaDescriptor*>>();
 			}
 
-			for (rox::core::usize index = 0; index < count; ++index)
+			for (usize index = 0; index < count; ++index)
 			{
 				sorted.AddRequired({&registry.GetSchemaByIndex(index), 0});
 			}
 
-			rox::core::Sort(sorted.begin(), sorted.end(),
+			core::Sort(sorted.begin(), sorted.end(),
 				[](const RankedSchema& left, const RankedSchema& right)
 				{
 					return left.Schema->Type < right.Schema->Type;
 				});
 			// Registration is topological. A dependency later in TypeId order requires the next scan pass.
 			// Ranking by that pass preserves the canonical repeated-scan order without repeated scans.
-			for (rox::core::usize index = 0; index < count; ++index)
+			for (usize index = 0; index < count; ++index)
 			{
 				const SchemaDescriptor& schema = registry.GetSchemaByIndex(index);
 				RankedSchema& ranked = *findRankedSchema(sorted, schema.Type);
@@ -430,12 +430,12 @@ namespace rox::core
 						}
 
 						const RankedSchema& predecessor = *findRankedSchema(sorted, dependency);
-						ranked.Pass = rox::core::Max(ranked.Pass, predecessor.Pass + (schema.Type < dependency ? 1U : 0U));
+						ranked.Pass = core::Max(ranked.Pass, predecessor.Pass + (schema.Type < dependency ? 1U : 0U));
 					}
 				}
 			}
 
-			rox::core::Sort(sorted.begin(), sorted.end(),
+			core::Sort(sorted.begin(), sorted.end(),
 				[](const RankedSchema& left, const RankedSchema& right)
 				{
 					return left.Pass != right.Pass ? left.Pass < right.Pass : left.Schema->Type < right.Schema->Type;
@@ -445,7 +445,7 @@ namespace rox::core
 				ordered.AddRequired(entry.Schema);
 			}
 
-			return Result<Array<const SchemaDescriptor*>>::Success(rox::core::Move(ordered));
+			return Result<Array<const SchemaDescriptor*>>::Success(core::Move(ordered));
 		}
 
 		Result<Array<const SchemaFieldDescriptor*>> buildFieldOrder(const SchemaDescriptor& schema, MemoryResource& scratchResource)
@@ -462,12 +462,12 @@ namespace rox::core
 				fields.AddRequired(&field);
 			}
 
-			rox::core::Sort(fields.begin(), fields.end(),
+			core::Sort(fields.begin(), fields.end(),
 				[](const SchemaFieldDescriptor* const left, const SchemaFieldDescriptor* const right)
 				{
 					return left->ID < right->ID;
 				});
-			return Result<Array<const SchemaFieldDescriptor*>>::Success(rox::core::Move(fields));
+			return Result<Array<const SchemaFieldDescriptor*>>::Success(core::Move(fields));
 		}
 
 		Result<uint64> measureCatalog(const Array<const SchemaDescriptor*>& schemas, MemoryResource& scratchResource, const SchemaCatalogLimits& limits, uint64* const outFieldCount)
@@ -507,8 +507,8 @@ namespace rox::core
 						return failure<uint64>(EErrorCode::Unsupported, "ROX-CORE-SCHEMA-CATALOG-BYTE-LIMIT", "A schema catalog exceeds MaximumBytes.", "Reduce schema data or raise MaximumBytes intentionally.");
 					}
 
-					const rox::core::StringView strings[] = {field->Name, field->Display.DisplayName, field->Display.Description, field->Display.Category};
-					for (const rox::core::StringView text : strings)
+					const StringView strings[] = {field->Name, field->Display.DisplayName, field->Display.Description, field->Display.Category};
+					for (const StringView text : strings)
 					{
 						const Result<void> measured = measureString(text, limits, &total);
 						if (!measured)
@@ -524,7 +524,7 @@ namespace rox::core
 							return failure<uint64>(EErrorCode::Unsupported, "ROX-CORE-SCHEMA-CATALOG-BYTE-LIMIT", "Nested array metadata exceeds the catalog byte limit.", "Reduce metadata or increase the limit.");
 						}
 
-						for (rox::core::usize level = 0; level < field->NestedArrays.size(); ++level)
+						for (usize level = 0; level < field->NestedArrays.size(); ++level)
 						{
 							const Result<void> consumed = consumeValue(&valueContext, 1);
 
@@ -597,7 +597,7 @@ namespace rox::core
 				writer->WriteByte(*value.GetBoolean() ? 1 : 0);
 				break;
 			case ESchemaValueKind::SignedInteger:
-				writer->WriteUint64(rox::core::BitCast<uint64>(*value.GetSignedInteger()));
+				writer->WriteUint64(core::BitCast<uint64>(*value.GetSignedInteger()));
 				break;
 			case ESchemaValueKind::UnsignedInteger:
 				writer->WriteUint64(*value.GetUnsignedInteger());
@@ -606,7 +606,7 @@ namespace rox::core
 			{
 				const float64 source = *value.GetFloatingPoint();
 				const float64 canonical = source == 0.0 ? 0.0 : source;
-				writer->WriteUint64(rox::core::BitCast<uint64>(canonical));
+				writer->WriteUint64(core::BitCast<uint64>(canonical));
 				break;
 			}
 			case ESchemaValueKind::String:
@@ -700,14 +700,14 @@ namespace rox::core
 				return Result<Array<Byte>>::Failure(measuredResult.GetError());
 			}
 
-			if (measuredResult.Value() > static_cast<uint64>(rox::core::NumericLimits<rox::core::usize>::max()))
+			if (measuredResult.Value() > static_cast<uint64>(NumericLimits<usize>::max()))
 			{
 				return failure<Array<Byte>>(EErrorCode::Unsupported, "ROX-CORE-SCHEMA-CATALOG-BYTE-LIMIT", "The measured schema catalog cannot be represented by this process.", "Use a smaller catalog or a platform with a sufficient address space.");
 			}
 
 			Array<Byte> output(outputResource);
 
-			if (!output.Resize(static_cast<rox::core::usize>(measuredResult.Value())))
+			if (!output.Resize(static_cast<usize>(measuredResult.Value())))
 			{
 				return allocationFailure<Array<Byte>>();
 			}
@@ -824,7 +824,7 @@ namespace rox::core
 			}
 
 			ASSERT(writer.GetOffset() == measuredResult.Value(), "Schema catalog encoding must write exactly the measured byte count.");
-			return Result<Array<Byte>>::Success(rox::core::Move(output));
+			return Result<Array<Byte>>::Success(core::Move(output));
 		}
 
 		Result<Value> decodeValue(CatalogByteReader* const reader, ValueContext* const context, const uint32 depth, MemoryResource& resource)
@@ -870,7 +870,7 @@ namespace rox::core
 					return failure<Value>(EErrorCode::InvalidArgument, "ROX-CORE-SCHEMA-CATALOG-VALUE-TRUNCATED", "A schema catalog integer is truncated.", "Replace the catalog with complete bytes.");
 				}
 
-				return Result<Value>::Success(Value(rox::core::BitCast<int64>(bits)));
+				return Result<Value>::Success(Value(core::BitCast<int64>(bits)));
 			}
 			case ESchemaValueKind::UnsignedInteger:
 			{
@@ -892,9 +892,9 @@ namespace rox::core
 					return failure<Value>(EErrorCode::InvalidArgument, "ROX-CORE-SCHEMA-CATALOG-VALUE-TRUNCATED", "A schema catalog floating-point value is truncated.", "Replace the catalog with complete bytes.");
 				}
 
-				const float64 value = rox::core::BitCast<float64>(bits);
+				const float64 value = core::BitCast<float64>(bits);
 
-				if (!rox::core::IsFinite(value) || (value == 0.0 && rox::core::SignBit(value)))
+				if (!core::IsFinite(value) || (value == 0.0 && core::SignBit(value)))
 				{
 					return failure<Value>(EErrorCode::InvalidArgument, "ROX-CORE-SCHEMA-CATALOG-FLOAT-NON-CANONICAL", "A schema catalog floating-point value is non-finite or negative zero.", "Encode finite values and canonicalize both signed zeros to positive zero.");
 				}
@@ -903,7 +903,7 @@ namespace rox::core
 			}
 			case ESchemaValueKind::String:
 			{
-				rox::core::StringView value;
+				StringView value;
 
 				if (!reader->ReadString(&value, context->Limits.MaximumStringBytes) ||
 				    !IsValidUtf8({value.data(), value.size()}))
@@ -936,14 +936,14 @@ namespace rox::core
 				uint64 count = 0;
 
 				if (!reader->ReadUint64(&count) || count > reader->GetRemaining() ||
-				    count > static_cast<uint64>(rox::core::NumericLimits<rox::core::usize>::max()))
+				    count > static_cast<uint64>(NumericLimits<usize>::max()))
 				{
 					return failure<Value>(EErrorCode::InvalidArgument, "ROX-CORE-SCHEMA-CATALOG-VALUE-TRUNCATED", "A schema catalog byte value exceeds the remaining input.", "Replace the catalog with complete bounded bytes.");
 				}
 
 				Value::Bytes value(resource);
 
-				if (!value.Reserve(static_cast<rox::core::usize>(count)))
+				if (!value.Reserve(static_cast<usize>(count)))
 				{
 					return allocationFailure<Value>();
 				}
@@ -956,7 +956,7 @@ namespace rox::core
 					value.AddRequired(static_cast<Byte>(byte));
 				}
 
-				Result<Value> adopted = Value::CreateBytes(rox::core::Move(value));
+				Result<Value> adopted = Value::CreateBytes(core::Move(value));
 
 				if (!adopted)
 				{
@@ -971,14 +971,14 @@ namespace rox::core
 
 				if (!reader->ReadUint64(&count) || count > reader->GetRemaining() ||
 				    count > context->Limits.MaximumValues - context->Values ||
-				    count > static_cast<uint64>(rox::core::NumericLimits<rox::core::usize>::max()))
+				    count > static_cast<uint64>(NumericLimits<usize>::max()))
 				{
 					return failure<Value>(EErrorCode::Unsupported, "ROX-CORE-SCHEMA-CATALOG-VALUE-COUNT", "A schema catalog array count is invalid or exceeds its limit.", "Reduce the array or raise MaximumValues intentionally.");
 				}
 
 				Value::Array values(resource);
 
-				if (!values.Reserve(static_cast<rox::core::usize>(count)))
+				if (!values.Reserve(static_cast<usize>(count)))
 				{
 					return allocationFailure<Value>();
 				}
@@ -992,10 +992,10 @@ namespace rox::core
 						return value;
 					}
 
-					values.AddRequired(rox::core::Move(value).TakeValue());
+					values.AddRequired(core::Move(value).TakeValue());
 				}
 
-				Result<Value> adopted = Value::CreateArray(rox::core::Move(values));
+				Result<Value> adopted = Value::CreateArray(core::Move(values));
 
 				if (!adopted)
 				{
@@ -1015,7 +1015,7 @@ namespace rox::core
 					return failure<Value>(EErrorCode::Unsupported, "ROX-CORE-SCHEMA-CATALOG-VALUE-COUNT", "A schema catalog object field count is invalid or exceeds its limit.", "Reduce the object or raise MaximumValues intentionally.");
 				}
 
-				if (!object.Fields.Reserve(static_cast<rox::core::usize>(knownCount)))
+				if (!object.Fields.Reserve(static_cast<usize>(knownCount)))
 				{
 					return allocationFailure<Value>();
 				}
@@ -1038,7 +1038,7 @@ namespace rox::core
 						return value;
 					}
 
-					const bool bInserted = object.Fields.InsertRequired(field, rox::core::Move(value).TakeValue()).bInserted;
+					const bool bInserted = object.Fields.InsertRequired(field, core::Move(value).TakeValue()).bInserted;
 					ASSERT(bInserted, "Strict ascending schema catalog object fields must insert exactly once.");
 					previousField = field;
 				}
@@ -1051,16 +1051,16 @@ namespace rox::core
 					return failure<Value>(EErrorCode::Unsupported, "ROX-CORE-SCHEMA-CATALOG-VALUE-COUNT", "A schema catalog unknown-field count is invalid or exceeds its limit.", "Reduce the object or raise MaximumValues intentionally.");
 				}
 
-				if (!object.UnknownFields.Reserve(static_cast<rox::core::usize>(unknownCount)))
+				if (!object.UnknownFields.Reserve(static_cast<usize>(unknownCount)))
 				{
 					return allocationFailure<Value>();
 				}
 
-				rox::core::StringView previousName;
+				StringView previousName;
 
 				for (uint64 index = 0; index < unknownCount; ++index)
 				{
-					rox::core::StringView name;
+					StringView name;
 
 					if (!reader->ReadString(&name, context->Limits.MaximumStringBytes) || name.empty() ||
 					    !IsValidUtf8({name.data(), name.size()}) ||
@@ -1083,12 +1083,12 @@ namespace rox::core
 						return allocationFailure<Value>();
 					}
 
-					const bool bInserted = object.UnknownFields.InsertRequired(rox::core::Move(copiedName).TakeValue(), rox::core::Move(value).TakeValue()).bInserted;
+					const bool bInserted = object.UnknownFields.InsertRequired(core::Move(copiedName).TakeValue(), core::Move(value).TakeValue()).bInserted;
 					ASSERT(bInserted, "Strict ascending schema catalog unknown fields must insert exactly once.");
 					previousName = name;
 				}
 
-				Result<Value> adopted = Value::CreateObject(rox::core::Move(object), resource);
+				Result<Value> adopted = Value::CreateObject(core::Move(object), resource);
 
 				if (!adopted)
 				{
@@ -1104,7 +1104,7 @@ namespace rox::core
 
 		bool equalBytes(const Span<const Byte> left, const Span<const Byte> right) noexcept
 		{
-			return left.Size() == right.Size() && (left.IsEmpty() || rox::core::CompareBytes(left.Data(), right.Data(), left.Size()) == 0);
+			return left.Size() == right.Size() && (left.IsEmpty() || core::CompareBytes(left.Data(), right.Data(), left.Size()) == 0);
 		}
 
 		Result<SchemaRegistry> readCatalog(const Span<const Byte> bytes, MemoryResource& outputResource,MemoryResource& scratchResource, const SchemaCatalogLimits& limits)
@@ -1167,8 +1167,8 @@ namespace rox::core
 			}
 
 			if (schemaCount > limits.MaximumSchemas || totalFieldCount > limits.MaximumFields ||
-			    schemaCount > static_cast<uint64>(rox::core::NumericLimits<rox::core::usize>::max()) ||
-			    totalFieldCount > static_cast<uint64>(rox::core::NumericLimits<rox::core::usize>::max()) ||
+			    schemaCount > static_cast<uint64>(NumericLimits<usize>::max()) ||
+			    totalFieldCount > static_cast<uint64>(NumericLimits<usize>::max()) ||
 			    (schemaCount == 0 && totalFieldCount != 0))
 			{
 				return failure<SchemaRegistry>(EErrorCode::Unsupported, "ROX-CORE-SCHEMA-CATALOG-COUNT", "The schema or field count is invalid or exceeds its configured limit.", "Publish a smaller valid registry or raise the explicit limits.");
@@ -1194,7 +1194,7 @@ namespace rox::core
 					                               "Replace the catalog with complete bounded bytes.");
 				}
 
-				if (schemaReserved != 0 || fieldCount > totalFieldCount - decodedFieldCount || fieldCount > static_cast<uint64>(rox::core::NumericLimits<rox::core::usize>::max()))
+				if (schemaReserved != 0 || fieldCount > totalFieldCount - decodedFieldCount || fieldCount > static_cast<uint64>(NumericLimits<usize>::max()))
 				{
 					return failure<SchemaRegistry>(
 					    EErrorCode::InvalidArgument, "ROX-CORE-SCHEMA-CATALOG-SCHEMA-RECORD",
@@ -1210,7 +1210,7 @@ namespace rox::core
 				Array<Value> defaultValues(scratchResource);
 				Array<Value> minimumValues(scratchResource);
 				Array<Value> maximumValues(scratchResource);
-				const rox::core::usize fieldSize = static_cast<rox::core::usize>(fieldCount);
+				const usize fieldSize = static_cast<usize>(fieldCount);
 
 				if (!fields.Resize(fieldSize) || !defaultValues.Resize(fieldSize) ||
 				    !minimumValues.Resize(fieldSize) || !maximumValues.Resize(fieldSize) ||
@@ -1219,7 +1219,7 @@ namespace rox::core
 					return allocationFailure<SchemaRegistry>();
 				}
 
-				for (rox::core::usize fieldIndex = 0; fieldIndex < fieldSize; ++fieldIndex)
+				for (usize fieldIndex = 0; fieldIndex < fieldSize; ++fieldIndex)
 				{
 					SchemaFieldDescriptor& field = fields[fieldIndex];
 					uint32 flags = 0;
@@ -1270,7 +1270,7 @@ namespace rox::core
 						valueContext.Values += count;
 						Array<SchemaEnumEntry>& entries = enumStorage[fieldIndex];
 
-						if (!entries.Resize(static_cast<rox::core::usize>(count)))
+						if (!entries.Resize(static_cast<usize>(count)))
 						{
 							return allocationFailure<SchemaRegistry>();
 						}
@@ -1306,7 +1306,7 @@ namespace rox::core
 						valueContext.Values += count;
 						Array<SchemaArrayDescriptor>& nested = nestedStorage[fieldIndex];
 
-						if (!nested.Resize(static_cast<rox::core::usize>(count)))
+						if (!nested.Resize(static_cast<usize>(count)))
 						{
 							return allocationFailure<SchemaRegistry>();
 						}
@@ -1378,7 +1378,7 @@ namespace rox::core
 
 					Value* const values[] = {&defaultValues[fieldIndex], &minimumValues[fieldIndex], &maximumValues[fieldIndex]};
 					const uint16 bits[] = {VALUE_PRESENT, MINIMUM_PRESENT, MAXIMUM_PRESENT};
-					for (rox::core::usize valueIndex = 0; valueIndex < 3; ++valueIndex)
+					for (usize valueIndex = 0; valueIndex < 3; ++valueIndex)
 					{
 						if ((presence & bits[valueIndex]) == 0)
 						{
@@ -1391,7 +1391,7 @@ namespace rox::core
 						{
 							return Result<SchemaRegistry>::Failure(value.GetError());
 						}
-						*values[valueIndex] = rox::core::Move(value).TakeValue();
+						*values[valueIndex] = core::Move(value).TakeValue();
 					}
 
 					field.DefaultValue = (presence & VALUE_PRESENT) != 0 ? values[0] : nullptr;
@@ -1433,7 +1433,7 @@ namespace rox::core
 				    "Rebuild it with the current deterministic codec.");
 			}
 
-			return Result<SchemaRegistry>::Success(rox::core::Move(registry));
+			return Result<SchemaRegistry>::Success(core::Move(registry));
 		}
 	} // namespace
 
@@ -1443,7 +1443,7 @@ namespace rox::core
 		{
 			return writeCatalog(registry, outputResource, scratchResource, limits);
 		}
-		catch (const rox::core::AllocationException&)
+		catch (const core::AllocationException&)
 		{
 			return allocationFailure<Array<Byte>>();
 		}
@@ -1461,7 +1461,7 @@ namespace rox::core
 		{
 			return readCatalog(bytes, outputResource, scratchResource, limits);
 		}
-		catch (const rox::core::AllocationException&)
+		catch (const core::AllocationException&)
 		{
 			return allocationFailure<SchemaRegistry>();
 		}
@@ -1478,14 +1478,14 @@ namespace rox::core
 
 		bool measureDisplay(const SchemaDisplayMetadata& display, const SchemaCatalogLimits& limits, uint64& total)
 		{
-			ASSERT(display.Hint <= ESchemaUiHint::ReadOnly && rox::core::IsFinite(display.Step), "Registered display metadata must contain a known hint and finite step.");
+			ASSERT(display.Hint <= ESchemaUiHint::ReadOnly && core::IsFinite(display.Step), "Registered display metadata must contain a known hint and finite step.");
 			if (!addBytes(9, limits.MaximumBytes, &total))
 			{
 				return false;
 			}
 
-			const rox::core::StringView texts[] = {display.DisplayName, display.Description, display.Category, display.Icon, display.RefKind, display.Unit};
-			for (const rox::core::StringView text : texts)
+			const StringView texts[] = {display.DisplayName, display.Description, display.Category, display.Icon, display.RefKind, display.Unit};
+			for (const StringView text : texts)
 			{
 				ASSERT(IsValidUtf8(text), "Registered display text must contain well-formed UTF-8.");
 				if (!measureString(text, limits, &total))
@@ -1506,14 +1506,14 @@ namespace rox::core
 			writer.WriteString(display.RefKind);
 			writer.WriteString(display.Unit);
 			writer.WriteByte(static_cast<uint8>(display.Hint));
-			writer.WriteUint32(rox::core::BitCast<uint32>(display.Step));
-			writer.WriteUint32(rox::core::BitCast<uint32>(display.Order));
+			writer.WriteUint32(core::BitCast<uint32>(display.Step));
+			writer.WriteUint32(core::BitCast<uint32>(display.Order));
 		}
 
 		bool readDisplay(CatalogByteReader& reader, SchemaDisplayMetadata& display, const SchemaCatalogLimits& limits)
 		{
-			rox::core::StringView* texts[] = {&display.DisplayName, &display.Description, &display.Category, &display.Icon, &display.RefKind, &display.Unit};
-			for (rox::core::StringView* const text : texts)
+			StringView* texts[] = {&display.DisplayName, &display.Description, &display.Category, &display.Icon, &display.RefKind, &display.Unit};
+			for (StringView* const text : texts)
 			{
 				if (!reader.ReadString(text, limits.MaximumStringBytes) || !IsValidUtf8({text->data(), text->size()}))
 				{
@@ -1530,10 +1530,10 @@ namespace rox::core
 			}
 
 			display.Hint = static_cast<ESchemaUiHint>(hint);
-			display.Step = rox::core::BitCast<float32>(step);
-			display.Order = rox::core::BitCast<int32>(order);
+			display.Step = core::BitCast<float32>(step);
+			display.Order = core::BitCast<int32>(order);
 
-			return rox::core::IsFinite(display.Step);
+			return core::IsFinite(display.Step);
 		}
 	}
 
@@ -1576,7 +1576,7 @@ namespace rox::core
 			}
 
 			Array<Byte> result(output);
-			if (!result.Resize(static_cast<rox::core::usize>(total)))
+			if (!result.Resize(static_cast<usize>(total)))
 			{
 				return allocationFailure<Array<Byte>>();
 			}
@@ -1584,7 +1584,7 @@ namespace rox::core
 			CatalogByteWriter header(result.View());
 			header.WriteUint64(TRANSFER_MAGIC);
 			header.WriteUint64(binary.Value().Size());
-			rox::core::Copy(binary.Value().begin(), binary.Value().end(), result.begin() + 16);
+			core::Copy(binary.Value().begin(), binary.Value().end(), result.begin() + 16);
 
 			CatalogByteWriter writer(result.View().Subspan(16 + binary.Value().Size()));
 			writer.WriteUint64(ordered.Value().Size());
@@ -1609,9 +1609,9 @@ namespace rox::core
 			}
 
 			ASSERT(writer.GetOffset() + 16 + binary.Value().Size() == total, "Transfer measurement must match its complete metadata bytes.");
-			return Result<Array<Byte>>::Success(rox::core::Move(result));
+			return Result<Array<Byte>>::Success(core::Move(result));
 		}
-		catch (const rox::core::AllocationException&)
+		catch (const core::AllocationException&)
 		{
 			return allocationFailure<Array<Byte>>();
 		}
@@ -1635,7 +1635,7 @@ namespace rox::core
 				return invalidTransfer<SchemaRegistry>();
 			}
 
-			Result<SchemaRegistry> binary = ReadSchemaCatalog(bytes.Subspan(16, static_cast<rox::core::usize>(length)), scratch, scratch, limits);
+			Result<SchemaRegistry> binary = ReadSchemaCatalog(bytes.Subspan(16, static_cast<usize>(length)), scratch, scratch, limits);
 			if (!binary)
 			{
 				return Result<SchemaRegistry>::Failure(binary.GetError());
@@ -1647,7 +1647,7 @@ namespace rox::core
 				return Result<SchemaRegistry>::Failure(ordered.GetError());
 			}
 
-			CatalogByteReader reader(bytes.Subspan(16 + static_cast<rox::core::usize>(length)));
+			CatalogByteReader reader(bytes.Subspan(16 + static_cast<usize>(length)));
 			uint64 count = 0;
 			if (!reader.ReadUint64(&count) || count != ordered.Value().Size())
 			{
@@ -1710,9 +1710,9 @@ namespace rox::core
 			}
 
 			result.Freeze();
-			return Result<SchemaRegistry>::Success(rox::core::Move(result));
+			return Result<SchemaRegistry>::Success(core::Move(result));
 		}
-		catch (const rox::core::AllocationException&)
+		catch (const core::AllocationException&)
 		{
 			return allocationFailure<SchemaRegistry>();
 		}

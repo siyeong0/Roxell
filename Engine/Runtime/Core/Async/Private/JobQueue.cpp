@@ -15,18 +15,18 @@ namespace rox::core
 	namespace
 	{
 		MemoryResource& validateQueueInputs(MemoryResource& resource, const SharedPtr<JobSchedulerIdentity>& identity,
-		                                    rox::core::usize capacity) noexcept
+		                                    usize capacity) noexcept
 		{
 			ASSERT(resource.GetThreadSafety() == EMemoryResourceThreadSafety::ThreadSafe, "Job scheduler resource must support concurrent access.");
 			ASSERT(static_cast<bool>(identity), "Job state requires a live scheduler identity.");
 			ASSERT(identity.GetResource()->GetThreadSafety() == EMemoryResourceThreadSafety::ThreadSafe, "Job scheduler resource must support concurrent access.");
-			ASSERT(capacity > 0 && capacity <= rox::core::NumericLimits<rox::core::usize>::max() / sizeof(TaskHandle), "Job scheduler configuration requires positive representable storage capacities.");
+			ASSERT(capacity > 0 && capacity <= NumericLimits<usize>::max() / sizeof(TaskHandle), "Job scheduler configuration requires positive representable storage capacities.");
 
 			return resource;
 		}
 	}
 
-	JobQueue::JobQueue(MemoryResource& resource, const SharedPtr<JobSchedulerIdentity>& identity, rox::core::usize capacity) noexcept
+	JobQueue::JobQueue(MemoryResource& resource, const SharedPtr<JobSchedulerIdentity>& identity, usize capacity) noexcept
 	    : m_Resource(&validateQueueInputs(resource, identity, capacity))
 	    , m_Identity(identity)
 	    , m_AnyReady(resource)
@@ -48,7 +48,7 @@ namespace rox::core
 	                         const CancellationToken& cancellation, EJobExecutionContext executionContext) noexcept
 	{
 		JobState::ValidateSubmission(*m_Resource, m_Identity, name, target, prerequisites);
-		auto factory = [&target]() noexcept { return rox::core::Move(target); };
+		auto factory = [&target]() noexcept { return core::Move(target); };
 
 		return TrySubmitFactory(out, name, factory, prerequisites, priority, cancellation, executionContext);
 	}
@@ -62,10 +62,10 @@ namespace rox::core
 		ASSERT(priority >= EJobPriority::Low && priority <= EJobPriority::High, "Job priority must be a supported value.");
 		ASSERT(executionContext == EJobExecutionContext::AnyThread || executionContext == EJobExecutionContext::MainThread, "Job execution context must be a supported value.");
 
-		rox::core::usize sequence;
+		usize sequence;
 		bool ready = false;
 		{
-			rox::core::LockGuard lock(m_Mutex);
+			core::LockGuard lock(m_Mutex);
 			ASSERT(!m_bStopped, "Job queue submission requires open admission.");
 
 			if (m_Queued == m_Capacity)
@@ -73,7 +73,7 @@ namespace rox::core
 				return false;
 			}
 
-			ASSERT(m_NextSequence != rox::core::NumericLimits<rox::core::usize>::max(), "Job admission order must remain representable.");
+			ASSERT(m_NextSequence != NumericLimits<usize>::max(), "Job admission order must remain representable.");
 
 			sequence = m_NextSequence++;
 			++m_Queued;
@@ -81,11 +81,11 @@ namespace rox::core
 
 		UniqueFunction<void(JobContext&) noexcept> target = factory();
 		JobState::ValidateSubmission(*m_Resource, m_Identity, name, target, prerequisites);
-		TaskHandle accepted = JobState::Create(*m_Resource, m_Identity, name, rox::core::Move(target), prerequisites, priority, cancellation, executionContext);
+		TaskHandle accepted = JobState::Create(*m_Resource, m_Identity, name, core::Move(target), prerequisites, priority, cancellation, executionContext);
 		JobState& state = JobState::From(accepted);
 		state.PrepareQueueAdmission(sequence);
 		{
-			rox::core::LockGuard lock(m_Mutex);
+			core::LockGuard lock(m_Mutex);
 
 			if (state.RegisterQueueDependencies())
 			{
@@ -106,14 +106,14 @@ namespace rox::core
 			}
 		}
 
-		(*out) = rox::core::Move(accepted);
+		(*out) = core::Move(accepted);
 
 		return true;
 	}
 
 	TaskHandle JobQueue::TakeReady(EJobExecutionContext executionContext) noexcept
 	{
-		rox::core::LockGuard lock(m_Mutex);
+		core::LockGuard lock(m_Mutex);
 		return m_bEnabled && !m_bStopped ? takeReadyLocked(executionContext) : TaskHandle{};
 	}
 
@@ -126,7 +126,7 @@ namespace rox::core
 			return {};
 		}
 
-		rox::core::PopHeap(ready.begin(), ready.end(), comesAfter);
+		core::PopHeap(ready.begin(), ready.end(), comesAfter);
 		JobState* const state = ready.Back();
 		ready.PopBack();
 		--m_Queued;
@@ -145,7 +145,7 @@ namespace rox::core
 	{
 		Array<JobState*>& ready = state.GetExecutionContext() == EJobExecutionContext::MainThread ? m_MainReady : m_AnyReady;
 		ready.AddRequired(&state);
-		rox::core::PushHeap(ready.begin(), ready.end(), comesAfter);
+		core::PushHeap(ready.begin(), ready.end(), comesAfter);
 	}
 
 	void JobQueue::Finish(const TaskHandle& handle) noexcept
@@ -153,7 +153,7 @@ namespace rox::core
 		ASSERT(JobState::From(handle).IsOwnedBy(*m_Identity), "Job prerequisite must belong to this scheduler instance.");
 
 		{
-			rox::core::LockGuard lock(m_Mutex);
+			core::LockGuard lock(m_Mutex);
 			ASSERT(handle.IsComplete() && m_Active > 0, "Job completion requires active execution.");
 
 			JobState& completed = JobState::From(handle);
@@ -194,7 +194,7 @@ namespace rox::core
 	void JobQueue::Enable() noexcept
 	{
 		{
-			rox::core::LockGuard lock(m_Mutex);
+			core::LockGuard lock(m_Mutex);
 			ASSERT(!m_bEnabled && !m_bStopped, "Job queue enable requires parked ownership.");
 
 			m_bEnabled = true;
@@ -208,7 +208,7 @@ namespace rox::core
 		ASSERT(CurrentJobExecution() == nullptr, "Job waits and shutdown are forbidden from job execution or target destruction.");
 
 		TaskHandle result;
-		rox::core::UniqueLock lock(m_Mutex);
+		core::UniqueLock lock(m_Mutex);
 
 		while (!m_bStopped)
 		{
@@ -233,7 +233,7 @@ namespace rox::core
 		ASSERT(CurrentJobExecution() == nullptr, "Job waits and shutdown are forbidden from job execution or target destruction.");
 		ASSERT(JobState::From(handle).IsOwnedBy(*m_Identity), "Job prerequisite must belong to this scheduler instance.");
 
-		rox::core::UniqueLock lock(m_Mutex);
+		core::UniqueLock lock(m_Mutex);
 		ASSERT(m_bEnabled || handle.IsComplete(), "Job completion wait requires enabled dispatch or completed work.");
 
 		m_Changed.wait(lock,
@@ -247,7 +247,7 @@ namespace rox::core
 	{
 		ASSERT(CurrentJobExecution() == nullptr, "Job waits and shutdown are forbidden from job execution or target destruction.");
 
-		rox::core::UniqueLock lock(m_Mutex);
+		core::UniqueLock lock(m_Mutex);
 		ASSERT(m_bEnabled || ((m_Queued == 0) && m_Active == 0), "Job queue drain requires enabled dispatch or idle ownership.");
 
 		m_Changed.wait(lock, [this] { return (m_Queued == 0) && m_Active == 0; });
@@ -258,7 +258,7 @@ namespace rox::core
 		ASSERT(CurrentJobExecution() == nullptr, "Job waits and shutdown are forbidden from job execution or target destruction.");
 		ASSERT(until == nullptr || JobState::From(*until).IsOwnedBy(*m_Identity), "Job prerequisite must belong to this scheduler instance.");
 
-		rox::core::UniqueLock lock(m_Mutex);
+		core::UniqueLock lock(m_Mutex);
 		ASSERT(m_bEnabled, "Main-thread job wait requires enabled dispatch.");
 
 		for (;;)
@@ -288,7 +288,7 @@ namespace rox::core
 		ASSERT(CurrentJobExecution() == nullptr, "Job waits and shutdown are forbidden from job execution or target destruction.");
 
 		{
-			rox::core::UniqueLock lock(m_Mutex);
+			core::UniqueLock lock(m_Mutex);
 			ASSERT(m_bEnabled || ((m_Queued == 0) && m_Active == 0), "Job queue drain requires enabled dispatch or idle ownership.");
 
 			m_Changed.wait(lock, [this]{ return (m_Queued == 0) && m_Active == 0; });
@@ -300,13 +300,13 @@ namespace rox::core
 
 	bool JobQueue::IsIdle() noexcept
 	{
-		rox::core::LockGuard lock(m_Mutex);
+		core::LockGuard lock(m_Mutex);
 		return (m_Queued == 0) && m_Active == 0;
 	}
 
 	bool JobQueue::IsParked() noexcept
 	{
-		rox::core::LockGuard lock(m_Mutex);
+		core::LockGuard lock(m_Mutex);
 		return !m_bEnabled && !m_bStopped;
 	}
 }

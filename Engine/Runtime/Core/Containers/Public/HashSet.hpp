@@ -31,9 +31,9 @@ namespace rox::core
 		public:
 			explicit ConstIterator(typename Table::ConstIterator iterator) noexcept;
 
-			using iterator_category = rox::core::ForwardIteratorTag;
+			using iterator_category = core::ForwardIteratorTag;
 			using value_type = TKey;
-			using difference_type = rox::core::isize;
+			using difference_type = isize;
 			using reference = const TKey&;
 			using pointer = const TKey*;
 			ConstIterator() noexcept = default;
@@ -50,32 +50,32 @@ namespace rox::core
 
 		explicit HashSet(MemoryResource& resource, const THash& hash = {}, const TEqual& equal = {}) noexcept;
 
-		[[nodiscard]] rox::core::usize Size() const noexcept;
-		[[nodiscard]] rox::core::usize Capacity() const noexcept;
+		[[nodiscard]] usize Size() const noexcept;
+		[[nodiscard]] usize Capacity() const noexcept;
 
 		[[nodiscard]] bool IsEmpty() const noexcept;
 
 		[[nodiscard]] MemoryResource& GetResource() const noexcept;
 
-		void ReserveRequired(const rox::core::usize minimumCapacity) noexcept;
-		[[nodiscard]] bool Reserve(const rox::core::usize minimumCapacity) noexcept;
+		void ReserveRequired(const usize minimumCapacity) noexcept;
+		[[nodiscard]] bool Reserve(const usize minimumCapacity) noexcept;
 
 		template <typename TKeyArgument>
 		bool InsertRequired(TKeyArgument&& key) noexcept
-		    requires requires(Table& table) { table.EmplaceRequired(rox::core::Forward<TKeyArgument>(key)); };
+		    requires requires(Table& table) { table.EmplaceRequired(core::Forward<TKeyArgument>(key)); };
 
 		template <typename... TArguments>
 		bool EmplaceRequired(TArguments&&... arguments) noexcept
-		    requires rox::core::IsNothrowConstructible<TKey, TArguments&&...>;
+		    requires IsNothrowConstructible<TKey, TArguments&&...>;
 
 		template <typename TKeyArgument>
 		[[nodiscard]] InsertResult Insert(TKeyArgument&& key) noexcept
-		    requires requires(Table& table) { table.Emplace(rox::core::Forward<TKeyArgument>(key)); };
+		    requires requires(Table& table) { table.Emplace(core::Forward<TKeyArgument>(key)); };
 
 		// Constructs the candidate before admission; constructor inputs may be consumed even on failure.
 		template <typename... TArguments>
 		[[nodiscard]] InsertResult Emplace(TArguments&&... arguments) noexcept
-		    requires rox::core::IsNothrowConstructible<TKey, TArguments&&...>;
+		    requires IsNothrowConstructible<TKey, TArguments&&...>;
 
 		template <typename TLookup = TKey>
 		[[nodiscard]] const TKey* Find(const TLookup& key) const noexcept
@@ -118,7 +118,7 @@ namespace rox::core
 	template <typename TKey, typename THash, typename TEqual>
 	typename HashSet<TKey, THash, TEqual>::ConstIterator::pointer HashSet<TKey, THash, TEqual>::ConstIterator::operator->() const noexcept
 	{
-		return rox::core::AddressOf(operator*());
+		return core::AddressOf(operator*());
 	}
 
 	template <typename TKey, typename THash, typename TEqual>
@@ -143,13 +143,13 @@ namespace rox::core
 	}
 
 	template <typename TKey, typename THash, typename TEqual>
-	rox::core::usize HashSet<TKey, THash, TEqual>::Size() const noexcept
+	usize HashSet<TKey, THash, TEqual>::Size() const noexcept
 	{
 		return m_Table.Size();
 	}
 
 	template <typename TKey, typename THash, typename TEqual>
-	rox::core::usize HashSet<TKey, THash, TEqual>::Capacity() const noexcept
+	usize HashSet<TKey, THash, TEqual>::Capacity() const noexcept
 	{
 		return m_Table.Capacity();
 	}
@@ -167,13 +167,13 @@ namespace rox::core
 	}
 
 	template <typename TKey, typename THash, typename TEqual>
-	void HashSet<TKey, THash, TEqual>::ReserveRequired(const rox::core::usize minimumCapacity) noexcept
+	void HashSet<TKey, THash, TEqual>::ReserveRequired(const usize minimumCapacity) noexcept
 	{
 		m_Table.ReserveRequired(minimumCapacity);
 	}
 
 	template <typename TKey, typename THash, typename TEqual>
-	bool HashSet<TKey, THash, TEqual>::Reserve(const rox::core::usize minimumCapacity) noexcept
+	bool HashSet<TKey, THash, TEqual>::Reserve(const usize minimumCapacity) noexcept
 	{
 		return m_Table.Reserve(minimumCapacity);
 	}
@@ -181,36 +181,36 @@ namespace rox::core
 	template <typename TKey, typename THash, typename TEqual>
 	template <typename TKeyArgument>
 	bool HashSet<TKey, THash, TEqual>::InsertRequired(TKeyArgument&& key) noexcept
-	    requires requires(Table& table) { table.EmplaceRequired(rox::core::Forward<TKeyArgument>(key)); }
+	    requires requires(Table& table) { table.EmplaceRequired(core::Forward<TKeyArgument>(key)); }
 	{
-		return m_Table.EmplaceRequired(rox::core::Forward<TKeyArgument>(key)).bInserted;
+		return m_Table.EmplaceRequired(core::Forward<TKeyArgument>(key)).bInserted;
 	}
 
 	template <typename TKey, typename THash, typename TEqual>
 	template <typename... TArguments>
 	bool HashSet<TKey, THash, TEqual>::EmplaceRequired(TArguments&&... arguments) noexcept
-	    requires rox::core::IsNothrowConstructible<TKey, TArguments&&...>
+	    requires IsNothrowConstructible<TKey, TArguments&&...>
 	{
-		TKey key(rox::core::Forward<TArguments>(arguments)...);
-		return InsertRequired(rox::core::Move(key));
+		TKey key(core::Forward<TArguments>(arguments)...);
+		return InsertRequired(core::Move(key));
 	}
 
 	template <typename TKey, typename THash, typename TEqual>
 	template <typename TKeyArgument>
 	typename HashSet<TKey, THash, TEqual>::InsertResult HashSet<TKey, THash, TEqual>::Insert(TKeyArgument&& key) noexcept
-	    requires requires(Table& table) { table.Emplace(rox::core::Forward<TKeyArgument>(key)); }
+	    requires requires(Table& table) { table.Emplace(core::Forward<TKeyArgument>(key)); }
 	{
-		const auto result = m_Table.Emplace(rox::core::Forward<TKeyArgument>(key));
+		const auto result = m_Table.Emplace(core::Forward<TKeyArgument>(key));
 		return {result.Value != nullptr, result.bInserted};
 	}
 
 	template <typename TKey, typename THash, typename TEqual>
 	template <typename... TArguments>
 	typename HashSet<TKey, THash, TEqual>::InsertResult HashSet<TKey, THash, TEqual>::Emplace(TArguments&&... arguments) noexcept
-	    requires rox::core::IsNothrowConstructible<TKey, TArguments&&...>
+	    requires IsNothrowConstructible<TKey, TArguments&&...>
 	{
-		TKey key(rox::core::Forward<TArguments>(arguments)...);
-		return Insert(rox::core::Move(key));
+		TKey key(core::Forward<TArguments>(arguments)...);
+		return Insert(core::Move(key));
 	}
 
 	template <typename TKey, typename THash, typename TEqual>
@@ -219,7 +219,7 @@ namespace rox::core
 	    requires requires(const Table& table) { table.FindEntry(key); }
 	{
 		auto* const entry = m_Table.FindEntry(key);
-		return entry == nullptr ? nullptr : rox::core::AddressOf(entry->GetKey());
+		return entry == nullptr ? nullptr : core::AddressOf(entry->GetKey());
 	}
 
 	template <typename TKey, typename THash, typename TEqual>

@@ -29,8 +29,8 @@ namespace rox::core
 		if (m_Memory != nullptr)
 		{
 			const uintptr baseAddress = reinterpret_cast<uintptr>(m_Memory);
-			ASSERT(m_CapacityByteCount <= rox::core::NumericLimits<uintptr>::max() - baseAddress, "A linear memory backing range must not overflow the address space.");
-			ASSERT(m_CapacityByteCount <= static_cast<usize>(rox::core::NumericLimits<isize>::max()), "A linear memory backing range must support defined pointer arithmetic.");
+			ASSERT(m_CapacityByteCount <= NumericLimits<uintptr>::max() - baseAddress, "A linear memory backing range must not overflow the address space.");
+			ASSERT(m_CapacityByteCount <= static_cast<usize>(NumericLimits<isize>::max()), "A linear memory backing range must support defined pointer arithmetic.");
 		}
 	}
 
@@ -41,7 +41,7 @@ namespace rox::core
 
 	LinearMemoryResource::Marker LinearMemoryResource::Mark() noexcept
 	{
-		ASSERT(m_LastMarkerSerial != rox::core::NumericLimits<uint64>::max(), "Linear memory marker identities must not overflow.");
+		ASSERT(m_LastMarkerSerial != NumericLimits<uint64>::max(), "Linear memory marker identities must not overflow.");
 
 		const uint64 serial = ++m_LastMarkerSerial;
 		const Marker marker(this, serial, m_CurrentMarkerSerial, m_UsedByteCount);
@@ -108,7 +108,7 @@ namespace rox::core
 		const usize consumedByteCount = paddingByteCount + allocation.ByteCount;
 		Byte* const result = m_Memory + m_UsedByteCount + paddingByteCount;
 		m_UsedByteCount += consumedByteCount;
-		m_PeakByteCount = rox::core::Max(m_PeakByteCount, m_UsedByteCount);
+		m_PeakByteCount = core::Max(m_PeakByteCount, m_UsedByteCount);
 
 		return result;
 	}

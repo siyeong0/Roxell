@@ -94,7 +94,7 @@ namespace rox::math
 
 	static_assert(sizeof(Int3) == 3 * sizeof(int32) && alignof(Int3) == alignof(int32));
 	static_assert(offsetof(Int3, X) == 0 && offsetof(Int3, Y) == sizeof(int32) && offsetof(Int3, Z) == 2 * sizeof(int32));
-	static_assert(rox::core::IsStandardLayout<Int3> && rox::core::IsTriviallyCopyable<Int3>);
+	static_assert(core::IsStandardLayout<Int3> && core::IsTriviallyCopyable<Int3>);
 } // namespace rox::math
 
 namespace rox::core

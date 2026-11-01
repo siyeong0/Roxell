@@ -63,7 +63,7 @@ namespace rox::math
 	{
 		const int64 maxX = static_cast<int64>(position.X) + width;
 		const int64 maxY = static_cast<int64>(position.Y) + height;
-		constexpr int64 MAXIMUM = rox::core::NumericLimits<int32>::max();
+		constexpr int64 MAXIMUM = core::NumericLimits<int32>::max();
 		ASSERT(maxX <= MAXIMUM && maxY <= MAXIMUM, "Rectangle integer bounds must be representable as int32.");
 		return {position, {static_cast<int32>(maxX), static_cast<int32>(maxY)}};
 	}
@@ -75,8 +75,8 @@ namespace rox::math
 		const int64 minY = static_cast<int64>(Min.Y) + offset.Y;
 		const int64 maxX = static_cast<int64>(Max.X) + offset.X;
 		const int64 maxY = static_cast<int64>(Max.Y) + offset.Y;
-		constexpr int64 MINIMUM = rox::core::NumericLimits<int32>::min();
-		constexpr int64 MAXIMUM = rox::core::NumericLimits<int32>::max();
+		constexpr int64 MINIMUM = core::NumericLimits<int32>::min();
+		constexpr int64 MAXIMUM = core::NumericLimits<int32>::max();
 		ASSERT(minX >= MINIMUM && minX <= MAXIMUM && minY >= MINIMUM && minY <= MAXIMUM && maxX >= MINIMUM && maxX <= MAXIMUM && maxY >= MINIMUM && maxY <= MAXIMUM, "Rectangle integer bounds must be representable as int32.");
 		return {{static_cast<int32>(minX), static_cast<int32>(minY)},
 		        {static_cast<int32>(maxX), static_cast<int32>(maxY)}};
@@ -125,10 +125,10 @@ namespace rox::math
 			return Empty();
 		}
 
-		const T minX = rox::core::Floor(static_cast<T>(rectangle.Min.X));
-		const T minY = rox::core::Floor(static_cast<T>(rectangle.Min.Y));
-		const T maxX = rox::core::Ceil(static_cast<T>(rectangle.Max.X));
-		const T maxY = rox::core::Ceil(static_cast<T>(rectangle.Max.Y));
+		const T minX = core::Floor(static_cast<T>(rectangle.Min.X));
+		const T minY = core::Floor(static_cast<T>(rectangle.Min.Y));
+		const T maxX = core::Ceil(static_cast<T>(rectangle.Max.X));
+		const T maxY = core::Ceil(static_cast<T>(rectangle.Max.Y));
 		constexpr T MINIMUM = T(-2147483648.0);
 		constexpr T MAXIMUM = T(2147483648.0);
 		ASSERT(minX >= MINIMUM && minX < MAXIMUM && minY >= MINIMUM && minY < MAXIMUM && maxX >= MINIMUM && maxX < MAXIMUM && maxY >= MINIMUM && maxY < MAXIMUM, "Rectangle integer bounds must be representable as int32.");

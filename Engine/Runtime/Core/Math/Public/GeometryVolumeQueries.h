@@ -95,8 +95,8 @@ namespace rox::math
 	[[nodiscard]] Box<T> Expanded(const Box<T>& box, const Vector3<T>& amount) noexcept;
 
 	template <MathScalar T = float32>
-	[[nodiscard]] bool Intersect(const Ray<T>& ray, const OrientedBox<T>& box, RayInterval<T>* outInterval, T maxParameter = rox::core::NumericLimits<T>::max()) noexcept;
+	[[nodiscard]] bool Intersect(const Ray<T>& ray, const OrientedBox<T>& box, RayInterval<T>* outInterval, T maxParameter = core::NumericLimits<T>::max()) noexcept;
 
 	template <MathScalar T = float32>
-	[[nodiscard]] bool Intersect(const Ray<T>& ray, const Capsule<T>& capsule, RayInterval<T>* outInterval, T maxParameter = rox::core::NumericLimits<T>::max()) noexcept;
+	[[nodiscard]] bool Intersect(const Ray<T>& ray, const Capsule<T>& capsule, RayInterval<T>* outInterval, T maxParameter = core::NumericLimits<T>::max()) noexcept;
 } // namespace rox::math

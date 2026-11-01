@@ -11,9 +11,9 @@ namespace rox::core
 {
 	struct MemoryStatistics
 	{
-		rox::core::usize LiveAllocationCount = 0;
-		rox::core::usize LiveByteCount = 0;
-		rox::core::usize PeakByteCount = 0;
+		usize LiveAllocationCount = 0;
+		usize LiveByteCount = 0;
+		usize PeakByteCount = 0;
 	};
 
 #if defined(_MSC_VER)
@@ -29,7 +29,7 @@ namespace rox::core
 
 		MemoryStatistics GetStatistics() const noexcept;
 
-		rox::core::DiagnosticText GetName() const noexcept override;
+		DiagnosticText GetName() const noexcept override;
 		EMemoryResourceThreadSafety GetThreadSafety() const noexcept override;
 
 	protected:
@@ -45,9 +45,9 @@ namespace rox::core
 
 		// Keep mutable accounting off the upstream-reference cache line on common 64-byte-line CPUs.
 		alignas(64) mutable Atomic<uint32> m_StatisticsLock{0};
-		rox::core::usize m_LiveAllocationCount;
-		rox::core::usize m_LiveByteCount;
-		rox::core::usize m_PeakByteCount;
+		usize m_LiveAllocationCount;
+		usize m_LiveByteCount;
+		usize m_PeakByteCount;
 	};
 #if defined(_MSC_VER)
 #pragma warning(pop)

@@ -23,7 +23,7 @@ namespace rox::math::detail
 	template <MathScalar T>
 	inline VolumeFrame<T> VolumeRotation(const Quaternion<T>& rotation) noexcept
 	{
-		const T magnitude = rox::core::Max({rox::core::Abs(rotation.X), rox::core::Abs(rotation.Y), rox::core::Abs(rotation.Z), rox::core::Abs(rotation.W)});
+		const T magnitude = core::Max({core::Abs(rotation.X), core::Abs(rotation.Y), core::Abs(rotation.Z), core::Abs(rotation.W)});
 		const T x = rotation.X / magnitude;
 		const T y = rotation.Y / magnitude;
 		const T z = rotation.Z / magnitude;
@@ -57,8 +57,8 @@ namespace rox::math::detail
 
 		if (upper ? error > T(0) : error < T(0))
 		{
-			result = rox::core::NextAfter(result, upper ? rox::core::NumericLimits<T>::infinity()
-			                                            : -rox::core::NumericLimits<T>::infinity());
+			result = core::NextAfter(result, upper ? core::NumericLimits<T>::infinity()
+			                                            : -core::NumericLimits<T>::infinity());
 		}
 
 		return result;

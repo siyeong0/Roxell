@@ -7,7 +7,7 @@ namespace rox::core
 {
 	struct ThreadId final
 	{
-		rox::core::uint64 Value = 0;
+		uint64 Value = 0;
 		[[nodiscard]] bool operator==(const ThreadId&) const noexcept = default;
 	};
 
@@ -34,7 +34,7 @@ namespace rox::core
 	struct ThreadStartResult final
 	{
 		EThreadStartStatus Status = EThreadStartStatus::NativeFailure;
-		rox::core::uint32 NativeError = 0;
+		uint32 NativeError = 0;
 	};
 
 	struct NativeThreadStartResult final

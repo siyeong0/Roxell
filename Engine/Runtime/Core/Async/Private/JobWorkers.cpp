@@ -6,8 +6,8 @@
 
 namespace rox::core
 {
-	JobWorkers::Worker::Worker(MemoryResource& resource, IThreadBackend& backend, JobQueue& queue, rox::core::usize index,
-	                           rox::core::usize scratchBytes) noexcept
+	JobWorkers::Worker::Worker(MemoryResource& resource, IThreadBackend& backend, JobQueue& queue, usize index,
+	                           usize scratchBytes) noexcept
 	    : Owner(resource, backend)
 	    , Scratch(MemoryBlock::CreateRequired(resource, {scratchBytes, DEFAULT_MEMORY_ALIGNMENT}))
 	    , Queue(&queue)
@@ -15,22 +15,22 @@ namespace rox::core
 	{
 	}
 
-	MemoryResource& JobWorkers::ValidateConfiguration(MemoryResource& resource, rox::core::usize count,
-	                                                  rox::core::usize scratchBytes) noexcept
+	MemoryResource& JobWorkers::ValidateConfiguration(MemoryResource& resource, usize count,
+	                                                  usize scratchBytes) noexcept
 	{
 		ASSERT(resource.GetThreadSafety() == EMemoryResourceThreadSafety::ThreadSafe, "Job scheduler resource must support concurrent access.");
-		ASSERT(count > 0 && count <= rox::core::NumericLimits<rox::core::usize>::max() / sizeof(UniquePtr<Worker>) && scratchBytes > 0, "Job scheduler configuration requires positive representable storage capacities.");
+		ASSERT(count > 0 && count <= NumericLimits<usize>::max() / sizeof(UniquePtr<Worker>) && scratchBytes > 0, "Job scheduler configuration requires positive representable storage capacities.");
 
 		return resource;
 	}
 
-	JobWorkers::JobWorkers(MemoryResource& resource, IThreadBackend& backend, JobQueue& queue, rox::core::usize workerCount, rox::core::usize scratchBytes) noexcept
+	JobWorkers::JobWorkers(MemoryResource& resource, IThreadBackend& backend, JobQueue& queue, usize workerCount, usize scratchBytes) noexcept
 	    : m_Queue(&queue)
 	    , m_Workers(ValidateConfiguration(resource, workerCount, scratchBytes))
 	{
 		m_Workers.ReserveRequired(workerCount);
 
-		for (rox::core::usize index = 0; index < workerCount; ++index)
+		for (usize index = 0; index < workerCount; ++index)
 		{
 			m_Workers.AddRequired(MakeUniqueRequired<Worker>(resource, resource, backend, queue, index, scratchBytes));
 		}

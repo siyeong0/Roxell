@@ -42,7 +42,7 @@ namespace rox::math
 		ASSERT(IsValid(), "Oriented box must be valid.");
 		ASSERT(point.IsFinite(), "Geometry point must be finite.");
 		const detail::GeometryVector<T> local = detail::VolumeLocal<T>(detail::VolumeRotation<T>(Rotation), detail::GeometryVector<T>(point) - detail::GeometryVector<T>(Center));
-		return rox::core::Abs(local.X) <= HalfExtents.X && rox::core::Abs(local.Y) <= HalfExtents.Y && rox::core::Abs(local.Z) <= HalfExtents.Z;
+		return core::Abs(local.X) <= HalfExtents.X && core::Abs(local.Y) <= HalfExtents.Y && core::Abs(local.Z) <= HalfExtents.Z;
 	}
 
 	template <MathScalar T>
@@ -53,9 +53,9 @@ namespace rox::math
 		const detail::VolumeFrame<T> frame = detail::VolumeRotation<T>(Rotation);
 		const detail::GeometryVector<T> local = detail::VolumeLocal<T>(frame, detail::GeometryVector<T>(point) - detail::GeometryVector<T>(Center));
 		const detail::GeometryVector<T> clamped{
-		    rox::core::ClampValue(local.X, -static_cast<T>(HalfExtents.X), static_cast<T>(HalfExtents.X)),
-		    rox::core::ClampValue(local.Y, -static_cast<T>(HalfExtents.Y), static_cast<T>(HalfExtents.Y)),
-		    rox::core::ClampValue(local.Z, -static_cast<T>(HalfExtents.Z), static_cast<T>(HalfExtents.Z))};
+		    core::ClampValue(local.X, -static_cast<T>(HalfExtents.X), static_cast<T>(HalfExtents.X)),
+		    core::ClampValue(local.Y, -static_cast<T>(HalfExtents.Y), static_cast<T>(HalfExtents.Y)),
+		    core::ClampValue(local.Z, -static_cast<T>(HalfExtents.Z), static_cast<T>(HalfExtents.Z))};
 		if (clamped.X == local.X && clamped.Y == local.Y && clamped.Z == local.Z)
 		{
 			return point;
@@ -70,9 +70,9 @@ namespace rox::math
 		ASSERT(IsValid(), "Oriented box must be valid.");
 		ASSERT(point.IsFinite(), "Geometry point must be finite.");
 		const detail::GeometryVector<T> local = detail::VolumeLocal<T>(detail::VolumeRotation<T>(Rotation), detail::GeometryVector<T>(point) - detail::GeometryVector<T>(Center));
-		const detail::GeometryVector<T> gap{rox::core::Max(T(0.0), rox::core::Abs(local.X) - HalfExtents.X),
-		                            		rox::core::Max(T(0.0), rox::core::Abs(local.Y) - HalfExtents.Y),
-		                            		rox::core::Max(T(0.0), rox::core::Abs(local.Z) - HalfExtents.Z)};
+		const detail::GeometryVector<T> gap{core::Max(T(0.0), core::Abs(local.X) - HalfExtents.X),
+			core::Max(T(0.0), core::Abs(local.Y) - HalfExtents.Y),
+			core::Max(T(0.0), core::Abs(local.Z) - HalfExtents.Z)};
 		return detail::GeometryMagnitude<T>(gap.LengthSquared());
 	}
 

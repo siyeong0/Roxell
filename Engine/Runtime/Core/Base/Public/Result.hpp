@@ -93,9 +93,9 @@ namespace rox::core
 
 		Error(EErrorCode code, String&& diagnosticID, String&& message, String&& recoveryHint) noexcept
 		    : Code(code)
-		    , DiagnosticID(rox::core::Move(diagnosticID))
-		    , Message(rox::core::Move(message))
-		    , RecoveryHint(rox::core::Move(recoveryHint))
+		    , DiagnosticID(core::Move(diagnosticID))
+		    , Message(core::Move(message))
+		    , RecoveryHint(core::Move(recoveryHint))
 		{
 		}
 
@@ -144,7 +144,7 @@ namespace rox::core
 		{
 			if (&destination.GetResource() == &source.GetResource())
 			{
-				destination = rox::core::Move(source);
+				destination = core::Move(source);
 			}
 			else
 			{
@@ -168,41 +168,41 @@ namespace rox::core
 
 	template <typename TValue> class [[nodiscard]] Result
 	{
-		static_assert(!rox::core::IsReference<TValue>);
+		static_assert(!IsReference<TValue>);
 
 	public:
 		// References support over-aligned values without a by-value calling convention.
 		[[nodiscard]] static Result Success(TValue&& value)
 		{
-			return Result(rox::core::InPlaceIndex<0>, rox::core::Move(value));
+			return Result(core::InPlaceIndex<0>, core::Move(value));
 		}
 
 		[[nodiscard]] static Result Success(const TValue& value)
-		    requires rox::core::IsCopyConstructible<TValue>
+		    requires IsCopyConstructible<TValue>
 		{
 			TValue copy(value);
-			return Success(rox::core::Move(copy));
+			return Success(core::Move(copy));
 		}
 
 		// Copy directly into the result; any copy exception propagates to the caller.
 		[[nodiscard]] static Result SuccessCopy(const TValue& value)
-		    requires rox::core::IsCopyConstructible<TValue>
+		    requires IsCopyConstructible<TValue>
 		{
-			return Result(rox::core::InPlaceIndex<0>, value);
+			return Result(core::InPlaceIndex<0>, value);
 		}
 
 		[[nodiscard]] static Result Failure(
 		    EErrorCode code, StringView diagnosticID, StringView message,
 		    StringView recoveryHint = {}, SourceLocation source = SourceLocation::current())
 		{
-			return Result(rox::core::InPlaceIndex<1>, MakeError(code, diagnosticID, message, recoveryHint, source));
+			return Result(core::InPlaceIndex<1>, MakeError(code, diagnosticID, message, recoveryHint, source));
 		}
 
 		[[nodiscard]] static Result Failure(Error error, SourceLocation source = SourceLocation::current())
 		{
 			ASSERT(error.Code != EErrorCode::None, "A failed Result must contain a non-success error code.");
 			detail::LogResultFailure(error.Code, error.DiagnosticID.View(), error.Message.View(), "Failure", source);
-			return Result(rox::core::InPlaceIndex<1>, rox::core::Move(error));
+			return Result(core::InPlaceIndex<1>, core::Move(error));
 		}
 
 		[[nodiscard]] bool HasValue() const noexcept { return m_Storage.index() == 0; }
@@ -211,42 +211,42 @@ namespace rox::core
 		[[nodiscard]] TValue& Value() &
 		{
 			ASSERT(HasValue(), "Result does not contain a value.");
-			return rox::core::Get<0>(m_Storage);
+			return core::Get<0>(m_Storage);
 		}
 
 		[[nodiscard]] const TValue& Value() const&
 		{
 			ASSERT(HasValue(), "Result does not contain a value.");
-			return rox::core::Get<0>(m_Storage);
+			return core::Get<0>(m_Storage);
 		}
 
 		[[nodiscard]] TValue&& TakeValue() &&
 		{
 			ASSERT(HasValue(), "Result does not contain a value.");
-			return rox::core::Move(rox::core::Get<0>(m_Storage));
+			return core::Move(core::Get<0>(m_Storage));
 		}
 
 		[[nodiscard]] Error& GetError() &
 		{
 			ASSERT(!HasValue(), "Result does not contain an error.");
-			return rox::core::Get<1>(m_Storage);
+			return core::Get<1>(m_Storage);
 		}
 
 		[[nodiscard]] const Error& GetError() const&
 		{
 			ASSERT(!HasValue(), "Result does not contain an error.");
-			return rox::core::Get<1>(m_Storage);
+			return core::Get<1>(m_Storage);
 		}
 
 	private:
-		template <rox::core::usize Index, typename TValueArgument>
-		explicit Result(rox::core::InPlaceIndexTag<Index> index, TValueArgument&& value)
-		    : m_Storage(index, rox::core::Forward<TValueArgument>(value))
+		template <usize Index, typename TValueArgument>
+		explicit Result(core::InPlaceIndexTag<Index> index, TValueArgument&& value)
+		    : m_Storage(index, core::Forward<TValueArgument>(value))
 		{
 		}
 
 	private:
-		rox::core::Variant<TValue, Error> m_Storage;
+		core::Variant<TValue, Error> m_Storage;
 	};
 
 	template <> class [[nodiscard]] Result<void>
@@ -265,7 +265,7 @@ namespace rox::core
 		{
 			ASSERT(error.Code != EErrorCode::None, "A failed Result must contain a non-success error code.");
 			detail::LogResultFailure(error.Code, error.DiagnosticID.View(), error.Message.View(), "Failure", source);
-			return Result(rox::core::Move(error));
+			return Result(core::Move(error));
 		}
 
 		[[nodiscard]] bool HasValue() const noexcept { return m_Error.Code == EErrorCode::None; }
@@ -290,7 +290,7 @@ namespace rox::core
 		Result() noexcept {}
 
 		explicit Result(Error error)
-		    : m_Error(rox::core::Move(error))
+		    : m_Error(core::Move(error))
 		{
 		}
 

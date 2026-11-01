@@ -14,8 +14,8 @@ namespace rox::math
 		template <MathScalar T>
 		[[nodiscard]] T finiteScalar(T value) noexcept
 		{
-			ASSERT(rox::core::IsFinite(value), "Box calculation must produce a finite value.");
-			ASSERT(rox::core::Abs(value) <= static_cast<T>(rox::core::NumericLimits<T>::max()), "Box calculation must fit in the scalar type.");
+			ASSERT(core::IsFinite(value), "Box calculation must produce a finite value.");
+			ASSERT(core::Abs(value) <= static_cast<T>(core::NumericLimits<T>::max()), "Box calculation must fit in the scalar type.");
 			return static_cast<T>(value);
 		}
 
@@ -24,9 +24,9 @@ namespace rox::math
 		{
 			ASSERT(value >= T(0.0), "Box magnitude must be finite and non-negative.");
 
-			if (value > static_cast<T>(rox::core::NumericLimits<T>::max()))
+			if (value > static_cast<T>(core::NumericLimits<T>::max()))
 			{
-				return rox::core::NumericLimits<T>::infinity();
+				return core::NumericLimits<T>::infinity();
 			}
 
 			return static_cast<T>(value);
@@ -82,12 +82,12 @@ namespace rox::math
 	void Box<T>::Encapsulate(const Vector3<T>& point) noexcept
 	{
 		ASSERT(point.IsFinite(), "Box can encapsulate only a finite point.");
-		Min.X = rox::core::Min(Min.X, point.X);
-		Min.Y = rox::core::Min(Min.Y, point.Y);
-		Min.Z = rox::core::Min(Min.Z, point.Z);
-		Max.X = rox::core::Max(Max.X, point.X);
-		Max.Y = rox::core::Max(Max.Y, point.Y);
-		Max.Z = rox::core::Max(Max.Z, point.Z);
+		Min.X = core::Min(Min.X, point.X);
+		Min.Y = core::Min(Min.Y, point.Y);
+		Min.Z = core::Min(Min.Z, point.Z);
+		Max.X = core::Max(Max.X, point.X);
+		Max.Y = core::Max(Max.Y, point.Y);
+		Max.Z = core::Max(Max.Z, point.Z);
 	}
 
 	template <MathScalar T>

@@ -27,7 +27,7 @@ namespace rox::core
 		};
 
 		MemoryResource* m_Resource = nullptr;
-		rox::core::Mutex m_Mutex;
+		core::Mutex m_Mutex;
 		FreeBlock* m_Free = nullptr;
 	};
 

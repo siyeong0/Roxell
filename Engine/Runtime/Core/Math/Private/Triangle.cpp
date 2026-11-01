@@ -25,8 +25,8 @@ namespace rox::math
 	{
 		const detail::GeometryVector<T> rawAb = detail::GeometryVector<T>(triangle.B) - detail::GeometryVector<T>(triangle.A);
 		const detail::GeometryVector<T> rawAc = detail::GeometryVector<T>(triangle.C) - detail::GeometryVector<T>(triangle.A);
-		const T scale = rox::core::Max(rawAb.MaxAbs(), rawAc.MaxAbs());
-		if (scale == T(0) || !rox::core::IsFinite(scale))
+		const T scale = core::Max(rawAb.MaxAbs(), rawAc.MaxAbs());
+		if (scale == T(0) || !core::IsFinite(scale))
 		{
 			return false;
 		}
@@ -77,7 +77,7 @@ namespace rox::math
 		}
 
 		detail::GeometryVector<T> closest = vertices[0];
-		T nearest = rox::core::NumericLimits<T>::infinity();
+		T nearest = core::NumericLimits<T>::infinity();
 
 		for (uint32 edge = 0; edge < 3; ++edge)
 		{
@@ -90,7 +90,7 @@ namespace rox::math
 			const T parameter =
 			    lengthSquared == 0
 			        ? 0
-			        : rox::core::ClampValue(((query - start) / scale).Dot(direction) / lengthSquared, T(0.0), T(1.0));
+			        : core::ClampValue(((query - start) / scale).Dot(direction) / lengthSquared, T(0.0), T(1.0));
 			const detail::GeometryVector<T> candidate = start * (1 - parameter) + end * parameter;
 			const T distance = (query - candidate).Length();
 
@@ -139,7 +139,7 @@ namespace rox::math
 	{
 		ASSERT(IsValid(), "Triangle vertices must be finite.");
 		const detail::GeometryVector<T> cross = geometryTriangleCross<T>(*this);
-		return detail::GeometryMagnitude<T>(T(0.5) * rox::core::Hypot(cross.X, cross.Y, cross.Z));
+		return detail::GeometryMagnitude<T>(T(0.5) * core::Hypot(cross.X, cross.Y, cross.Z));
 	}
 
 	template <MathScalar T>
@@ -161,8 +161,8 @@ namespace rox::math
 	Box<T> Triangle<T>::GetBounds() const noexcept
 	{
 		ASSERT(IsValid(), "Triangle vertices must be finite.");
-		return {{rox::core::Min({A.X, B.X, C.X}), rox::core::Min({A.Y, B.Y, C.Y}), rox::core::Min({A.Z, B.Z, C.Z})},
-		        {rox::core::Max({A.X, B.X, C.X}), rox::core::Max({A.Y, B.Y, C.Y}), rox::core::Max({A.Z, B.Z, C.Z})}};
+		return {{core::Min({A.X, B.X, C.X}), core::Min({A.Y, B.Y, C.Y}), core::Min({A.Z, B.Z, C.Z})},
+		        {core::Max({A.X, B.X, C.X}), core::Max({A.Y, B.Y, C.Y}), core::Max({A.Z, B.Z, C.Z})}};
 	}
 
 	template struct Triangle<float32>;

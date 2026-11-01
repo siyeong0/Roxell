@@ -32,25 +32,25 @@ namespace rox::core
 	{
 		ETraceEventType Type = ETraceEventType::Scope;
 
-		rox::core::DiagnosticText Name;
-		rox::core::DiagnosticText Category;
+		DiagnosticText Name;
+		DiagnosticText Category;
 
-		rox::core::uint64 TimestampNanoseconds = 0;
-		rox::core::uint64 DurationNanoseconds = 0;
-		rox::core::uint64 ThreadId = 0;
+		uint64 TimestampNanoseconds = 0;
+		uint64 DurationNanoseconds = 0;
+		uint64 ThreadId = 0;
 
 		double Value = 0;
 
-		rox::core::uintptr ResourceId = 0;
-		rox::core::uintptr Address = 0;
-		rox::core::usize SizeBytes = 0;
+		uintptr ResourceId = 0;
+		uintptr Address = 0;
+		usize SizeBytes = 0;
 
-		rox::core::uint64 CaptureId = 1;
-		rox::core::uint64 ScopeId = 0;
-		rox::core::uint64 ParentScopeId = 0;
+		uint64 CaptureId = 1;
+		uint64 ScopeId = 0;
+		uint64 ParentScopeId = 0;
 
-		rox::core::uint64 FrameId = 0;
-		rox::core::uint32 Queue = 0;
+		uint64 FrameId = 0;
+		uint32 Queue = 0;
 	};
 
 }

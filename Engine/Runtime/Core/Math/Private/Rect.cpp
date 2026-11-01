@@ -71,8 +71,8 @@ namespace rox::math
 		ASSERT(position.IsFinite() && size.IsFinite() && size.X >= 0 && size.Y >= 0, "Rectangle size must be nonnegative and finite.");
 		const T maxX = static_cast<T>(position.X) + size.X;
 		const T maxY = static_cast<T>(position.Y) + size.Y;
-		constexpr T MAXIMUM = rox::core::NumericLimits<T>::max();
-		ASSERT(rox::core::Abs(maxX) <= MAXIMUM && rox::core::Abs(maxY) <= MAXIMUM, "Rectangle result must be representable in the finite scalar range.");
+		constexpr T MAXIMUM = core::NumericLimits<T>::max();
+		ASSERT(core::Abs(maxX) <= MAXIMUM && core::Abs(maxY) <= MAXIMUM, "Rectangle result must be representable in the finite scalar range.");
 		return {position, {static_cast<T>(maxX), static_cast<T>(maxY)}};
 	}
 
@@ -84,8 +84,8 @@ namespace rox::math
 		const T minY = static_cast<T>(Min.Y) + offset.Y;
 		const T maxX = static_cast<T>(Max.X) + offset.X;
 		const T maxY = static_cast<T>(Max.Y) + offset.Y;
-		constexpr T MAXIMUM = rox::core::NumericLimits<T>::max();
-		ASSERT(rox::core::Abs(minX) <= MAXIMUM && rox::core::Abs(minY) <= MAXIMUM && rox::core::Abs(maxX) <= MAXIMUM && rox::core::Abs(maxY) <= MAXIMUM, "Rectangle result must be representable in the finite scalar range.");
+		constexpr T MAXIMUM = core::NumericLimits<T>::max();
+		ASSERT(core::Abs(minX) <= MAXIMUM && core::Abs(minY) <= MAXIMUM && core::Abs(maxX) <= MAXIMUM && core::Abs(maxY) <= MAXIMUM, "Rectangle result must be representable in the finite scalar range.");
 		return {{static_cast<T>(minX), static_cast<T>(minY)}, {static_cast<T>(maxX), static_cast<T>(maxY)}};
 	}
 
@@ -95,7 +95,7 @@ namespace rox::math
 		ASSERT(IsValid(), "Rectangle inputs must be valid and finite.");
 		const T width = static_cast<T>(Max.X) - Min.X;
 		const T height = static_cast<T>(Max.Y) - Min.Y;
-		constexpr T MAXIMUM = rox::core::NumericLimits<T>::max();
+		constexpr T MAXIMUM = core::NumericLimits<T>::max();
 		ASSERT(width <= MAXIMUM && height <= MAXIMUM, "Rectangle result must be representable in the finite scalar range.");
 		return {static_cast<T>(width), static_cast<T>(height)};
 	}

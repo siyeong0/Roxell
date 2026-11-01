@@ -18,24 +18,24 @@ namespace rox::core
 	public:
 		constexpr Duration() noexcept = default;
 
-		static constexpr Duration FromNanoseconds(rox::core::int64 value) noexcept { return Duration(value); }
-		static constexpr Duration FromMicroseconds(rox::core::int64 value) noexcept { return Duration(value) * 1000; }
-		static constexpr Duration FromMilliseconds(rox::core::int64 value) noexcept { return Duration(value) * 1000000; }
+		static constexpr Duration FromNanoseconds(int64 value) noexcept { return Duration(value); }
+		static constexpr Duration FromMicroseconds(int64 value) noexcept { return Duration(value) * 1000; }
+		static constexpr Duration FromMilliseconds(int64 value) noexcept { return Duration(value) * 1000000; }
 
 		static Duration FromSeconds(double value) noexcept
 		{
 			const double nanoseconds = value * 1000000000.0;
-			ASSERT(rox::core::IsFinite(nanoseconds) && nanoseconds >= -0x1p63 && nanoseconds < 0x1p63, "Duration seconds must scale to finite representable nanoseconds.");
-			return Duration(static_cast<rox::core::int64>(nanoseconds));
+			ASSERT(core::IsFinite(nanoseconds) && nanoseconds >= -0x1p63 && nanoseconds < 0x1p63, "Duration seconds must scale to finite representable nanoseconds.");
+			return Duration(static_cast<int64>(nanoseconds));
 		}
 
-		static constexpr Duration FromChrono(rox::core::Nanoseconds value) noexcept
+		static constexpr Duration FromChrono(core::Nanoseconds value) noexcept
 		{
 			return Duration(value.count());
 		}
 
-		constexpr rox::core::Nanoseconds ToChrono() const noexcept { return rox::core::Nanoseconds(m_Nanoseconds); }
-		constexpr rox::core::int64 ToNanoseconds() const noexcept { return m_Nanoseconds; }
+		constexpr core::Nanoseconds ToChrono() const noexcept { return core::Nanoseconds(m_Nanoseconds); }
+		constexpr int64 ToNanoseconds() const noexcept { return m_Nanoseconds; }
 		constexpr double ToMicroseconds() const noexcept { return static_cast<double>(m_Nanoseconds) / 1000.0; }
 		constexpr double ToMilliseconds() const noexcept { return static_cast<double>(m_Nanoseconds) / 1000000.0; }
 		constexpr double ToSeconds() const noexcept { return static_cast<double>(m_Nanoseconds) / 1000000000.0; }
@@ -64,7 +64,7 @@ namespace rox::core
 			return Duration(-m_Nanoseconds);
 		}
 
-		constexpr Duration operator*(rox::core::int64 factor) const noexcept
+		constexpr Duration operator*(int64 factor) const noexcept
 		{
 			const auto count = m_Nanoseconds;
 
@@ -77,7 +77,7 @@ namespace rox::core
 			return Duration(count * factor);
 		}
 
-		constexpr Duration operator/(rox::core::int64 divisor) const noexcept
+		constexpr Duration operator/(int64 divisor) const noexcept
 		{
 			ASSERT(divisor != 0 && !(m_Nanoseconds == minimum() && divisor == -1),
 			       "Duration division requires a nonzero divisor and representable result.");
@@ -92,21 +92,21 @@ namespace rox::core
 
 		constexpr Duration& operator+=(Duration other) noexcept { return *this = *this + other; }
 		constexpr Duration& operator-=(Duration other) noexcept { return *this = *this - other; }
-		constexpr Duration& operator*=(rox::core::int64 factor) noexcept { return *this = *this * factor; }
-		constexpr Duration& operator/=(rox::core::int64 divisor) noexcept { return *this = *this / divisor; }
+		constexpr Duration& operator*=(int64 factor) noexcept { return *this = *this * factor; }
+		constexpr Duration& operator/=(int64 divisor) noexcept { return *this = *this / divisor; }
 
 	private:
-		explicit constexpr Duration(rox::core::int64 value) noexcept
+		explicit constexpr Duration(int64 value) noexcept
 		    : m_Nanoseconds(value)
 		{
 		}
 
-		static constexpr rox::core::int64 minimum() noexcept { return rox::core::NumericLimits<rox::core::int64>::min(); }
-		static constexpr rox::core::int64 maximum() noexcept { return rox::core::NumericLimits<rox::core::int64>::max(); }
+		static constexpr int64 minimum() noexcept { return NumericLimits<int64>::min(); }
+		static constexpr int64 maximum() noexcept { return NumericLimits<int64>::max(); }
 
 	private:
-		rox::core::int64 m_Nanoseconds = 0;
+		int64 m_Nanoseconds = 0;
 	};
 
-	constexpr Duration operator*(rox::core::int64 factor, Duration value) noexcept { return value * factor; }
+	constexpr Duration operator*(int64 factor, Duration value) noexcept { return value * factor; }
 }

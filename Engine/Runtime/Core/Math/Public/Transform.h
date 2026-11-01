@@ -58,6 +58,6 @@ namespace rox::math
 	static_assert(sizeof(Transform<float64>) == sizeof(float64) * 10);
 	static_assert(offsetof(Transform<float32>, Rotation) == sizeof(float32) * 3);
 	static_assert(offsetof(Transform<float64>, Rotation) == sizeof(float64) * 3);
-	static_assert(rox::core::IsStandardLayout<Transform<float32>> && rox::core::IsTriviallyCopyable<Transform<float32>>);
-	static_assert(rox::core::IsStandardLayout<Transform<float64>> && rox::core::IsTriviallyCopyable<Transform<float64>>);
+	static_assert(core::IsStandardLayout<Transform<float32>> && core::IsTriviallyCopyable<Transform<float32>>);
+	static_assert(core::IsStandardLayout<Transform<float64>> && core::IsTriviallyCopyable<Transform<float64>>);
 } // namespace rox::math

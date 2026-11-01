@@ -54,8 +54,8 @@ namespace rox::core
 		const Value* Maximum = nullptr;
 
 		// Object length includes unknown fields and missing fields supplied by schema defaults.
-		rox::core::Optional<uint64> MinimumLength;
-		rox::core::Optional<uint64> MaximumLength;
+		core::Optional<uint64> MinimumLength;
+		core::Optional<uint64> MaximumLength;
 	};
 
 	// How a field or a schema presents itself in a tool. Every member is a hint: nothing here
@@ -87,16 +87,16 @@ namespace rox::core
 
 	struct SchemaDisplayMetadata
 	{
-		rox::core::StringView DisplayName;
-		rox::core::StringView Description;
-		rox::core::StringView Category;
-		rox::core::StringView Icon;
+		StringView DisplayName;
+		StringView Description;
+		StringView Category;
+		StringView Icon;
 
 		ESchemaUiHint Hint = ESchemaUiHint::None;
 
 		// For AssetRef: a token matched against the asset source type ("mesh", "material").
-		rox::core::StringView RefKind;
-		rox::core::StringView Unit;
+		StringView RefKind;
+		StringView Unit;
 
 		float32 Step = 0.0f;
 		int32 Order = 0;
@@ -104,22 +104,22 @@ namespace rox::core
 
 	struct SchemaEnumEntry
 	{
-		rox::core::StringView Name;
+		StringView Name;
 		uint64 Bits = 0;
 
-		static constexpr SchemaEnumEntry Signed(rox::core::StringView name, int64 value) noexcept
+		static constexpr SchemaEnumEntry Signed(StringView name, int64 value) noexcept
 		{
-			return {name, rox::core::BitCast<uint64>(value)};
+			return {name, core::BitCast<uint64>(value)};
 		}
 
-		static constexpr SchemaEnumEntry Unsigned(rox::core::StringView name, uint64 value) noexcept
+		static constexpr SchemaEnumEntry Unsigned(StringView name, uint64 value) noexcept
 		{
 			return {name, value};
 		}
 	};
 
-	inline constexpr rox::core::usize MAXIMUM_SCHEMA_ENUM_ENTRIES = 4096;
-	inline constexpr rox::core::usize MAXIMUM_SCHEMA_NESTED_ARRAYS = 64;
+	inline constexpr usize MAXIMUM_SCHEMA_ENUM_ENTRIES = 4096;
+	inline constexpr usize MAXIMUM_SCHEMA_NESTED_ARRAYS = 64;
 
 	// Each entry describes one array inside the preceding array's elements, outermost first.
 	struct SchemaArrayDescriptor
@@ -128,14 +128,14 @@ namespace rox::core
 		TypeId ElementType;
 
 		uint64 MinimumLength = 0;
-		uint64 MaximumLength = rox::core::NumericLimits<uint64>::max();
+		uint64 MaximumLength = NumericLimits<uint64>::max();
 	};
 
 	struct SchemaFieldDescriptor
 	{
 		FieldId ID;
 		TypeId ValueType;
-		rox::core::StringView Name;
+		StringView Name;
 
 		ESchemaFieldFlags Flags = ESchemaFieldFlags::None;
 		ESchemaValueKind ValueKind = ESchemaValueKind::Null;
@@ -147,25 +147,25 @@ namespace rox::core
 		SchemaValueConstraints Constraints;
 		SchemaDisplayMetadata Display;
 
-		rox::core::Span<const SchemaEnumEntry> EnumEntries;
-		rox::core::Span<const SchemaArrayDescriptor> NestedArrays;
+		Span<const SchemaEnumEntry> EnumEntries;
+		Span<const SchemaArrayDescriptor> NestedArrays;
 
 		// Maximum byte length of each innermost String/Bytes element in this array shape.
-		rox::core::Optional<uint64> ElementMaximumLength;
+		core::Optional<uint64> ElementMaximumLength;
 	};
 
 	[[nodiscard]] const SchemaEnumEntry* FindSchemaEnumEntry(const SchemaFieldDescriptor& field, uint64 bits) noexcept;
 	[[nodiscard]] const SchemaEnumEntry* FindSchemaEnumEntry(const SchemaFieldDescriptor& field,
-	                                                         rox::core::StringView name) noexcept;
+	                                                         StringView name) noexcept;
 
 	struct SchemaDescriptor
 	{
 		SchemaId ID;
 		TypeId Type;
 		uint32 Version = 0;
-		rox::core::StringView Name;
+		StringView Name;
 
-		rox::core::Span<const SchemaFieldDescriptor> Fields;
+		Span<const SchemaFieldDescriptor> Fields;
 
 		// How tools present the schema as a whole: the human name, the category it is listed under.
 		SchemaDisplayMetadata Display;

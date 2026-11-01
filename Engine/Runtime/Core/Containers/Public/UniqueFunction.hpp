@@ -21,7 +21,7 @@ namespace rox::core
 	class UniqueFunction<TResult(TArguments...) noexcept> final
 	{
 	public:
-		static constexpr rox::core::usize INLINE_CAPACITY = 64;
+		static constexpr usize INLINE_CAPACITY = 64;
 
 	public:
 		UniqueFunction() noexcept = default;
@@ -30,11 +30,11 @@ namespace rox::core
 
 		template <typename TTarget>
 		UniqueFunction(MemoryResource& resource, TTarget&& target) noexcept
-		    requires(!rox::core::IsSame<rox::core::Decay<TTarget>, UniqueFunction> &&
-		             !rox::core::IsMemberPointer<rox::core::Decay<TTarget>> &&
-		             rox::core::IsNothrowConstructible<rox::core::Decay<TTarget>, TTarget &&> &&
-		             rox::core::IsNothrowDestructible<rox::core::Decay<TTarget>> &&
-		             NothrowFunctionTarget<TResult, rox::core::Decay<TTarget>, TArguments...>);
+		    requires(!IsSame<core::Decay<TTarget>, UniqueFunction> &&
+		             !IsMemberPointer<core::Decay<TTarget>> &&
+		             IsNothrowConstructible<core::Decay<TTarget>, TTarget &&> &&
+		             IsNothrowDestructible<core::Decay<TTarget>> &&
+		             NothrowFunctionTarget<TResult, core::Decay<TTarget>, TArguments...>);
 
 		UniqueFunction(UniqueFunction&& other) noexcept;
 
@@ -49,7 +49,7 @@ namespace rox::core
 		// Successful replacement transfers the supplied resource with its target.
 		template <typename TTarget>
 		[[nodiscard]] bool Assign(MemoryResource& resource, TTarget&& target) noexcept
-		    requires rox::core::IsConstructible<UniqueFunction, MemoryResource&, TTarget&&>;
+		    requires IsConstructible<UniqueFunction, MemoryResource&, TTarget&&>;
 
 		// Detach before destruction so target cleanup may observe or reset this empty owner.
 		void Reset() noexcept;
@@ -72,7 +72,7 @@ namespace rox::core
 		void (*m_Destroy)(MemoryResource&, void*) noexcept = nullptr;
 		void* (*m_Move)(void*, void*) noexcept = nullptr;
 
-		alignas(rox::core::MaxAlign) rox::core::Byte m_Inline[INLINE_CAPACITY];
+		alignas(core::MaxAlign) Byte m_Inline[INLINE_CAPACITY];
 	};
 }
 
@@ -87,28 +87,28 @@ namespace rox::core
 	template <typename TResult, typename... TArguments>
 	template <typename TTarget>
 	UniqueFunction<TResult(TArguments...) noexcept>::UniqueFunction(MemoryResource& resource, TTarget&& target) noexcept
-	    requires(!rox::core::IsSame<rox::core::Decay<TTarget>, UniqueFunction> &&
-	             !rox::core::IsMemberPointer<rox::core::Decay<TTarget>> &&
-	             rox::core::IsNothrowConstructible<rox::core::Decay<TTarget>, TTarget &&> &&
-	             rox::core::IsNothrowDestructible<rox::core::Decay<TTarget>> &&
-	             NothrowFunctionTarget<TResult, rox::core::Decay<TTarget>, TArguments...>)
+	    requires(!IsSame<core::Decay<TTarget>, UniqueFunction> &&
+	             !IsMemberPointer<core::Decay<TTarget>> &&
+	             IsNothrowConstructible<core::Decay<TTarget>, TTarget &&> &&
+	             IsNothrowDestructible<core::Decay<TTarget>> &&
+	             NothrowFunctionTarget<TResult, core::Decay<TTarget>, TArguments...>)
 	{
-		using Target = rox::core::Decay<TTarget>;
-		if constexpr (rox::core::IsPointer<Target> && rox::core::IsFunction<rox::core::RemovePointer<Target>>)
+		using Target = core::Decay<TTarget>;
+		if constexpr (IsPointer<Target> && IsFunction<RemovePointer<Target>>)
 		{
 			ASSERT(target != nullptr, "UniqueFunction requires a non-null function pointer.");
 		}
 
-		if constexpr (sizeof(Target) <= INLINE_CAPACITY && alignof(Target) <= alignof(rox::core::MaxAlign) &&
-		              rox::core::IsNothrowMoveConstructible<Target>)
+		if constexpr (sizeof(Target) <= INLINE_CAPACITY && alignof(Target) <= alignof(core::MaxAlign) &&
+		              IsNothrowMoveConstructible<Target>)
 		{
-			m_Object = rox::core::ConstructAt(reinterpret_cast<Target*>(m_Inline), rox::core::Forward<TTarget>(target));
+			m_Object = core::ConstructAt(reinterpret_cast<Target*>(m_Inline), core::Forward<TTarget>(target));
 			m_Destroy = &destroyInline<Target>;
 			m_Move = &moveInline<Target>;
 		}
 		else
 		{
-			m_Object = CreateObjectRequired<Target>(resource, rox::core::Forward<TTarget>(target));
+			m_Object = CreateObjectRequired<Target>(resource, core::Forward<TTarget>(target));
 			m_Destroy = &destroyTarget<Target>;
 		}
 
@@ -149,18 +149,18 @@ namespace rox::core
 	template <typename TResult, typename... TArguments>
 	template <typename TTarget>
 	bool UniqueFunction<TResult(TArguments...) noexcept>::Assign(MemoryResource& resource, TTarget&& target) noexcept
-	    requires rox::core::IsConstructible<UniqueFunction, MemoryResource&, TTarget&&>
+	    requires IsConstructible<UniqueFunction, MemoryResource&, TTarget&&>
 	{
-		using Target = rox::core::Decay<TTarget>;
+		using Target = core::Decay<TTarget>;
 
-		if constexpr (sizeof(Target) <= INLINE_CAPACITY && alignof(Target) <= alignof(rox::core::MaxAlign) && rox::core::IsNothrowMoveConstructible<Target>)
+		if constexpr (sizeof(Target) <= INLINE_CAPACITY && alignof(Target) <= alignof(core::MaxAlign) && IsNothrowMoveConstructible<Target>)
 		{
-			UniqueFunction replacement(resource, rox::core::Forward<TTarget>(target));
-			*this = rox::core::Move(replacement);
+			UniqueFunction replacement(resource, core::Forward<TTarget>(target));
+			*this = core::Move(replacement);
 		}
 		else
 		{
-			Target* const object = CreateObject<Target>(resource, rox::core::Forward<TTarget>(target));
+			Target* const object = CreateObject<Target>(resource, core::Forward<TTarget>(target));
 
 			if (object == nullptr)
 			{
@@ -172,7 +172,7 @@ namespace rox::core
 			replacement.m_Resource = &resource;
 			replacement.m_Invoke = &invokeTarget<Target>;
 			replacement.m_Destroy = &destroyTarget<Target>;
-			*this = rox::core::Move(replacement);
+			*this = core::Move(replacement);
 		}
 
 		return true;
@@ -181,9 +181,9 @@ namespace rox::core
 	template <typename TResult, typename... TArguments>
 	void UniqueFunction<TResult(TArguments...) noexcept>::Reset() noexcept
 	{
-		auto* const resource = rox::core::Exchange(m_Resource, nullptr);
-		void* const object = rox::core::Exchange(m_Object, nullptr);
-		const auto destroy = rox::core::Exchange(m_Destroy, nullptr);
+		auto* const resource = core::Exchange(m_Resource, nullptr);
+		void* const object = core::Exchange(m_Object, nullptr);
+		const auto destroy = core::Exchange(m_Destroy, nullptr);
 		m_Invoke = nullptr;
 		m_Move = nullptr;
 
@@ -197,14 +197,14 @@ namespace rox::core
 	TResult UniqueFunction<TResult(TArguments...) noexcept>::operator()(TArguments... arguments) & noexcept
 	{
 		ASSERT(m_Object != nullptr, "UniqueFunction cannot invoke an empty target.");
-		return m_Invoke(m_Object, rox::core::Forward<TArguments>(arguments)...);
+		return m_Invoke(m_Object, core::Forward<TArguments>(arguments)...);
 	}
 
 	template <typename TResult, typename... TArguments>
 	template <typename TTarget>
 	void UniqueFunction<TResult(TArguments...) noexcept>::destroyInline(MemoryResource&, void* object) noexcept
 	{
-		rox::core::DestroyAt(static_cast<TTarget*>(object));
+		core::DestroyAt(static_cast<TTarget*>(object));
 	}
 
 	template <typename TResult, typename... TArguments>
@@ -212,8 +212,8 @@ namespace rox::core
 	void* UniqueFunction<TResult(TArguments...) noexcept>::moveInline(void* source, void* destination) noexcept
 	{
 		auto* target = static_cast<TTarget*>(source);
-		auto* moved = rox::core::ConstructAt(static_cast<TTarget*>(destination), rox::core::Move(*target));
-		rox::core::DestroyAt(target);
+		auto* moved = core::ConstructAt(static_cast<TTarget*>(destination), core::Move(*target));
+		core::DestroyAt(target);
 		return moved;
 	}
 
@@ -221,13 +221,13 @@ namespace rox::core
 	template <typename TTarget>
 	TResult UniqueFunction<TResult(TArguments...) noexcept>::invokeTarget(void* object, TArguments&&... arguments) noexcept
 	{
-		if constexpr (rox::core::IsVoid<TResult>)
+		if constexpr (IsVoid<TResult>)
 		{
-			rox::core::Invoke(*static_cast<TTarget*>(object), rox::core::Forward<TArguments>(arguments)...);
+			core::Invoke(*static_cast<TTarget*>(object), core::Forward<TArguments>(arguments)...);
 		}
 		else
 		{
-			return rox::core::Invoke(*static_cast<TTarget*>(object), rox::core::Forward<TArguments>(arguments)...);
+			return core::Invoke(*static_cast<TTarget*>(object), core::Forward<TArguments>(arguments)...);
 		}
 	}
 
@@ -241,11 +241,11 @@ namespace rox::core
 	template <typename TResult, typename... TArguments>
 	void UniqueFunction<TResult(TArguments...) noexcept>::moveFrom(UniqueFunction& other) noexcept
 	{
-		m_Resource = rox::core::Exchange(other.m_Resource, nullptr);
-		void* const object = rox::core::Exchange(other.m_Object, nullptr);
-		m_Invoke = rox::core::Exchange(other.m_Invoke, nullptr);
-		m_Destroy = rox::core::Exchange(other.m_Destroy, nullptr);
-		m_Move = rox::core::Exchange(other.m_Move, nullptr);
+		m_Resource = core::Exchange(other.m_Resource, nullptr);
+		void* const object = core::Exchange(other.m_Object, nullptr);
+		m_Invoke = core::Exchange(other.m_Invoke, nullptr);
+		m_Destroy = core::Exchange(other.m_Destroy, nullptr);
+		m_Move = core::Exchange(other.m_Move, nullptr);
 		m_Object = m_Move != nullptr ? m_Move(object, m_Inline) : object;
 	}
 }

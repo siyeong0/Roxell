@@ -12,7 +12,7 @@
 namespace rox::math
 {
 	template <MathScalar T = float32>
-	[[nodiscard]] rox::core::usize RandomWeightedIndex(RandomStream& stream, const T* weights, rox::core::usize count) noexcept;
+	[[nodiscard]] core::usize RandomWeightedIndex(RandomStream& stream, const T* weights, core::usize count) noexcept;
 
 	template <MathScalar T = float32>
 	[[nodiscard]] Vector2<T> RandomUnitCircle(RandomStream& stream) noexcept;

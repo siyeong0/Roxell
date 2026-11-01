@@ -12,22 +12,22 @@ namespace rox::math
 	template <MathScalar T>
 	static T dampingWeight(T halfLifeSeconds, T deltaSeconds) noexcept
 	{
-		return -rox::core::Expm1(-rox::core::LN_TWO<T> * static_cast<T>(deltaSeconds) / halfLifeSeconds);
+		return -core::Expm1(-core::LN_TWO<T> * static_cast<T>(deltaSeconds) / halfLifeSeconds);
 	}
 
 	template <MathScalar T, typename TValue>
 	static TValue dampingApply(const TValue& current, const TValue& target, T halfLifeSeconds, T deltaSeconds) noexcept
 	{
-		if constexpr (rox::core::IsSame<TValue, T>)
+		if constexpr (core::IsSame<TValue, T>)
 		{
-			ASSERT(rox::core::IsFinite(current) && rox::core::IsFinite(target), "Damping inputs must be finite.");
+			ASSERT(core::IsFinite(current) && core::IsFinite(target), "Damping inputs must be finite.");
 		}
 		else
 		{
 			ASSERT(current.IsFinite() && target.IsFinite(), "Damping inputs must be finite.");
 		}
 
-		ASSERT(rox::core::IsFinite(halfLifeSeconds) && halfLifeSeconds >= 0 && rox::core::IsFinite(deltaSeconds) &&
+		ASSERT(core::IsFinite(halfLifeSeconds) && halfLifeSeconds >= 0 && core::IsFinite(deltaSeconds) &&
 		           deltaSeconds >= 0,
 		       "Damping times must be finite and nonnegative.");
 
@@ -44,9 +44,9 @@ namespace rox::math
 		const T weight = dampingWeight<T>(halfLifeSeconds, deltaSeconds);
 		const auto blend = [weight](T from, T to) noexcept
 		{
-			return static_cast<T>(rox::core::LerpValue(static_cast<T>(from), static_cast<T>(to), weight));
+			return static_cast<T>(core::LerpValue(static_cast<T>(from), static_cast<T>(to), weight));
 		};
-		if constexpr (rox::core::IsSame<TValue, T>)
+		if constexpr (core::IsSame<TValue, T>)
 		{
 			return blend(current, target);
 		}

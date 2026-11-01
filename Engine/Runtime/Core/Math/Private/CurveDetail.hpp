@@ -29,15 +29,15 @@ namespace rox::math::detail
 	template <MathScalar T>
 	inline void CurveValidateParameter(T t) noexcept
 	{
-		ASSERT(rox::core::IsFinite(t) && t >= 0 && t <= 1, "Curve parameter must be finite and between zero and one.");
+		ASSERT(core::IsFinite(t) && t >= 0 && t <= 1, "Curve parameter must be finite and between zero and one.");
 	}
 
 	template <MathScalar T, typename TValue>
 	CurveSample<T> CurveRead(const TValue& value) noexcept
 	{
-		if constexpr (rox::core::IsSame<TValue, T>)
+		if constexpr (core::IsSame<TValue, T>)
 		{
-			ASSERT(rox::core::IsFinite(value), "Curve controls must be finite.");
+			ASSERT(core::IsFinite(value), "Curve controls must be finite.");
 			return {{value, 0, 0, 0}};
 		}
 		else
@@ -63,10 +63,10 @@ namespace rox::math::detail
 	{
 		for (const T component : value.Components)
 		{
-			ASSERT(rox::core::IsFinite(component), "Interpolation result must fit the finite scalar range.");
+			ASSERT(core::IsFinite(component), "Interpolation result must fit the finite scalar range.");
 		}
 
-		if constexpr (rox::core::IsSame<TValue, T>)
+		if constexpr (core::IsSame<TValue, T>)
 		{
 			return static_cast<T>(value.Components[0]);
 		}
@@ -103,8 +103,8 @@ namespace rox::math::detail
 			if (kind == ECurveKind::Quadratic)
 			{
 				result.Components[index] =
-				    derivative ? 2 * rox::core::LerpValue(b - a, c - b, t)
-				               : rox::core::LerpValue(rox::core::LerpValue(a, b, t), rox::core::LerpValue(b, c, t), t);
+				    derivative ? 2 * core::LerpValue(b - a, c - b, t)
+				               : core::LerpValue(core::LerpValue(a, b, t), core::LerpValue(b, c, t), t);
 			}
 			else
 			{
@@ -114,11 +114,11 @@ namespace rox::math::detail
 				{
 					result.Components[index] =
 					    derivative
-					        ? 3 * rox::core::LerpValue(rox::core::LerpValue(b - a, c - b, t),
-					                                   rox::core::LerpValue(c - b, d - c, t), t)
-					        : rox::core::LerpValue(
-					              rox::core::LerpValue(rox::core::LerpValue(a, b, t), rox::core::LerpValue(b, c, t), t),
-					              rox::core::LerpValue(rox::core::LerpValue(b, c, t), rox::core::LerpValue(c, d, t), t),
+					        ? 3 * core::LerpValue(core::LerpValue(b - a, c - b, t),
+					                                   core::LerpValue(c - b, d - c, t), t)
+					        : core::LerpValue(
+					              core::LerpValue(core::LerpValue(a, b, t), core::LerpValue(b, c, t), t),
+					              core::LerpValue(core::LerpValue(b, c, t), core::LerpValue(c, d, t), t),
 					              t);
 				}
 				else
@@ -129,7 +129,7 @@ namespace rox::math::detail
 					const T tangent1 = kind == ECurveKind::CatmullRom ? (d - b) * T(0.5) : d;
 					result.Components[index] = derivative ? (c - start) * (6 * t * u) + tangent0 * (u * (1 - 3 * t)) +
 					                                            tangent1 * (t * (3 * t - 2))
-					                                      : rox::core::LerpValue(start, c, t * t * (3 - 2 * t)) +
+					                                      : core::LerpValue(start, c, t * t * (3 - 2 * t)) +
 					                                            tangent0 * (t * u * u) - tangent1 * (t * t * u);
 				}
 			}

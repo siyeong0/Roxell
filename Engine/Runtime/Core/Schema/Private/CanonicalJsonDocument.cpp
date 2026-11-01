@@ -31,7 +31,7 @@ namespace rox::core
 
 		struct ContainerFrame final
 		{
-			rox::core::usize Node;
+			usize Node;
 			bool bFirst = true;
 			bool bAfterValue = false;
 		};
@@ -39,7 +39,7 @@ namespace rox::core
 		class DocumentParser final
 		{
 		public:
-			DocumentParser(const rox::core::StringView input, CanonicalJsonDocument& document, MemoryResource& resource) noexcept
+			DocumentParser(const StringView input, CanonicalJsonDocument& document, MemoryResource& resource) noexcept
 			    : m_Input(input)
 			    , m_Document(document)
 			    , m_Stack(resource)
@@ -62,7 +62,7 @@ namespace rox::core
 
 				while (!m_Stack.IsEmpty())
 				{
-					const rox::core::usize frameIndex = m_Stack.Size() - 1;
+					const usize frameIndex = m_Stack.Size() - 1;
 					const ContainerFrame frame = m_Stack[frameIndex];
 					const bool bObject = m_Document.Nodes[frame.Node].Kind == ESchemaValueKind::Object;
 					const char closing = bObject ? '}' : ']';
@@ -122,14 +122,14 @@ namespace rox::core
 					return false;
 				}
 
-				rox::core::Sort(m_Members.begin(), m_Members.end(),
-				          [this](rox::core::usize left, rox::core::usize right)
+				core::Sort(m_Members.begin(), m_Members.end(),
+				          [this](usize left, usize right)
 				          {
 					          const CanonicalJsonNode& a = m_Document.Nodes[left];
 					          const CanonicalJsonNode& b = m_Document.Nodes[right];
 					          return a.Parent != b.Parent ? a.Parent < b.Parent : m_Document.GetText(a.KeyOffset, a.KeySize) < m_Document.GetText(b.KeyOffset, b.KeySize);
 				          });
-				for (rox::core::usize i = 1; i < m_Members.Size(); ++i)
+				for (usize i = 1; i < m_Members.Size(); ++i)
 				{
 					const CanonicalJsonNode& a = m_Document.Nodes[m_Members[i - 1]];
 					const CanonicalJsonNode& b = m_Document.Nodes[m_Members[i]];
@@ -282,7 +282,7 @@ namespace rox::core
 				       append(static_cast<char>(0x80 | (code & 0x3f)));
 			}
 
-			[[nodiscard]] bool parseString(rox::core::usize& offset, rox::core::usize& size) noexcept
+			[[nodiscard]] bool parseString(usize& offset, usize& size) noexcept
 			{
 				if (!take('"'))
 				{
@@ -359,7 +359,7 @@ namespace rox::core
 
 			[[nodiscard]] bool parseNumber(CanonicalJsonNode& node) noexcept
 			{
-				const rox::core::usize start = m_Position;
+				const usize start = m_Position;
 				const bool bNegative = take('-');
 
 				if (m_Position == m_Input.size())
@@ -384,7 +384,7 @@ namespace rox::core
 				if (take('.'))
 				{
 					bFloating = true;
-					const rox::core::usize first = m_Position;
+					const usize first = m_Position;
 
 					while (m_Position < m_Input.size() && isDigit(m_Input[m_Position]))
 					{
@@ -406,7 +406,7 @@ namespace rox::core
 						(void)take('-');
 					}
 
-					const rox::core::usize first = m_Position;
+					const usize first = m_Position;
 
 					while (m_Position < m_Input.size() && isDigit(m_Input[m_Position]))
 					{
@@ -427,9 +427,9 @@ namespace rox::core
 					if (bNegative)
 					{
 						int64 integer = 0;
-						const FromCharsResult result = rox::core::FromChars(first, last, integer);
+						const FromCharsResult result = core::FromChars(first, last, integer);
 
-						if (result.ec == rox::core::EErrorCondition{})
+						if (result.ec == core::EErrorCondition{})
 						{
 							node.Kind = ESchemaValueKind::SignedInteger;
 							node.Signed = integer;
@@ -439,9 +439,9 @@ namespace rox::core
 					else
 					{
 						uint64 integer = 0;
-						const FromCharsResult result = rox::core::FromChars(first, last, integer);
+						const FromCharsResult result = core::FromChars(first, last, integer);
 
-						if (result.ec == rox::core::EErrorCondition{})
+						if (result.ec == core::EErrorCondition{})
 						{
 							node.Kind = ESchemaValueKind::UnsignedInteger;
 							node.Unsigned = integer;
@@ -450,17 +450,17 @@ namespace rox::core
 					}
 				}
 
-				const rox::core::usize length = static_cast<rox::core::usize>(last - first);
+				const usize length = static_cast<usize>(last - first);
 
-				if (length == rox::core::NumericLimits<rox::core::usize>::max() || !m_NumberBuffer.ResizeUninitialized(length + 1))
+				if (length == NumericLimits<usize>::max() || !m_NumberBuffer.ResizeUninitialized(length + 1))
 				{
 					return fail(EParseFailure::Allocation);
 				}
 
-				const std::lconv* locale = rox::core::LocaleConvention();
+				const std::lconv* locale = core::LocaleConvention();
 				const char decimalPoint = locale->decimal_point == nullptr ? '.' : *locale->decimal_point;
 
-				for (rox::core::usize i = 0; i < length; ++i)
+				for (usize i = 0; i < length; ++i)
 				{
 					m_NumberBuffer[i] = first[i] == '.' ? decimalPoint : first[i];
 				}
@@ -468,9 +468,9 @@ namespace rox::core
 				m_NumberBuffer[length] = '\0';
 				char* end = nullptr;
 				// Preserve the codec's active rounding mode and subnormal behavior.
-				const float64 number = rox::core::ParseDouble(m_NumberBuffer.Data(), &end);
+				const float64 number = core::ParseDouble(m_NumberBuffer.Data(), &end);
 
-				if (end != m_NumberBuffer.Data() + length || !rox::core::IsFinite(number))
+				if (end != m_NumberBuffer.Data() + length || !core::IsFinite(number))
 				{
 					return fail(EParseFailure::Malformed);
 				}
@@ -533,7 +533,7 @@ namespace rox::core
 					return fail(EParseFailure::Malformed);
 				}
 
-				const rox::core::usize index = m_Document.Nodes.Size();
+				const usize index = m_Document.Nodes.Size();
 
 				if (!m_Document.Nodes.Add(node))
 				{
@@ -572,19 +572,19 @@ namespace rox::core
 			}
 
 		private:
-			rox::core::StringView m_Input;
+			StringView m_Input;
 			CanonicalJsonDocument& m_Document;
 
 			Array<ContainerFrame> m_Stack;
-			Array<rox::core::usize> m_Members;
+			Array<usize> m_Members;
 			Array<char> m_NumberBuffer;
 
-			rox::core::usize m_Position = 0;
+			usize m_Position = 0;
 			EParseFailure m_Failure = EParseFailure::None;
 		};
 	} // namespace
 
-	Result<CanonicalJsonDocument> ParseCanonicalJsonDocument(rox::core::Span<const Byte> bytes, MemoryResource& resource)
+	Result<CanonicalJsonDocument> ParseCanonicalJsonDocument(Span<const Byte> bytes, MemoryResource& resource)
 	{
 		CanonicalJsonDocument document(resource);
 		DocumentParser parser({reinterpret_cast<const char*>(bytes.data()), bytes.size()}, document, resource);
@@ -613,6 +613,6 @@ namespace rox::core
 			    "Keep exactly one value for each object key before loading the document.");
 		}
 
-		return Result<CanonicalJsonDocument>::Success(rox::core::Move(document));
+		return Result<CanonicalJsonDocument>::Success(core::Move(document));
 	}
 } // namespace rox::core

@@ -83,32 +83,32 @@ namespace rox::math
 
 	Int2 Int2::Min(const Int2& other) const noexcept
 	{
-		return {rox::core::Min(X, other.X), rox::core::Min(Y, other.Y)};
+		return {core::Min(X, other.X), core::Min(Y, other.Y)};
 	}
 
 	Int2 Int2::Max(const Int2& other) const noexcept
 	{
-		return {rox::core::Max(X, other.X), rox::core::Max(Y, other.Y)};
+		return {core::Max(X, other.X), core::Max(Y, other.Y)};
 	}
 
 	Int2 Int2::Abs() const noexcept
 	{
-		return {detail::NarrowIntegerLane(rox::core::Abs(static_cast<int64>(X))),
-		        detail::NarrowIntegerLane(rox::core::Abs(static_cast<int64>(Y)))};
+		return {detail::NarrowIntegerLane(core::Abs(static_cast<int64>(X))),
+		        detail::NarrowIntegerLane(core::Abs(static_cast<int64>(Y)))};
 	}
 
 	Int2 Int2::Clamped(const Int2& minimum, const Int2& maximum) const noexcept
 	{
 		ASSERT(minimum.X <= maximum.X && minimum.Y <= maximum.Y, "Integer vector clamp bounds must be ordered.");
-		return {rox::core::ClampValue(X, minimum.X, maximum.X), rox::core::ClampValue(Y, minimum.Y, maximum.Y)};
+		return {core::ClampValue(X, minimum.X, maximum.X), core::ClampValue(Y, minimum.Y, maximum.Y)};
 	}
 
 	template <MathScalar T>
 	Int2 Int2::Floor(const Vector2<T>& value) noexcept
 	{
 		ASSERT(value.IsFinite(), "Integer vector conversion input must be finite.");
-		const T roundedX = rox::core::Floor(static_cast<T>(value.X));
-		const T roundedY = rox::core::Floor(static_cast<T>(value.Y));
+		const T roundedX = core::Floor(static_cast<T>(value.X));
+		const T roundedY = core::Floor(static_cast<T>(value.Y));
 		ASSERT(detail::IsIntegerConversionRepresentable<T>(roundedX) && detail::IsIntegerConversionRepresentable<T>(roundedY), "Integer vector conversion result must be representable as int32.");
 		return {static_cast<int32>(roundedX), static_cast<int32>(roundedY)};
 	}
@@ -117,8 +117,8 @@ namespace rox::math
 	Int2 Int2::Ceil(const Vector2<T>& value) noexcept
 	{
 		ASSERT(value.IsFinite(), "Integer vector conversion input must be finite.");
-		const T roundedX = rox::core::Ceil(static_cast<T>(value.X));
-		const T roundedY = rox::core::Ceil(static_cast<T>(value.Y));
+		const T roundedX = core::Ceil(static_cast<T>(value.X));
+		const T roundedY = core::Ceil(static_cast<T>(value.Y));
 		ASSERT(detail::IsIntegerConversionRepresentable<T>(roundedX) && detail::IsIntegerConversionRepresentable<T>(roundedY), "Integer vector conversion result must be representable as int32.");
 		return {static_cast<int32>(roundedX), static_cast<int32>(roundedY)};
 	}
@@ -127,8 +127,8 @@ namespace rox::math
 	Int2 Int2::Round(const Vector2<T>& value) noexcept
 	{
 		ASSERT(value.IsFinite(), "Integer vector conversion input must be finite.");
-		const T roundedX = rox::core::Round(static_cast<T>(value.X));
-		const T roundedY = rox::core::Round(static_cast<T>(value.Y));
+		const T roundedX = core::Round(static_cast<T>(value.X));
+		const T roundedY = core::Round(static_cast<T>(value.Y));
 		ASSERT(detail::IsIntegerConversionRepresentable<T>(roundedX) && detail::IsIntegerConversionRepresentable<T>(roundedY), "Integer vector conversion result must be representable as int32.");
 		return {static_cast<int32>(roundedX), static_cast<int32>(roundedY)};
 	}

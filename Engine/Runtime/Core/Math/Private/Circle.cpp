@@ -7,7 +7,7 @@ namespace rox::math
 	template <MathScalar T>
 	bool Circle<T>::IsValid() const noexcept
 	{
-		return Center.IsFinite() && rox::core::IsFinite(Radius) && Radius >= T(0.0);
+		return Center.IsFinite() && core::IsFinite(Radius) && Radius >= T(0.0);
 	}
 
 	template <MathScalar T>
@@ -17,7 +17,7 @@ namespace rox::math
 		ASSERT(point.IsFinite(), "Geometry point must be finite.");
 		const T x = static_cast<T>(point.X) - Center.X;
 		const T y = static_cast<T>(point.Y) - Center.Y;
-		return rox::core::Hypot(x, y) <= Radius;
+		return core::Hypot(x, y) <= Radius;
 	}
 
 	template <MathScalar T>
@@ -27,12 +27,12 @@ namespace rox::math
 		const T x = static_cast<T>(other.Center.X) - Center.X;
 		const T y = static_cast<T>(other.Center.Y) - Center.Y;
 		const T radius = static_cast<T>(Radius) + other.Radius;
-		if (rox::core::IsFinite(radius))
+		if (core::IsFinite(radius))
 		{
-			return rox::core::Hypot(x, y) <= radius;
+			return core::Hypot(x, y) <= radius;
 		}
 
-		return rox::core::Hypot(other.Center.X * T(0.5) - Center.X * T(0.5), other.Center.Y * T(0.5) - Center.Y * T(0.5)) <= Radius * T(0.5) + other.Radius * T(0.5);
+		return core::Hypot(other.Center.X * T(0.5) - Center.X * T(0.5), other.Center.Y * T(0.5) - Center.Y * T(0.5)) <= Radius * T(0.5) + other.Radius * T(0.5);
 	}
 
 	template <MathScalar T>
@@ -42,7 +42,7 @@ namespace rox::math
 		ASSERT(point.IsFinite(), "Geometry point must be finite.");
 		const T x = static_cast<T>(point.X) - Center.X;
 		const T y = static_cast<T>(point.Y) - Center.Y;
-		const T distance = rox::core::Hypot(x, y);
+		const T distance = core::Hypot(x, y);
 
 		if (distance <= Radius)
 		{
@@ -60,7 +60,7 @@ namespace rox::math
 		ASSERT(point.IsFinite(), "Geometry point must be finite.");
 		const T x = static_cast<T>(point.X) - Center.X;
 		const T y = static_cast<T>(point.Y) - Center.Y;
-		const T distance = rox::core::Hypot(x, y);
+		const T distance = core::Hypot(x, y);
 		const T gap = distance > Radius ? distance - Radius : T(0.0);
 		return detail::GeometryMagnitude<T>(gap * gap);
 	}

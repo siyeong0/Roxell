@@ -42,13 +42,13 @@ namespace rox::core
 		writeUnsigned(value, 8, false);
 	}
 
-	void ByteWriter::writeUnsigned(const uint64 value, const rox::core::usize byteCount, const bool bLittleEndian) noexcept
+	void ByteWriter::writeUnsigned(const uint64 value, const usize byteCount, const bool bLittleEndian) noexcept
 	{
 		ASSERT(CanWrite(byteCount), "ByteWriter requires enough remaining bytes.");
 
-		for (rox::core::usize index = 0; index < byteCount; ++index)
+		for (usize index = 0; index < byteCount; ++index)
 		{
-			const rox::core::usize shift = (bLittleEndian ? index : byteCount - index - 1) * 8;
+			const usize shift = (bLittleEndian ? index : byteCount - index - 1) * 8;
 			m_Bytes[m_Offset + index] = static_cast<Byte>(static_cast<uint8>(value >> shift));
 		}
 
@@ -61,7 +61,7 @@ namespace rox::core
 
 		if (!bytes.IsEmpty())
 		{
-			rox::core::MoveBytes(m_Bytes.Data() + m_Offset, bytes.Data(), bytes.Size());
+			core::MoveBytes(m_Bytes.Data() + m_Offset, bytes.Data(), bytes.Size());
 			m_Offset += bytes.Size();
 		}
 	}

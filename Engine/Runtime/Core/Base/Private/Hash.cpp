@@ -38,14 +38,14 @@ namespace rox::core
 
 	bool Hash256::IsValid() const noexcept
 	{
-		return rox::core::AnyOf(Bytes.begin(), Bytes.end(),
+		return core::AnyOf(Bytes.begin(), Bytes.end(),
 		                   [](uint8 value)
 		                   {
 			                   return value != 0;
 		                   });
 	}
 
-	Hash256 ComputeSha256(rox::core::Span<const Byte> data) noexcept
+	Hash256 ComputeSha256(Span<const Byte> data) noexcept
 	{
 		Sha256 state;
 		state.Update(data);
@@ -57,7 +57,7 @@ namespace rox::core
 		static constexpr char HEX_DIGITS[] = "0123456789abcdef";
 		char text[64] = {};
 
-		for (rox::core::usize index = 0; index < hash.Bytes.size(); ++index)
+		for (usize index = 0; index < hash.Bytes.size(); ++index)
 		{
 			text[index * 2] = HEX_DIGITS[hash.Bytes[index] >> 4];
 			text[index * 2 + 1] = HEX_DIGITS[hash.Bytes[index] & 0x0f];
@@ -66,7 +66,7 @@ namespace rox::core
 		return String(StringView(text, sizeof(text)));
 	}
 
-	bool TryParseHash256(rox::core::StringView text, Hash256* outHash) noexcept
+	bool TryParseHash256(StringView text, Hash256* outHash) noexcept
 	{
 		ASSERT(outHash != nullptr, "Hash output must not be null.");
 
@@ -77,7 +77,7 @@ namespace rox::core
 
 		Hash256 parsed;
 
-		for (rox::core::usize index = 0; index < parsed.Bytes.size(); ++index)
+		for (usize index = 0; index < parsed.Bytes.size(); ++index)
 		{
 			const uint8 high = hexValue(text[index * 2]);
 			const uint8 low = hexValue(text[index * 2 + 1]);
@@ -95,13 +95,13 @@ namespace rox::core
 		return true;
 	}
 
-	rox::core::usize Hash256Hash::operator()(const Hash256& hash) const noexcept
+	usize Hash256Hash::operator()(const Hash256& hash) const noexcept
 	{
-		rox::core::usize result = 0;
+		usize result = 0;
 
 		for (const uint8 value : hash.Bytes)
 		{
-			result ^= static_cast<rox::core::usize>(value) + static_cast<rox::core::usize>(0x9e3779b97f4a7c15ull) +
+			result ^= static_cast<usize>(value) + static_cast<usize>(0x9e3779b97f4a7c15ull) +
 			          (result << 6) + (result >> 2);
 		}
 

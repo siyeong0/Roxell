@@ -60,12 +60,12 @@ namespace rox::math::detail
 
 		T Length() const noexcept
 		{
-			return rox::core::Hypot(X, Y, Z);
+			return core::Hypot(X, Y, Z);
 		}
 
 		T MaxAbs() const noexcept
 		{
-			return rox::core::Max({rox::core::Abs(X), rox::core::Abs(Y), rox::core::Abs(Z)});
+			return core::Max({core::Abs(X), core::Abs(Y), core::Abs(Z)});
 		}
 
 		GeometryVector<T> operator/(T scale) const noexcept
@@ -113,7 +113,7 @@ namespace rox::math::detail
 	template <MathScalar T>
 	inline T GeometryCoordinate(T value) noexcept
 	{
-		ASSERT(rox::core::IsFinite(value), "Geometry coordinate must fit the finite scalar range.");
+		ASSERT(core::IsFinite(value), "Geometry coordinate must fit the finite scalar range.");
 		return static_cast<T>(value);
 	}
 
@@ -126,7 +126,7 @@ namespace rox::math::detail
 	template <MathScalar T>
 	inline T GeometryMagnitude(T value) noexcept
 	{
-		return value > rox::core::NumericLimits<T>::max() ? rox::core::NumericLimits<T>::infinity()
+		return value > core::NumericLimits<T>::max() ? core::NumericLimits<T>::infinity()
 		                                                  : static_cast<T>(value);
 	}
 } // namespace rox::math::detail

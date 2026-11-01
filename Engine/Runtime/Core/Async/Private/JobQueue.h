@@ -14,7 +14,7 @@ namespace rox::core
 	{
 	public:
 		JobQueue(MemoryResource& resource, const SharedPtr<JobSchedulerIdentity>& identity,
-		         rox::core::usize capacity) noexcept;
+		         usize capacity) noexcept;
 		~JobQueue() noexcept;
 		JobQueue(const JobQueue&) = delete;
 		JobQueue& operator=(const JobQueue&) = delete;
@@ -59,16 +59,16 @@ namespace rox::core
 		Array<JobState*> m_AnyReady;
 		Array<JobState*> m_MainReady;
 
-		const rox::core::usize m_Capacity;
-		rox::core::usize m_Queued = 0;
-		rox::core::usize m_NextSequence = 0;
+		const usize m_Capacity;
+		usize m_Queued = 0;
+		usize m_NextSequence = 0;
 
-		rox::core::Mutex m_Mutex;
+		core::Mutex m_Mutex;
 
-		rox::core::ConditionVariable m_Changed;
-		rox::core::ConditionVariable m_WorkReady;
+		core::ConditionVariable m_Changed;
+		core::ConditionVariable m_WorkReady;
 
-		rox::core::usize m_Active = 0;
+		usize m_Active = 0;
 
 		bool m_bEnabled = false;
 		bool m_bStopped = false;

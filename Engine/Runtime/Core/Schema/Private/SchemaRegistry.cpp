@@ -18,12 +18,12 @@ namespace rox::core
 		template <typename TValue>
 		[[nodiscard]] bool contains(const Array<TValue>& values, const TValue& value) noexcept
 		{
-			return rox::core::Find(values.begin(), values.end(), value) != values.end();
+			return core::Find(values.begin(), values.end(), value) != values.end();
 		}
 
 		[[nodiscard]] Result<void> cyclicSchemaFailure();
 
-		[[nodiscard]] bool appendOwnedText(Array<String>& texts, MemoryResource& resource, const rox::core::StringView text) noexcept;
+		[[nodiscard]] bool appendOwnedText(Array<String>& texts, MemoryResource& resource, const StringView text) noexcept;
 		[[nodiscard]] bool appendOwnedValue(Array<UniquePtr<Value>>& values, MemoryResource& resource, const Value* const value);
 
 		[[nodiscard]] bool isValueKindValid(ESchemaValueKind kind) noexcept;
@@ -39,7 +39,7 @@ namespace rox::core
 					return detail::Failure(EErrorCode::InvalidArgument, "ROX-CORE-SCHEMA-INVALID-METADATA-UTF8", "Schema display metadata must contain well-formed UTF-8.", "Replace invalid UTF-8 in the display metadata.");
 				}
 			}
-			if (display.Hint > ESchemaUiHint::ReadOnly || !rox::core::IsFinite(display.Step))
+			if (display.Hint > ESchemaUiHint::ReadOnly || !core::IsFinite(display.Step))
 			{
 				return detail::Failure(EErrorCode::InvalidArgument, "ROX-CORE-SCHEMA-INVALID-METADATA", "Schema display metadata requires a known UI hint and a finite step.", "Use a declared ESchemaUiHint and a finite step value.");
 			}
@@ -48,14 +48,14 @@ namespace rox::core
 		}
 
 		template <typename TEntry, typename TKey>
-		[[nodiscard]] rox::core::usize lowerBoundIndex(const Array<TEntry>& entries, const TKey key) noexcept
+		[[nodiscard]] usize lowerBoundIndex(const Array<TEntry>& entries, const TKey key) noexcept
 		{
-			rox::core::usize low = 0;
-			rox::core::usize high = entries.Size();
+			usize low = 0;
+			usize high = entries.Size();
 
 			while (low < high)
 			{
-				const rox::core::usize middle = low + ((high - low) / 2);
+				const usize middle = low + ((high - low) / 2);
 
 				if (entries[middle].Key < key)
 				{
@@ -71,13 +71,13 @@ namespace rox::core
 		}
 
 		template <typename TEntry>
-		void insertIndexEntry(Array<TEntry>& entries, const TEntry& entry, const rox::core::usize position) noexcept
+		void insertIndexEntry(Array<TEntry>& entries, const TEntry& entry, const usize position) noexcept
 		{
 			ASSERT(position <= entries.Size(), "A sorted index insertion position must be within the index.");
 			ASSERT(entries.Size() < entries.Capacity(), "Sorted index storage must be reserved before an entry is published.");
 			entries.AddRequired(entry);
 
-			for (rox::core::usize index = entries.Size() - 1; index > position; --index)
+			for (usize index = entries.Size() - 1; index > position; --index)
 			{
 				entries[index] = entries[index - 1];
 			}
@@ -89,7 +89,7 @@ namespace rox::core
 			return detail::Failure(EErrorCode::Conflict, "ROX-CORE-SCHEMA-BY-VALUE-CYCLE", "A schema contains a cyclic by-value type dependency.", "Break the cycle with an ID reference or another non-owning representation.");
 		}
 
-		[[nodiscard]] bool appendOwnedText(Array<String>& texts, MemoryResource& resource, const rox::core::StringView text) noexcept
+		[[nodiscard]] bool appendOwnedText(Array<String>& texts, MemoryResource& resource, const StringView text) noexcept
 		{
 			String owned(resource);
 
@@ -99,7 +99,7 @@ namespace rox::core
 			}
 
 			ASSERT(texts.Size() < texts.Capacity(), "Owned schema text storage must be reserved before it is filled.");
-			texts.AddRequired(rox::core::Move(owned));
+			texts.AddRequired(core::Move(owned));
 			return true;
 		}
 
@@ -116,7 +116,7 @@ namespace rox::core
 					return false;
 				}
 
-				owned = MakeUnique<Value>(resource, rox::core::Move(copied).TakeValue());
+				owned = MakeUnique<Value>(resource, core::Move(copied).TakeValue());
 
 				if (!owned)
 				{
@@ -125,7 +125,7 @@ namespace rox::core
 			}
 
 			ASSERT(values.Size() < values.Capacity(), "Owned schema value storage must be reserved before it is filled.");
-			values.AddRequired(rox::core::Move(owned));
+			values.AddRequired(core::Move(owned));
 			return true;
 		}
 
@@ -180,7 +180,7 @@ namespace rox::core
 				ASSERT(maximumFloatingPoint != nullptr, "Floating-point maximum constraint must have floating-point storage.");
 			}
 
-			if ((minimumFloatingPoint != nullptr && !rox::core::IsFinite(*minimumFloatingPoint)) || (maximumFloatingPoint != nullptr && !rox::core::IsFinite(*maximumFloatingPoint)))
+			if ((minimumFloatingPoint != nullptr && !core::IsFinite(*minimumFloatingPoint)) || (maximumFloatingPoint != nullptr && !core::IsFinite(*maximumFloatingPoint)))
 			{
 				return detail::Failure(EErrorCode::InvalidArgument, "ROX-CORE-SCHEMA-NON-FINITE-CONSTRAINT", "Numeric constraints cannot contain NaN or infinity.", "Provide finite numeric bounds.");
 			}
@@ -305,7 +305,7 @@ namespace rox::core
 					return detail::Failure(EErrorCode::InvalidArgument, "ROX-CORE-SCHEMA-NESTED-ARRAY", "Nested array metadata requires a bounded array-of-arrays field.",  "Use an outermost-first array descriptor chain within the supported depth.");
 				}
 
-				for (rox::core::usize level = 0; level < field.NestedArrays.size(); ++level)
+				for (usize level = 0; level < field.NestedArrays.size(); ++level)
 				{
 					const SchemaArrayDescriptor& nested = field.NestedArrays[level];
 
@@ -403,7 +403,7 @@ namespace rox::core
 			return detail::AllocationFailure("The schema registry could not allocate the owned schema name.");
 		}
 
-		const rox::core::usize fieldCount = descriptor.Fields.size();
+		const usize fieldCount = descriptor.Fields.size();
 
 		if (!owned->FieldNames.Reserve(fieldCount) || !owned->DisplayNames.Reserve(fieldCount) ||
 		    !owned->Descriptions.Reserve(fieldCount) || !owned->Categories.Reserve(fieldCount) ||
@@ -452,7 +452,7 @@ namespace rox::core
 					nested.AddRequired(level);
 				}
 
-				if (!owned->NestedArrays.Add(rox::core::Move(nested)))
+				if (!owned->NestedArrays.Add(core::Move(nested)))
 				{
 					return detail::AllocationFailure("The schema registry could not retain nested array metadata.");
 				}
@@ -470,7 +470,7 @@ namespace rox::core
 
 			if (copiedEnum.Value())
 			{
-				if (!owned->Enums.Add(rox::core::Move(copiedEnum).TakeValue()))
+				if (!owned->Enums.Add(core::Move(copiedEnum).TakeValue()))
 				{
 					return detail::AllocationFailure("The schema registry could not reserve its owned field storage.");
 				}
@@ -480,7 +480,7 @@ namespace rox::core
 			}
 		}
 
-		for (rox::core::usize index = 0; index < owned->Fields.Size(); ++index)
+		for (usize index = 0; index < owned->Fields.Size(); ++index)
 		{
 			ASSERT(index < owned->FieldNames.Size() && index < owned->DisplayNames.Size() &&
 			           index < owned->Descriptions.Size() && index < owned->Categories.Size() &&
@@ -513,7 +513,7 @@ namespace rox::core
 
 		OwnedSchema* const stored = owned.Get();
 		ASSERT(stored != nullptr, "Validated schema ownership must produce a valid stored schema.");
-		const rox::core::usize publishedCount = m_Schemas.Size() + 1;
+		const usize publishedCount = m_Schemas.Size() + 1;
 
 		if (!m_Schemas.Reserve(publishedCount) || !m_ByID.Reserve(publishedCount) || !m_ByType.Reserve(publishedCount))
 		{
@@ -522,9 +522,9 @@ namespace rox::core
 
 		// Publication starts here and nothing below can allocate or fail, so the registry never carries a schema
 		// its indexes do not resolve, or an index entry with no schema behind it.
-		const rox::core::usize idPosition = lowerBoundIndex(m_ByID, stored->View.ID);
-		const rox::core::usize typePosition = lowerBoundIndex(m_ByType, stored->View.Type);
-		m_Schemas.AddRequired(rox::core::Move(owned));
+		const usize idPosition = lowerBoundIndex(m_ByID, stored->View.ID);
+		const usize typePosition = lowerBoundIndex(m_ByType, stored->View.Type);
+		m_Schemas.AddRequired(core::Move(owned));
 		insertIndexEntry(m_ByID, SchemaIndexEntry{stored->View.ID, stored}, idPosition);
 		insertIndexEntry(m_ByType, TypeIndexEntry{stored->View.Type, stored}, typePosition);
 		ASSERT(m_Schemas.Size() == m_ByID.Size() && m_Schemas.Size() == m_ByType.Size(), "Validated unique schema IDs and types must be inserted exactly once.");
@@ -539,7 +539,7 @@ namespace rox::core
 
 	const SchemaDescriptor* SchemaRegistry::Find(SchemaId id) const
 	{
-		const rox::core::usize position = lowerBoundIndex(m_ByID, id);
+		const usize position = lowerBoundIndex(m_ByID, id);
 
 		if (position == m_ByID.Size() || !(m_ByID[position].Key == id))
 		{
@@ -552,7 +552,7 @@ namespace rox::core
 
 	const SchemaDescriptor* SchemaRegistry::Find(TypeId type) const
 	{
-		const rox::core::usize position = lowerBoundIndex(m_ByType, type);
+		const usize position = lowerBoundIndex(m_ByType, type);
 
 		if (position == m_ByType.Size() || !(m_ByType[position].Key == type))
 		{
@@ -563,12 +563,12 @@ namespace rox::core
 		return &m_ByType[position].Schema->View;
 	}
 
-	rox::core::usize SchemaRegistry::GetSchemaCount() const noexcept
+	usize SchemaRegistry::GetSchemaCount() const noexcept
 	{
 		return m_Schemas.Size();
 	}
 
-	const SchemaDescriptor& SchemaRegistry::GetSchemaByIndex(const rox::core::usize index) const
+	const SchemaDescriptor& SchemaRegistry::GetSchemaByIndex(const usize index) const
 	{
 		ASSERT(m_bFrozen, "Schema enumeration requires a frozen registry.");
 		ASSERT(index < m_Schemas.Size(), "Schema enumeration index must be within the frozen registry.");
@@ -593,10 +593,10 @@ namespace rox::core
 
 	SchemaRegistry::SchemaRegistry(SchemaRegistry&& other) noexcept
 	    : m_Resource(other.m_Resource)
-	    , m_bFrozen(rox::core::Exchange(other.m_bFrozen, false))
-	    , m_Schemas(rox::core::Move(other.m_Schemas))
-	    , m_ByID(rox::core::Move(other.m_ByID))
-	    , m_ByType(rox::core::Move(other.m_ByType))
+	    , m_bFrozen(core::Exchange(other.m_bFrozen, false))
+	    , m_Schemas(core::Move(other.m_Schemas))
+	    , m_ByID(core::Move(other.m_ByID))
+	    , m_ByType(core::Move(other.m_ByType))
 	{
 		other.m_Schemas.Reset();
 		other.m_ByID.Reset();

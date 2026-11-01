@@ -17,8 +17,8 @@ namespace rox::math
 	template <MathScalar T = float32>
 	struct Box final
 	{
-		Vector3<T> Min{rox::core::NumericLimits<T>::max(), rox::core::NumericLimits<T>::max(), rox::core::NumericLimits<T>::max()};
-		Vector3<T> Max{rox::core::NumericLimits<T>::lowest(), rox::core::NumericLimits<T>::lowest(), rox::core::NumericLimits<T>::lowest()};
+		Vector3<T> Min{core::NumericLimits<T>::max(), core::NumericLimits<T>::max(), core::NumericLimits<T>::max()};
+		Vector3<T> Max{core::NumericLimits<T>::lowest(), core::NumericLimits<T>::lowest(), core::NumericLimits<T>::lowest()};
 
 		constexpr Box() noexcept = default;
 
@@ -50,6 +50,6 @@ namespace rox::math
 
 	static_assert(sizeof(Box<float32>) == sizeof(float32) * 6);
 	static_assert(sizeof(Box<float64>) == sizeof(float64) * 6);
-	static_assert(rox::core::IsStandardLayout<Box<float32>> && rox::core::IsTriviallyCopyable<Box<float32>>);
-	static_assert(rox::core::IsStandardLayout<Box<float64>> && rox::core::IsTriviallyCopyable<Box<float64>>);
+	static_assert(core::IsStandardLayout<Box<float32>> && core::IsTriviallyCopyable<Box<float32>>);
+	static_assert(core::IsStandardLayout<Box<float64>> && core::IsTriviallyCopyable<Box<float64>>);
 } // namespace rox::math

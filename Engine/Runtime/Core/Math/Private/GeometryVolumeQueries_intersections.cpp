@@ -8,7 +8,7 @@ namespace rox::math
 	template <MathScalar T>
 	static bool volumeCylinderInterval(const detail::GeometryVector<T>& rawOffset, const detail::GeometryVector<T>& rawDirection, const detail::GeometryVector<T>& rawAxis, T radius, T maxParameter, T& enter, T& exit) noexcept
 	{
-		const T magnitude = rox::core::Max({rawOffset.MaxAbs(), rawDirection.MaxAbs(), rawAxis.MaxAbs(), radius});
+		const T magnitude = core::Max({rawOffset.MaxAbs(), rawDirection.MaxAbs(), rawAxis.MaxAbs(), radius});
 		int exponent = 0;
 		std::frexp(magnitude, &exponent);
 		const T scale = std::scalbn(T(1), exponent - 1);
@@ -33,8 +33,8 @@ namespace rox::math
 		{
 			const T first = -axialOrigin / axialDirection;
 			const T second = (1 - axialOrigin) / axialDirection;
-			enter = rox::core::Max(enter, rox::core::Min(first, second));
-			exit = rox::core::Min(exit, rox::core::Max(first, second));
+			enter = core::Max(enter, core::Min(first, second));
+			exit = core::Min(exit, core::Max(first, second));
 
 			if (enter > exit)
 			{
@@ -42,7 +42,7 @@ namespace rox::math
 			}
 		}
 
-		const T inverseLength = radius == T(0) ? T(1) : T(1) / rox::core::Sqrt(axisSquared);
+		const T inverseLength = radius == T(0) ? T(1) : T(1) / core::Sqrt(axisSquared);
 		const detail::GeometryVector<T> radialOrigin = offset.Cross(axis) * inverseLength;
 		const detail::GeometryVector<T> radialDirection = direction.Cross(axis) * inverseLength;
 		const T speedSquared = radialDirection.LengthSquared();
@@ -53,24 +53,24 @@ namespace rox::math
 		}
 
 		const T center = -radialOrigin.Dot(radialDirection) / speedSquared;
-		const T closestDistance = rox::core::Hypot(rox::core::Fma(radialDirection.X, center, radialOrigin.X),
-		                                           rox::core::Fma(radialDirection.Y, center, radialOrigin.Y),
-		                                           rox::core::Fma(radialDirection.Z, center, radialOrigin.Z));
+		const T closestDistance = core::Hypot(core::Fma(radialDirection.X, center, radialOrigin.X),
+		                                           core::Fma(radialDirection.Y, center, radialOrigin.Y),
+		                                           core::Fma(radialDirection.Z, center, radialOrigin.Z));
 
 		if (closestDistance > radius)
 		{
 			return false;
 		}
 
-		const T halfWidth = rox::core::Sqrt(((radius - closestDistance) * (radius + closestDistance)) / speedSquared);
-		const T stableRoot = center + rox::core::CopySign(halfWidth, center);
-		const T originDistance = rox::core::Hypot(radialOrigin.X, radialOrigin.Y, radialOrigin.Z);
+		const T halfWidth = core::Sqrt(((radius - closestDistance) * (radius + closestDistance)) / speedSquared);
+		const T stableRoot = center + core::CopySign(halfWidth, center);
+		const T originDistance = core::Hypot(radialOrigin.X, radialOrigin.Y, radialOrigin.Z);
 		const T otherRoot = halfWidth == T(0) ? center
 		                    : stableRoot == 0
 		                        ? 0
 		                        : (((originDistance - radius) * (originDistance + radius)) / speedSquared) / stableRoot;
-		enter = rox::core::Max(enter, rox::core::Min(stableRoot, otherRoot));
-		exit = rox::core::Min(exit, rox::core::Max(stableRoot, otherRoot));
+		enter = core::Max(enter, core::Min(stableRoot, otherRoot));
+		exit = core::Min(exit, core::Max(stableRoot, otherRoot));
 		return enter <= exit;
 	}
 
@@ -80,7 +80,7 @@ namespace rox::math
 		ASSERT(outInterval != nullptr, "Intersect requires a valid output pointer.");
 		ASSERT(ray.IsValid(), "Ray must have finite origin and a finite nonzero direction.");
 		ASSERT(capsule.IsValid(), "Capsule must be valid.");
-		ASSERT(rox::core::IsFinite(maxParameter) && maxParameter >= 0, "Ray query limit must be finite and non-negative.");
+		ASSERT(core::IsFinite(maxParameter) && maxParameter >= 0, "Ray query limit must be finite and non-negative.");
 
 		if (capsule.Axis.Start == capsule.Axis.End)
 		{
@@ -99,8 +99,8 @@ namespace rox::math
 
 			if (Intersect<T>(ray, Sphere<T>{center, capsule.Radius}, &(sphereInterval), maxParameter))
 			{
-				enter = hit ? rox::core::Min(enter, static_cast<T>(sphereInterval.Enter)) : sphereInterval.Enter;
-				exit = hit ? rox::core::Max(exit, static_cast<T>(sphereInterval.Exit)) : sphereInterval.Exit;
+				enter = hit ? core::Min(enter, static_cast<T>(sphereInterval.Enter)) : sphereInterval.Enter;
+				exit = hit ? core::Max(exit, static_cast<T>(sphereInterval.Exit)) : sphereInterval.Exit;
 				hit = true;
 			}
 		}
@@ -120,7 +120,7 @@ namespace rox::math
 		ASSERT(outInterval != nullptr, "Intersect requires a valid output pointer.");
 		ASSERT(ray.IsValid(), "Ray must have finite origin and a finite nonzero direction.");
 		ASSERT(box.IsValid(), "Oriented box must be valid.");
-		ASSERT(rox::core::IsFinite(maxParameter) && maxParameter >= 0, "Ray query limit must be finite and non-negative.");
+		ASSERT(core::IsFinite(maxParameter) && maxParameter >= 0, "Ray query limit must be finite and non-negative.");
 
 		const detail::VolumeFrame<T> frame = detail::VolumeRotation<T>(box.Rotation);
 		const detail::GeometryVector<T> origin = detail::VolumeLocal<T>(frame, detail::GeometryVector<T>(ray.Origin) - detail::GeometryVector<T>(box.Center));
@@ -136,7 +136,7 @@ namespace rox::math
 		{
 			if (directions[axis] == 0)
 			{
-				if (rox::core::Abs(origins[axis]) > extents[axis])
+				if (core::Abs(origins[axis]) > extents[axis])
 				{
 					return false;
 				}
@@ -146,8 +146,8 @@ namespace rox::math
 
 			const T first = (-extents[axis] - origins[axis]) / directions[axis];
 			const T second = (extents[axis] - origins[axis]) / directions[axis];
-			enter = rox::core::Max(enter, rox::core::Min(first, second));
-			exit = rox::core::Min(exit, rox::core::Max(first, second));
+			enter = core::Max(enter, core::Min(first, second));
+			exit = core::Min(exit, core::Max(first, second));
 
 			if (enter > exit)
 			{

@@ -10,7 +10,7 @@ namespace rox::math
 	template <MathScalar T>
 	static T springNarrow(T value) noexcept
 	{
-		ASSERT(rox::core::IsFinite(value),
+		ASSERT(core::IsFinite(value),
 		       "Interpolation result must fit the finite scalar range.");
 		return static_cast<T>(value);
 	}
@@ -19,16 +19,16 @@ namespace rox::math
 	static SpringState<T> springApply(SpringState<T> current, T target, const detail::SpringTransition<T>& transition) noexcept
 	{
 		const T offset = static_cast<T>(current.Value) - target;
-		const T value = rox::core::Abs(transition.ValueDeltaFromValue) < T(0.5)
-		                    ? rox::core::Fma(transition.ValueFromVelocity, current.Velocity,
-		                                     rox::core::Fma(transition.ValueDeltaFromValue, offset, current.Value))
-		                    : rox::core::Fma(transition.ValueFromVelocity, current.Velocity,
-		                                     rox::core::Fma(transition.ValueFromValue, offset, target));
-		const T velocity = rox::core::Abs(transition.VelocityDeltaFromVelocity) < T(0.5)
-		                       ? rox::core::Fma(transition.VelocityFromValue, offset,
-		                                        rox::core::Fma(transition.VelocityDeltaFromVelocity, current.Velocity,
+		const T value = core::Abs(transition.ValueDeltaFromValue) < T(0.5)
+		                    ? core::Fma(transition.ValueFromVelocity, current.Velocity,
+		                                     core::Fma(transition.ValueDeltaFromValue, offset, current.Value))
+		                    : core::Fma(transition.ValueFromVelocity, current.Velocity,
+		                                     core::Fma(transition.ValueFromValue, offset, target));
+		const T velocity = core::Abs(transition.VelocityDeltaFromVelocity) < T(0.5)
+		                       ? core::Fma(transition.VelocityFromValue, offset,
+		                                        core::Fma(transition.VelocityDeltaFromVelocity, current.Velocity,
 		                                                       current.Velocity))
-		                       : rox::core::Fma(transition.VelocityFromValue, offset,
+		                       : core::Fma(transition.VelocityFromValue, offset,
 		                                        transition.VelocityFromVelocity * current.Velocity);
 		return {springNarrow<T>(value), springNarrow<T>(velocity)};
 	}
@@ -36,8 +36,8 @@ namespace rox::math
 	template <MathScalar T>
 	SpringState<T> SpringStep(SpringState<T> current, T target, T frequencyHz, T dampingRatio, T deltaSeconds) noexcept
 	{
-		ASSERT(rox::core::IsFinite(current.Value) && rox::core::IsFinite(current.Velocity) && rox::core::IsFinite(target), "Spring state and target must be finite.");
-		ASSERT(rox::core::IsFinite(frequencyHz) && frequencyHz >= 0 && rox::core::IsFinite(dampingRatio) && dampingRatio >= 0 && rox::core::IsFinite(deltaSeconds) && deltaSeconds >= 0, "Spring parameters must be finite and nonnegative.");
+		ASSERT(core::IsFinite(current.Value) && core::IsFinite(current.Velocity) && core::IsFinite(target), "Spring state and target must be finite.");
+		ASSERT(core::IsFinite(frequencyHz) && frequencyHz >= 0 && core::IsFinite(dampingRatio) && dampingRatio >= 0 && core::IsFinite(deltaSeconds) && deltaSeconds >= 0, "Spring parameters must be finite and nonnegative.");
 
 		if (deltaSeconds == 0)
 		{
@@ -46,7 +46,7 @@ namespace rox::math
 
 		if (frequencyHz == 0)
 		{
-			return {springNarrow<T>(rox::core::Fma(static_cast<T>(current.Velocity), deltaSeconds, current.Value)),
+			return {springNarrow<T>(core::Fma(static_cast<T>(current.Velocity), deltaSeconds, current.Value)),
 			        current.Velocity};
 		}
 
@@ -57,7 +57,7 @@ namespace rox::math
 	static SpringState<TValue> springVectorStep(SpringState<TValue> current, const TValue& target, T frequencyHz, T dampingRatio, T deltaSeconds) noexcept
 	{
 		ASSERT(current.Value.IsFinite() && current.Velocity.IsFinite() && target.IsFinite(), "Spring state and target must be finite.");
-		ASSERT(rox::core::IsFinite(frequencyHz) && frequencyHz >= 0 && rox::core::IsFinite(dampingRatio) && dampingRatio >= 0 && rox::core::IsFinite(deltaSeconds) && deltaSeconds >= 0, "Spring parameters must be finite and nonnegative.");
+		ASSERT(core::IsFinite(frequencyHz) && frequencyHz >= 0 && core::IsFinite(dampingRatio) && dampingRatio >= 0 && core::IsFinite(deltaSeconds) && deltaSeconds >= 0, "Spring parameters must be finite and nonnegative.");
 
 		if (deltaSeconds == 0)
 		{
@@ -72,7 +72,7 @@ namespace rox::math
 		{
 			const SpringState<T> scalar{current.Value.*component, current.Velocity.*component};
 			const SpringState<T> stepped = frequencyHz == 0
-			                         ? SpringState<T>{springNarrow<T>(rox::core::Fma(static_cast<T>(scalar.Velocity),
+			                         ? SpringState<T>{springNarrow<T>(core::Fma(static_cast<T>(scalar.Velocity),
 			                                                                         deltaSeconds, scalar.Value)),
 			                                          scalar.Velocity}
 			                         : springApply<T>(scalar, target.*component, transition);

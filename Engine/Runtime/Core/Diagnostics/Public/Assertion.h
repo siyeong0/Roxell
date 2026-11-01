@@ -15,9 +15,9 @@ namespace rox::core
 {
 	struct AssertionFailure
 	{
-		rox::core::DiagnosticText Expression;
-		rox::core::DiagnosticText Message;
-		rox::core::SourceLocation Source;
+		DiagnosticText Expression;
+		DiagnosticText Message;
+		SourceLocation Source;
 	};
 
 	using AssertionFailureHandler = void (*)(const AssertionFailure& failure) noexcept;

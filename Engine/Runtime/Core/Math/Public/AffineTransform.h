@@ -58,6 +58,6 @@ namespace rox::math
 	static_assert(alignof(AffineTransform<float64>) == alignof(float64));
 	static_assert(offsetof(AffineTransform<float32>, Translation) == 9 * sizeof(float32));
 	static_assert(offsetof(AffineTransform<float64>, Translation) == 9 * sizeof(float64));
-	static_assert(rox::core::IsStandardLayout<AffineTransform<float32>> && rox::core::IsTriviallyCopyable<AffineTransform<float32>>);
-	static_assert(rox::core::IsStandardLayout<AffineTransform<float64>> && rox::core::IsTriviallyCopyable<AffineTransform<float64>>);
+	static_assert(core::IsStandardLayout<AffineTransform<float32>> && core::IsTriviallyCopyable<AffineTransform<float32>>);
+	static_assert(core::IsStandardLayout<AffineTransform<float64>> && core::IsTriviallyCopyable<AffineTransform<float64>>);
 } // namespace rox::math

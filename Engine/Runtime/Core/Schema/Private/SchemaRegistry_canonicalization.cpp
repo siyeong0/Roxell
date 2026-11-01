@@ -110,10 +110,10 @@ namespace rox::core
 				{
 					return canonicalElement;
 				}
-				elements.AddRequired(rox::core::Move(canonicalElement).TakeValue());
+				elements.AddRequired(core::Move(canonicalElement).TakeValue());
 			}
 
-			return Value::CreateArray(rox::core::Move(elements));
+			return Value::CreateArray(core::Move(elements));
 		}
 		case ESchemaValueKind::Object:
 		{
@@ -140,10 +140,10 @@ namespace rox::core
 				{
 					return Result<Value>::Failure(copiedName.GetError());
 				}
-				object.UnknownFields.InsertRequired(rox::core::Move(copiedName).TakeValue(), rox::core::Move(canonicalField).TakeValue());
+				object.UnknownFields.InsertRequired(core::Move(copiedName).TakeValue(), core::Move(canonicalField).TakeValue());
 			}
 
-			return Value::CreateObject(rox::core::Move(object), resource);
+			return Value::CreateObject(core::Move(object), resource);
 		}
 		case ESchemaValueKind::String:
 			return Value::CreateString(*value.GetString(), resource);
@@ -228,11 +228,11 @@ namespace rox::core
 					{
 						return canonicalElement;
 					}
-					elements.AddRequired(rox::core::Move(canonicalElement).TakeValue());
+					elements.AddRequired(core::Move(canonicalElement).TakeValue());
 				}
 			}
 
-			return Value::CreateArray(rox::core::Move(elements));
+			return Value::CreateArray(core::Move(elements));
 		}
 
 		return canonicalizeGenericValue(value, context, depth);
@@ -272,7 +272,7 @@ namespace rox::core
 			{
 				return canonicalField;
 			}
-			object.Fields.InsertRequired(field.ID, rox::core::Move(canonicalField).TakeValue());
+			object.Fields.InsertRequired(field.ID, core::Move(canonicalField).TakeValue());
 		}
 
 		for (const Value::UnknownFieldMap::Entry& entry : source.UnknownFields)
@@ -292,9 +292,9 @@ namespace rox::core
 			{
 				return Result<Value>::Failure(copiedName.GetError());
 			}
-			object.UnknownFields.InsertRequired(rox::core::Move(copiedName).TakeValue(), rox::core::Move(canonicalField).TakeValue());
+			object.UnknownFields.InsertRequired(core::Move(copiedName).TakeValue(), core::Move(canonicalField).TakeValue());
 		}
 
-		return Value::CreateObject(rox::core::Move(object), resource);
+		return Value::CreateObject(core::Move(object), resource);
 	}
 } // namespace rox::core

@@ -40,6 +40,6 @@ namespace rox::math
 		}
 	};
 
-	static_assert(rox::core::IsStandardLayout<OrientedBox<float32>> && rox::core::IsTriviallyCopyable<OrientedBox<float32>>);
-	static_assert(rox::core::IsStandardLayout<OrientedBox<float64>> && rox::core::IsTriviallyCopyable<OrientedBox<float64>>);
+	static_assert(core::IsStandardLayout<OrientedBox<float32>> && core::IsTriviallyCopyable<OrientedBox<float32>>);
+	static_assert(core::IsStandardLayout<OrientedBox<float64>> && core::IsTriviallyCopyable<OrientedBox<float64>>);
 } // namespace rox::math

@@ -20,7 +20,7 @@ namespace rox::core
 			{
 			}
 
-			void Text(rox::core::StringView text) noexcept
+			void Text(StringView text) noexcept
 			{
 				if (m_bSuccess)
 				{
@@ -33,22 +33,22 @@ namespace rox::core
 			template <typename T> void Number(T value) noexcept
 			{
 				char buffer[64];
-				const auto result = rox::core::ToChars(buffer, buffer + sizeof(buffer), value);
-				ASSERT(result.ec == rox::core::EErrorCondition{}, "Trace numeric storage must fit the formatted value.");
-				Text({buffer, static_cast<rox::core::usize>(result.ptr - buffer)});
+				const auto result = core::ToChars(buffer, buffer + sizeof(buffer), value);
+				ASSERT(result.ec == core::EErrorCondition{}, "Trace numeric storage must fit the formatted value.");
+				Text({buffer, static_cast<usize>(result.ptr - buffer)});
 			}
 
-			void Pointer(rox::core::uintptr value) noexcept
+			void Pointer(uintptr value) noexcept
 			{
 				char buffer[2 * sizeof(value)];
-				const auto result = rox::core::ToChars(buffer, buffer + sizeof(buffer), value, 16);
-				ASSERT(result.ec == rox::core::EErrorCondition{}, "Trace pointer storage must fit its hexadecimal value.");
+				const auto result = core::ToChars(buffer, buffer + sizeof(buffer), value, 16);
+				ASSERT(result.ec == core::EErrorCondition{}, "Trace pointer storage must fit its hexadecimal value.");
 				Text("\"0x");
-				Text({buffer, static_cast<rox::core::usize>(result.ptr - buffer)});
+				Text({buffer, static_cast<usize>(result.ptr - buffer)});
 				Text("\"");
 			}
 
-			void Microseconds(rox::core::uint64 nanoseconds) noexcept
+			void Microseconds(uint64 nanoseconds) noexcept
 			{
 				Number(nanoseconds / 1000);
 				const auto remainder = nanoseconds % 1000;
@@ -62,7 +62,7 @@ namespace rox::core
 				}
 			}
 
-			void Quoted(rox::core::StringView value) noexcept
+			void Quoted(StringView value) noexcept
 			{
 				constexpr char hex[] = "0123456789abcdef";
 				Text("\"");

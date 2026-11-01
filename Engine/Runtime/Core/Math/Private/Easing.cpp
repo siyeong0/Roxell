@@ -66,18 +66,18 @@ namespace rox::math
 
 		if (curve == EEasingCurve::Sine)
 		{
-			const T sine = rox::core::Sin(rox::core::PI<T> * t / 4);
+			const T sine = core::Sin(core::PI<T> * t / 4);
 			return 2 * sine * sine;
 		}
 
 		if (curve == EEasingCurve::Exponential)
 		{
-			return rox::core::Expm1(10 * rox::core::LN_TWO<T> * t) / 1023;
+			return core::Expm1(10 * core::LN_TWO<T> * t) / 1023;
 		}
 
 		if (curve == EEasingCurve::Circular)
 		{
-			return t * t / (1 + rox::core::Sqrt(1 - t * t));
+			return t * t / (1 + core::Sqrt(1 - t * t));
 		}
 
 		if (curve == EEasingCurve::Back)
@@ -87,7 +87,7 @@ namespace rox::math
 
 		if (curve == EEasingCurve::Elastic)
 		{
-			return -rox::core::Exp2(10 * t - 10) * rox::core::Sin((10 * t - T(10.75)) * 2 * rox::core::PI<T> / 3);
+			return -core::Exp2(10 * t - 10) * core::Sin((10 * t - T(10.75)) * 2 * core::PI<T> / 3);
 		}
 
 		return 1 - easingBounceOut<T>(1 - t);
@@ -96,7 +96,7 @@ namespace rox::math
 	template <MathScalar T>
 	T Ease(T t, EEasingCurve curve, EEasingMode mode) noexcept
 	{
-		ASSERT(rox::core::IsFinite(t) && t >= 0 && t <= 1, "Easing parameter must be finite and between zero and one.");
+		ASSERT(core::IsFinite(t) && t >= 0 && t <= 1, "Easing parameter must be finite and between zero and one.");
 		ASSERT(curve <= EEasingCurve::Bounce, "Easing curve must be a listed value.");
 		ASSERT(mode <= EEasingMode::InOut, "Easing mode must be a listed value.");
 

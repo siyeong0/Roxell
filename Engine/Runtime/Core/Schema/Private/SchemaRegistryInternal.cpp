@@ -91,7 +91,7 @@ namespace rox::core
 			return result;
 		}
 
-		StringView ToStringView(const rox::core::StringView text) noexcept
+		StringView ToStringView(const StringView text) noexcept
 		{
 			return {text.data(), text.size()};
 		}

@@ -13,7 +13,7 @@ namespace rox::math
 	template <MathScalar T>
 	static T geometryRayCoordinate(T value) noexcept
 	{
-		ASSERT(rox::core::IsFinite(value), "Geometry coordinate must fit the finite scalar range.");
+		ASSERT(core::IsFinite(value), "Geometry coordinate must fit the finite scalar range.");
 		return static_cast<T>(value);
 	}
 
@@ -29,8 +29,8 @@ namespace rox::math
 	template <MathScalar T>
 	static RayProjection<T> geometryRayProjection(const Ray<T>& ray, const Vector3<T>& point) noexcept
 	{
-		const T positionScale = rox::core::Max({point.Abs().X, point.Abs().Y, point.Abs().Z, ray.Origin.Abs().X, ray.Origin.Abs().Y, ray.Origin.Abs().Z});
-		const T directionScale = rox::core::Max({rox::core::Abs(ray.Direction.X), rox::core::Abs(ray.Direction.Y), rox::core::Abs(ray.Direction.Z)});
+		const T positionScale = core::Max({point.Abs().X, point.Abs().Y, point.Abs().Z, ray.Origin.Abs().X, ray.Origin.Abs().Y, ray.Origin.Abs().Z});
+		const T directionScale = core::Max({core::Abs(ray.Direction.X), core::Abs(ray.Direction.Y), core::Abs(ray.Direction.Z)});
 		const Vector3<T> direction = ray.Direction / directionScale;
 		if (positionScale == T(0))
 		{
@@ -38,7 +38,7 @@ namespace rox::math
 		}
 
 		const Vector3<T> offset = point / positionScale - ray.Origin / positionScale;
-		const T projected = rox::core::Max(T(0), offset.Dot(direction) / direction.Dot(direction));
+		const T projected = core::Max(T(0), offset.Dot(direction) / direction.Dot(direction));
 		return {direction, directionScale, positionScale, projected};
 	}
 
@@ -47,9 +47,9 @@ namespace rox::math
 	{
 		const RayProjection<T> projection = geometryRayProjection(ray, point);
 		// The ray parameter may overflow even when every coordinate of its projection is representable.
-		return {rox::core::Fma(projection.Parameter * projection.Direction.X, projection.PositionScale, ray.Origin.X),
-		        rox::core::Fma(projection.Parameter * projection.Direction.Y, projection.PositionScale, ray.Origin.Y),
-		        rox::core::Fma(projection.Parameter * projection.Direction.Z, projection.PositionScale, ray.Origin.Z)};
+		return {core::Fma(projection.Parameter * projection.Direction.X, projection.PositionScale, ray.Origin.X),
+		        core::Fma(projection.Parameter * projection.Direction.Y, projection.PositionScale, ray.Origin.Y),
+		        core::Fma(projection.Parameter * projection.Direction.Z, projection.PositionScale, ray.Origin.Z)};
 	}
 
 	template <MathScalar T>
@@ -62,10 +62,10 @@ namespace rox::math
 	Vector3<T> Ray<T>::At(T parameter) const noexcept
 	{
 		ASSERT(IsValid(), "Ray must have finite origin and a finite nonzero direction.");
-		ASSERT(rox::core::IsFinite(parameter) && parameter >= T(0.0), "Ray parameter must be finite and non-negative.");
-		return {geometryRayCoordinate<T>(rox::core::Fma(parameter, Direction.X, Origin.X)),
-		        geometryRayCoordinate<T>(rox::core::Fma(parameter, Direction.Y, Origin.Y)),
-		        geometryRayCoordinate<T>(rox::core::Fma(parameter, Direction.Z, Origin.Z))};
+		ASSERT(core::IsFinite(parameter) && parameter >= T(0.0), "Ray parameter must be finite and non-negative.");
+		return {geometryRayCoordinate<T>(core::Fma(parameter, Direction.X, Origin.X)),
+		        geometryRayCoordinate<T>(core::Fma(parameter, Direction.Y, Origin.Y)),
+		        geometryRayCoordinate<T>(core::Fma(parameter, Direction.Z, Origin.Z))};
 	}
 
 	template <MathScalar T>
@@ -85,9 +85,9 @@ namespace rox::math
 		const T parameter = std::frexp(projection.Parameter, &parameterExponent);
 		const T position = std::frexp(projection.PositionScale, &positionExponent);
 		const T direction = std::frexp(projection.DirectionScale, &directionExponent);
-		return rox::core::Min(
+		return core::Min(
 		    std::scalbn(parameter * position / direction, parameterExponent + positionExponent - directionExponent),
-		    rox::core::NumericLimits<T>::max());
+		    core::NumericLimits<T>::max());
 	}
 
 	template <MathScalar T>
@@ -109,7 +109,7 @@ namespace rox::math
 		const T y = point.Y - closest.Y;
 		const T z = point.Z - closest.Z;
 		const T squared = x * x + y * y + z * z;
-		return squared > rox::core::NumericLimits<T>::max() ? rox::core::NumericLimits<T>::infinity()
+		return squared > core::NumericLimits<T>::max() ? core::NumericLimits<T>::infinity()
 		                                                    : static_cast<T>(squared);
 	}
 

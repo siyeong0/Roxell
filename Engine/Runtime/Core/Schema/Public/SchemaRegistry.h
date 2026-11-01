@@ -49,8 +49,8 @@ namespace rox::core
 
 		[[nodiscard]] const SchemaDescriptor* Find(SchemaId id) const;
 		[[nodiscard]] const SchemaDescriptor* Find(TypeId type) const;
-		[[nodiscard]] rox::core::usize GetSchemaCount() const noexcept;
-		[[nodiscard]] const SchemaDescriptor& GetSchemaByIndex(rox::core::usize index) const;
+		[[nodiscard]] usize GetSchemaCount() const noexcept;
+		[[nodiscard]] const SchemaDescriptor& GetSchemaByIndex(usize index) const;
 
 		// Checks constraints after accounting for defaults without modifying the input.
 		[[nodiscard]] Result<void> Validate(TypeId type, const Value& value) const;

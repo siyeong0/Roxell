@@ -30,8 +30,8 @@ namespace rox::core
 		StringBuilder& operator=(const StringBuilder& other) noexcept;
 		StringBuilder& operator=(StringBuilder&& other) noexcept;
 
-		[[nodiscard]] rox::core::usize Size() const noexcept { return m_Storage.IsEmpty() ? 0 : m_Storage.Size() - 1; }
-		[[nodiscard]] rox::core::usize Capacity() const noexcept { return m_Storage.Capacity() - 1; }
+		[[nodiscard]] usize Size() const noexcept { return m_Storage.IsEmpty() ? 0 : m_Storage.Size() - 1; }
+		[[nodiscard]] usize Capacity() const noexcept { return m_Storage.Capacity() - 1; }
 		[[nodiscard]] bool IsEmpty() const noexcept { return Size() == 0; }
 
 		[[nodiscard]] MemoryResource& GetResource() const noexcept { return m_Storage.GetResource(); }
@@ -52,8 +52,8 @@ namespace rox::core
 			return m_Storage.Data();
 		}
 
-		void ReserveRequired(rox::core::usize bytes) noexcept;
-		[[nodiscard]] bool Reserve(rox::core::usize bytes) noexcept;
+		void ReserveRequired(usize bytes) noexcept;
+		[[nodiscard]] bool Reserve(usize bytes) noexcept;
 
 		void Clear() noexcept { m_Storage.Clear(); m_Terminated = true; }
 		void Reset() noexcept { m_Storage.Reset(); m_Terminated = true; }
@@ -111,13 +111,13 @@ namespace rox::core
 		}
 
 		template <typename TInteger>
-		    requires rox::core::IsIntegral<TInteger> && (!rox::core::IsSame<rox::core::RemoveCv<TInteger>, bool>) && (sizeof(TInteger) <= 8)
+		    requires IsIntegral<TInteger> && (!IsSame<RemoveCv<TInteger>, bool>) && (sizeof(TInteger) <= 8)
 		[[nodiscard]] bool AppendInteger(const TInteger value) noexcept
 		{
 			char text[24];
-			const rox::core::ToCharsResult converted = rox::core::ToChars(text, text + sizeof(text), value);
-			ASSERT(converted.ec == rox::core::EErrorCondition(), "StringBuilder integer rendering must fit 24 bytes.");
-			const rox::core::usize size = static_cast<rox::core::usize>(converted.ptr - text);
+			const core::ToCharsResult converted = core::ToChars(text, text + sizeof(text), value);
+			ASSERT(converted.ec == core::EErrorCondition(), "StringBuilder integer rendering must fit 24 bytes.");
+			const usize size = static_cast<usize>(converted.ptr - text);
 			if (size == 1)
 			{
 				return Append(text[0]);
@@ -127,13 +127,13 @@ namespace rox::core
 		}
 
 		template <typename TInteger>
-		    requires rox::core::IsIntegral<TInteger> && (!rox::core::IsSame<rox::core::RemoveCv<TInteger>, bool>) && (sizeof(TInteger) <= 8)
+		    requires IsIntegral<TInteger> && (!IsSame<RemoveCv<TInteger>, bool>) && (sizeof(TInteger) <= 8)
 		void AppendIntegerRequired(const TInteger value) noexcept
 		{
 			char text[24];
-			const rox::core::ToCharsResult converted = rox::core::ToChars(text, text + sizeof(text), value);
-			ASSERT(converted.ec == rox::core::EErrorCondition(), "StringBuilder integer rendering must fit 24 bytes.");
-			const rox::core::usize size = static_cast<rox::core::usize>(converted.ptr - text);
+			const core::ToCharsResult converted = core::ToChars(text, text + sizeof(text), value);
+			ASSERT(converted.ec == core::EErrorCondition(), "StringBuilder integer rendering must fit 24 bytes.");
+			const usize size = static_cast<usize>(converted.ptr - text);
 			if (size == 1)
 			{
 				AppendRequired(text[0]);
@@ -150,12 +150,12 @@ namespace rox::core
 	private:
 		[[nodiscard]] bool tryAppendValidated(StringView text) noexcept;
 		void appendValidated(StringView text) noexcept;
-		[[nodiscard]] bool canAppend(rox::core::usize size) const noexcept;
-		[[nodiscard]] rox::core::usize growthStorageCapacity(rox::core::usize required) const noexcept;
+		[[nodiscard]] bool canAppend(usize size) const noexcept;
+		[[nodiscard]] usize growthStorageCapacity(usize required) const noexcept;
 
 		[[nodiscard]] ROXELL_FORCE_INLINE bool appendAsciiWithinCapacity(const char ascii) noexcept
 		{
-			const rox::core::usize storageSize = m_Storage.Size();
+			const usize storageSize = m_Storage.Size();
 			if (storageSize == 0 || storageSize >= m_Storage.Capacity())
 			{
 				return false;

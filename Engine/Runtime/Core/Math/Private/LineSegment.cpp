@@ -13,7 +13,7 @@ namespace rox::math
 	{
 		const Vector3<T> a = segment.Start.Abs();
 		const Vector3<T> b = segment.End.Abs();
-		const T magnitude = rox::core::Max({a.X, a.Y, a.Z, b.X, b.Y, b.Z});
+		const T magnitude = core::Max({a.X, a.Y, a.Z, b.X, b.Y, b.Z});
 		int exponent = 0;
 		std::frexp(magnitude, &exponent);
 		const T scale = std::scalbn(T(1), exponent - 1);
@@ -30,13 +30,13 @@ namespace rox::math
 			return T(0);
 		}
 
-		return rox::core::ClampValue((point / scale - start).Dot(direction) / squared, T(0), T(1));
+		return core::ClampValue((point / scale - start).Dot(direction) / squared, T(0), T(1));
 	}
 
 	template <MathScalar T>
 	static T geometrySegmentMagnitude(T value) noexcept
 	{
-		return value > rox::core::NumericLimits<T>::max() ? rox::core::NumericLimits<T>::infinity()
+		return value > core::NumericLimits<T>::max() ? core::NumericLimits<T>::infinity()
 		                                                  : static_cast<T>(value);
 	}
 
@@ -56,7 +56,7 @@ namespace rox::math
 	Vector3<T> LineSegment<T>::At(T parameter) const noexcept
 	{
 		ASSERT(IsValid(), "Segment endpoints must be finite.");
-		ASSERT(rox::core::IsFinite(parameter) && parameter >= 0 && parameter <= 1, "Segment parameter must be finite and within zero and one.");
+		ASSERT(core::IsFinite(parameter) && parameter >= 0 && parameter <= 1, "Segment parameter must be finite and within zero and one.");
 		return geometrySegmentPoint<T>(*this, parameter);
 	}
 
@@ -64,7 +64,7 @@ namespace rox::math
 	T LineSegment<T>::Length() const noexcept
 	{
 		ASSERT(IsValid(), "Segment endpoints must be finite.");
-		return geometrySegmentMagnitude<T>(rox::core::Hypot(static_cast<T>(End.X) - Start.X, static_cast<T>(End.Y) - Start.Y, static_cast<T>(End.Z) - Start.Z));
+		return geometrySegmentMagnitude<T>(core::Hypot(static_cast<T>(End.X) - Start.X, static_cast<T>(End.Y) - Start.Y, static_cast<T>(End.Z) - Start.Z));
 	}
 
 	template <MathScalar T>
@@ -109,8 +109,8 @@ namespace rox::math
 	Box<T> LineSegment<T>::GetBounds() const noexcept
 	{
 		ASSERT(IsValid(), "Segment endpoints must be finite.");
-		return {{rox::core::Min(Start.X, End.X), rox::core::Min(Start.Y, End.Y), rox::core::Min(Start.Z, End.Z)},
-		        {rox::core::Max(Start.X, End.X), rox::core::Max(Start.Y, End.Y), rox::core::Max(Start.Z, End.Z)}};
+		return {{core::Min(Start.X, End.X), core::Min(Start.Y, End.Y), core::Min(Start.Z, End.Z)},
+		        {core::Max(Start.X, End.X), core::Max(Start.Y, End.Y), core::Max(Start.Z, End.Z)}};
 	}
 
 	template struct LineSegment<float32>;

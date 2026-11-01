@@ -74,7 +74,7 @@ namespace rox::core
 			}
 
 			ASSERT(false, "Schema catalog JSON failure mapping requires a concrete failure.");
-			return Result<Array<Byte>>::Success(rox::core::Move(unused));
+			return Result<Array<Byte>>::Success(core::Move(unused));
 		}
 
 		[[nodiscard]] bool consumeValue(WriteContext* const context, const uint32 depth) noexcept
@@ -110,7 +110,7 @@ namespace rox::core
 			return true;
 		}
 
-		[[nodiscard]] bool appendText(WriteContext* const context, const rox::core::StringView text) noexcept
+		[[nodiscard]] bool appendText(WriteContext* const context, const StringView text) noexcept
 		{
 			ASSERT(context != nullptr, "Schema catalog JSON text writing requires a valid context.");
 
@@ -135,7 +135,7 @@ namespace rox::core
 			return true;
 		}
 
-		[[nodiscard]] bool appendJsonString(WriteContext* const context, const rox::core::StringView text) noexcept
+		[[nodiscard]] bool appendJsonString(WriteContext* const context, const StringView text) noexcept
 		{
 			if (!IsValidUtf8(StringView(text.data(), text.size())))
 			{
@@ -200,7 +200,7 @@ namespace rox::core
 					{
 						const char escaped[] = {
 						    '\\', 'u', '0', '0', HEX_DIGITS[(value >> 4) & 0xf], HEX_DIGITS[value & 0xf]};
-						if (!appendText(context, rox::core::StringView(escaped, sizeof(escaped))))
+						if (!appendText(context, StringView(escaped, sizeof(escaped))))
 						{
 							return false;
 						}
@@ -220,28 +220,28 @@ namespace rox::core
 		[[nodiscard]] bool appendInteger(WriteContext* const context, const TValue value) noexcept
 		{
 			char text[32] = {};
-			const rox::core::ToCharsResult result = rox::core::ToChars(rox::core::Begin(text), rox::core::End(text), value);
-			ASSERT(result.ec == rox::core::EErrorCondition{}, "Schema catalog integer formatting must fit its fixed buffer.");
-			return appendText(context, rox::core::StringView(text, static_cast<rox::core::usize>(result.ptr - text)));
+			const core::ToCharsResult result = core::ToChars(core::Begin(text), core::End(text), value);
+			ASSERT(result.ec == core::EErrorCondition{}, "Schema catalog integer formatting must fit its fixed buffer.");
+			return appendText(context, StringView(text, static_cast<usize>(result.ptr - text)));
 		}
 
 		[[nodiscard]] bool appendFloat(WriteContext* const context, const float64 value) noexcept
 		{
-			if (!rox::core::IsFinite(value))
+			if (!core::IsFinite(value))
 			{
 				context->Failure = EWriteFailure::InvalidInput;
 				return false;
 			}
 			char text[64] = {};
-			const rox::core::ToCharsResult result = rox::core::ToChars(rox::core::Begin(text), rox::core::End(text), value == 0.0 ? 0.0 : value, rox::core::ECharsFormat::general, rox::core::NumericLimits<float64>::max_digits10);
+			const core::ToCharsResult result = core::ToChars(core::Begin(text), core::End(text), value == 0.0 ? 0.0 : value, core::ECharsFormat::general, NumericLimits<float64>::max_digits10);
 
-			if (result.ec != rox::core::EErrorCondition{})
+			if (result.ec != core::EErrorCondition{})
 			{
 				context->Failure = EWriteFailure::InvalidInput;
 				return false;
 			}
 
-			return appendText(context, rox::core::StringView(text, static_cast<rox::core::usize>(result.ptr - text)));
+			return appendText(context, StringView(text, static_cast<usize>(result.ptr - text)));
 		}
 
 		template <typename TTag>
@@ -257,7 +257,7 @@ namespace rox::core
 				text[index + 16] = HEX_DIGITS[(id.Low >> shift) & 0xf];
 			}
 
-			return appendJsonString(context, rox::core::StringView(text, sizeof(text)));
+			return appendJsonString(context, StringView(text, sizeof(text)));
 		}
 
 		template <typename TTag>
@@ -386,10 +386,10 @@ namespace rox::core
 					return false;
 				}
 
-				for (rox::core::usize index = 0; index < bytes->Size(); ++index)
+				for (usize index = 0; index < bytes->Size(); ++index)
 				{
 					if ((index != 0 && !appendByte(context, ',')) ||
-					    !appendInteger(context, rox::core::ToInteger<uint8>((*bytes)[index])))
+					    !appendInteger(context, core::ToInteger<uint8>((*bytes)[index])))
 					{
 						return false;
 					}
@@ -407,7 +407,7 @@ namespace rox::core
 					return false;
 				}
 
-				for (rox::core::usize index = 0; index < values->Size(); ++index)
+				for (usize index = 0; index < values->Size(); ++index)
 				{
 					if ((index != 0 && !appendByte(context, ',')) || !appendValue(context, (*values)[index], depth + 1))
 					{
@@ -434,7 +434,7 @@ namespace rox::core
 			return value != nullptr ? appendValue(context, *value, depth) : appendText(context, "null");
 		}
 
-		[[nodiscard]] bool appendOptionalLength(WriteContext* const context, const rox::core::Optional<uint64>& value) noexcept
+		[[nodiscard]] bool appendOptionalLength(WriteContext* const context, const core::Optional<uint64>& value) noexcept
 		{
 			return value.has_value() ? appendInteger(context, *value) : appendText(context, "null");
 		}
@@ -503,12 +503,12 @@ namespace rox::core
 
 				first = false;
 				char bits[20];
-				const ToCharsResult converted = rox::core::ToChars(bits, bits + sizeof(bits), entry.Bits);
-				ASSERT(converted.ec == rox::core::EErrorCondition{}, "Enum bits must fit the uint64 decimal buffer.");
+				const ToCharsResult converted = core::ToChars(bits, bits + sizeof(bits), entry.Bits);
+				ASSERT(converted.ec == core::EErrorCondition{}, "Enum bits must fit the uint64 decimal buffer.");
 				if (!appendText(context, "{\"name\":") ||
 					!appendJsonString(context, entry.Name) ||
 				    !appendText(context, ",\"bits\":") ||
-				    !appendJsonString(context, {bits, static_cast<rox::core::usize>(converted.ptr - bits)}) ||
+				    !appendJsonString(context, {bits, static_cast<usize>(converted.ptr - bits)}) ||
 				    !appendByte(context, '}'))
 				{
 					return false;
@@ -682,7 +682,7 @@ namespace rox::core
 				ASSERT(bAdded, "Reserved schema catalog field order must accept every field.");
 			}
 
-			rox::core::Sort(fields.begin(), fields.end(),
+			core::Sort(fields.begin(), fields.end(),
 			          [](const SchemaFieldDescriptor* const left, const SchemaFieldDescriptor* const right) noexcept
 			          {
 				          ASSERT(left != nullptr && right != nullptr, "Schema catalog field ordering requires valid descriptors.");
@@ -698,7 +698,7 @@ namespace rox::core
 				return false;
 			}
 
-			for (rox::core::usize index = 0; index < fields.Size(); ++index)
+			for (usize index = 0; index < fields.Size(); ++index)
 			{
 				if ((index != 0 && !appendByte(context, ',')) || !appendField(context, *fields[index]))
 				{
@@ -726,13 +726,13 @@ namespace rox::core
 			return failureResult(EWriteFailure::Memory, resource);
 		}
 
-		for (rox::core::usize index = 0; index < registry.GetSchemaCount(); ++index)
+		for (usize index = 0; index < registry.GetSchemaCount(); ++index)
 		{
 			const bool bAdded = schemas.Add(&registry.GetSchemaByIndex(index));
 			ASSERT(bAdded, "Reserved schema catalog ordering storage must accept every schema.");
 		}
 
-		rox::core::Sort(schemas.begin(), schemas.end(),
+		core::Sort(schemas.begin(), schemas.end(),
 		          [](const SchemaDescriptor* const left, const SchemaDescriptor* const right) noexcept
 		          {
 			          ASSERT(left != nullptr && right != nullptr, "Schema catalog ordering requires valid descriptors.");
@@ -746,7 +746,7 @@ namespace rox::core
 			return failureResult(context.Failure, resource);
 		}
 
-		for (rox::core::usize index = 0; index < schemas.Size(); ++index)
+		for (usize index = 0; index < schemas.Size(); ++index)
 		{
 			if ((index != 0 && !appendByte(&context, ',')) || !appendSchema(&context, *schemas[index], resource))
 			{
@@ -760,6 +760,6 @@ namespace rox::core
 		}
 
 		ASSERT(context.Failure == EWriteFailure::None && output.Size() <= limits.MaximumBytes, "A successful schema catalog JSON write must satisfy its limits.");
-		return Result<Array<Byte>>::Success(rox::core::Move(output));
+		return Result<Array<Byte>>::Success(core::Move(output));
 	}
 } // namespace rox::core

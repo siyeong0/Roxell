@@ -7,7 +7,7 @@
 
 namespace rox::core
 {
-	inline constexpr rox::core::StaticArray<uint32, 64> ROUND_CONSTANTS = {
+	inline constexpr StaticArray<uint32, 64> ROUND_CONSTANTS = {
 		0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u, 0x3956c25bu, 0x59f111f1u, 0x923f82a4u, 0xab1c5ed5u,
 		0xd807aa98u, 0x12835b01u, 0x243185beu, 0x550c7dc3u, 0x72be5d74u, 0x80deb1feu, 0x9bdc06a7u, 0xc19bf174u,
 		0xe49b69c1u, 0xefbe4786u, 0x0fc19dc6u, 0x240ca1ccu, 0x2de92c6fu, 0x4a7484aau, 0x5cb0a9dcu, 0x76f988dau,
@@ -18,12 +18,12 @@ namespace rox::core
 		0x748f82eeu, 0x78a5636fu, 0x84c87814u, 0x8cc70208u, 0x90befffau, 0xa4506cebu, 0xbef9a3f7u, 0xc67178f2u};
 
 	// Blocks contain count * 64 readable bytes. State is the eight host-endian SHA-256 words.
-	void ProcessScalarBlocks(const uint8* blocks, rox::core::usize count, rox::core::StaticArray<uint32, 8>& state) noexcept;
+	void ProcessScalarBlocks(const uint8* blocks, usize count, StaticArray<uint32, 8>& state) noexcept;
 
 	[[nodiscard]] bool IsHardwareSupported() noexcept;
 
 	// Requires IsHardwareSupported(); kept private so callers cannot bypass CPU admission.
-	void ProcessHardwareBlocks(const uint8* blocks, rox::core::usize count, rox::core::StaticArray<uint32, 8>& state) noexcept;
+	void ProcessHardwareBlocks(const uint8* blocks, usize count, StaticArray<uint32, 8>& state) noexcept;
 
-	void ProcessBlocks(const uint8* blocks, rox::core::usize count, rox::core::StaticArray<uint32, 8>& state) noexcept;
+	void ProcessBlocks(const uint8* blocks, usize count, StaticArray<uint32, 8>& state) noexcept;
 } // namespace rox::core

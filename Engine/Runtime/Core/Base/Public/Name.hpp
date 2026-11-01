@@ -20,7 +20,7 @@ namespace rox::core
 
 		StringView View() const noexcept { return m_Text; }
 		bool IsEmpty() const noexcept { return m_Text.IsEmpty(); }
-		rox::core::uint64 GetHash() const noexcept { return m_Hash; }
+		uint64 GetHash() const noexcept { return m_Hash; }
 
 		bool operator==(Name right) const noexcept
 		{
@@ -30,7 +30,7 @@ namespace rox::core
 
 		auto operator<=>(Name right) const noexcept
 		{
-			return static_cast<rox::core::StringView>(m_Text) <=> static_cast<rox::core::StringView>(right.m_Text);
+			return static_cast<StringView>(m_Text) <=> static_cast<StringView>(right.m_Text);
 		}
 
 	private:
@@ -43,12 +43,12 @@ namespace rox::core
 	private:
 		StringView m_Text;
 
-		rox::core::uint64 m_Hash = 0;
+		uint64 m_Hash = 0;
 	};
 
 	template <> struct DefaultHash<Name>
 	{
-		rox::core::uint64 operator()(Name name) const noexcept { return name.GetHash(); }
+		uint64 operator()(Name name) const noexcept { return name.GetHash(); }
 	};
 
 }

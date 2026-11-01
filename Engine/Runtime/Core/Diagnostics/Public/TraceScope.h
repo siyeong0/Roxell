@@ -12,10 +12,10 @@ namespace rox::core
 	{
 	public:
 #if ROXELL_ENABLE_PROFILING
-		TraceScope(rox::core::DiagnosticText category, rox::core::DiagnosticText name, ETraceChannel channel = ETraceChannel::Default) noexcept;
+		TraceScope(DiagnosticText category, DiagnosticText name, ETraceChannel channel = ETraceChannel::Default) noexcept;
 		~TraceScope() noexcept;
 #else
-		TraceScope(rox::core::DiagnosticText, rox::core::DiagnosticText, ETraceChannel = ETraceChannel::Default) noexcept {}
+		TraceScope(DiagnosticText, DiagnosticText, ETraceChannel = ETraceChannel::Default) noexcept {}
 		~TraceScope() noexcept = default;
 #endif
 
@@ -29,8 +29,8 @@ namespace rox::core
 		ITraceSink* m_Sink = nullptr;
 		TraceEvent m_Event;
 
-		rox::core::uint64 m_PreviousScope = 0;
-		rox::core::uint64 m_PreviousCapture = 0;
+		uint64 m_PreviousScope = 0;
+		uint64 m_PreviousCapture = 0;
 #endif
 	};
 }

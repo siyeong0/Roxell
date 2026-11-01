@@ -61,7 +61,7 @@ namespace rox::math
 
 		[[nodiscard]] bool IsFinite() const noexcept
 		{
-			return rox::core::IsFinite(X) && rox::core::IsFinite(Y) && rox::core::IsFinite(Z) && rox::core::IsFinite(W);
+			return core::IsFinite(X) && core::IsFinite(Y) && core::IsFinite(Z) && core::IsFinite(W);
 		}
 
 		[[nodiscard]] constexpr Quaternion<T> Conjugated() const noexcept
@@ -141,14 +141,14 @@ namespace rox::math
 		Quaternion<T> Twist = Quaternion<T>::Identity();
 	};
 
-	static_assert(rox::core::IsStandardLayout<QuaternionAxisAngle<float32>> && rox::core::IsTriviallyCopyable<QuaternionAxisAngle<float32>>);
-	static_assert(rox::core::IsStandardLayout<QuaternionAxisAngle<float64>> && rox::core::IsTriviallyCopyable<QuaternionAxisAngle<float64>>);
-	static_assert(rox::core::IsStandardLayout<QuaternionSwingTwist<float32>> && rox::core::IsTriviallyCopyable<QuaternionSwingTwist<float32>>);
-	static_assert(rox::core::IsStandardLayout<QuaternionSwingTwist<float64>> && rox::core::IsTriviallyCopyable<QuaternionSwingTwist<float64>>);
+	static_assert(core::IsStandardLayout<QuaternionAxisAngle<float32>> && core::IsTriviallyCopyable<QuaternionAxisAngle<float32>>);
+	static_assert(core::IsStandardLayout<QuaternionAxisAngle<float64>> && core::IsTriviallyCopyable<QuaternionAxisAngle<float64>>);
+	static_assert(core::IsStandardLayout<QuaternionSwingTwist<float32>> && core::IsTriviallyCopyable<QuaternionSwingTwist<float32>>);
+	static_assert(core::IsStandardLayout<QuaternionSwingTwist<float64>> && core::IsTriviallyCopyable<QuaternionSwingTwist<float64>>);
 	static_assert(sizeof(Quaternion<float32>) == sizeof(float32) * 4);
 	static_assert(sizeof(Quaternion<float64>) == sizeof(float64) * 4);
 	static_assert(offsetof(Quaternion<float32>, W) == sizeof(float32) * 3);
 	static_assert(offsetof(Quaternion<float64>, W) == sizeof(float64) * 3);
-	static_assert(rox::core::IsStandardLayout<Quaternion<float32>> && rox::core::IsTriviallyCopyable<Quaternion<float32>>);
-	static_assert(rox::core::IsStandardLayout<Quaternion<float64>> && rox::core::IsTriviallyCopyable<Quaternion<float64>>);
+	static_assert(core::IsStandardLayout<Quaternion<float32>> && core::IsTriviallyCopyable<Quaternion<float32>>);
+	static_assert(core::IsStandardLayout<Quaternion<float64>> && core::IsTriviallyCopyable<Quaternion<float64>>);
 } // namespace rox::math

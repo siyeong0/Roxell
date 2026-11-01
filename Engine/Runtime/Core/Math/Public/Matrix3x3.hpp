@@ -129,6 +129,6 @@ namespace rox::math
 	static_assert(sizeof(Matrix3x3<float64>::Storage) == sizeof(float64) * 9);
 	static_assert(offsetof(Matrix3x3<float32>, M) == 0);
 	static_assert(offsetof(Matrix3x3<float64>, M) == 0);
-	static_assert(rox::core::IsStandardLayout<Matrix3x3<float32>> && rox::core::IsTriviallyCopyable<Matrix3x3<float32>>);
-	static_assert(rox::core::IsStandardLayout<Matrix3x3<float64>> && rox::core::IsTriviallyCopyable<Matrix3x3<float64>>);
+	static_assert(core::IsStandardLayout<Matrix3x3<float32>> && core::IsTriviallyCopyable<Matrix3x3<float32>>);
+	static_assert(core::IsStandardLayout<Matrix3x3<float64>> && core::IsTriviallyCopyable<Matrix3x3<float64>>);
 } // namespace rox::math

@@ -30,10 +30,10 @@ namespace rox::core
 		uint64 MaxValues = 1'000'000;
 	};
 
-	[[nodiscard]] Result<Value> ReadCanonicalJson(rox::core::Span<const Byte> bytes, const SchemaDescriptor& schema, const JsonReadLimits& limits);
-	[[nodiscard]] Result<Value> ReadCanonicalJson(rox::core::Span<const Byte> bytes, TypeId rootType, const SchemaRegistry& registry, const JsonReadLimits& limits);
-	[[nodiscard]] Result<Value> ReadCanonicalJson(rox::core::Span<const Byte> bytes, const SchemaDescriptor& schema, MemoryResource& resource, const JsonReadLimits& limits = {});
-	[[nodiscard]] Result<Value> ReadCanonicalJson(rox::core::Span<const Byte> bytes, TypeId rootType, const SchemaRegistry& registry, MemoryResource& resource, const JsonReadLimits& limits = {});
+	[[nodiscard]] Result<Value> ReadCanonicalJson(Span<const Byte> bytes, const SchemaDescriptor& schema, const JsonReadLimits& limits);
+	[[nodiscard]] Result<Value> ReadCanonicalJson(Span<const Byte> bytes, TypeId rootType, const SchemaRegistry& registry, const JsonReadLimits& limits);
+	[[nodiscard]] Result<Value> ReadCanonicalJson(Span<const Byte> bytes, const SchemaDescriptor& schema, MemoryResource& resource, const JsonReadLimits& limits = {});
+	[[nodiscard]] Result<Value> ReadCanonicalJson(Span<const Byte> bytes, TypeId rootType, const SchemaRegistry& registry, MemoryResource& resource, const JsonReadLimits& limits = {});
 
 	[[nodiscard]] Result<Array<Byte>> WriteCanonicalJson(const Value& value, const SchemaDescriptor& schema, MemoryResource& resource, const JsonWriteLimits& limits = {});
 	[[nodiscard]] Result<Array<Byte>> WriteCanonicalJson(const Value& value, TypeId rootType, const SchemaRegistry& registry, MemoryResource& resource, const JsonWriteLimits& limits = {});

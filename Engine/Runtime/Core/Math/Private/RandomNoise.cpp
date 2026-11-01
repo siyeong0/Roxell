@@ -35,7 +35,7 @@ namespace rox::math
 				value = absorbRandomWord(value, static_cast<uint64>(z));
 			}
 
-			if constexpr (rox::core::IsSame<T, float32>)
+			if constexpr (core::IsSame<T, float32>)
 			{
 				return static_cast<T>(value >> 40) * T(0x1p-24);
 			}
@@ -57,7 +57,7 @@ namespace rox::math
 	T RandomCounterFloat01(uint64 seed, uint64 counter, uint64 streamSelector) noexcept
 	{
 		const uint64 value = RandomCounterU64(seed, counter, streamSelector);
-		if constexpr (rox::core::IsSame<T, float32>)
+		if constexpr (core::IsSame<T, float32>)
 		{
 			return static_cast<T>(value >> 40) * T(0x1p-24);
 		}
@@ -70,9 +70,9 @@ namespace rox::math
 	template <MathScalar T>
 	T ValueNoise2D(const Vector2<T>& position, uint64 seed) noexcept
 	{
-		ASSERT(position.IsFinite() && rox::core::Abs(position.X) <= 1048576 && rox::core::Abs(position.Y) <= 1048576, "Random noise coordinates must be finite and within the supported range.");
-		const int64 x = static_cast<int64>(rox::core::Floor(position.X));
-		const int64 y = static_cast<int64>(rox::core::Floor(position.Y));
+		ASSERT(position.IsFinite() && core::Abs(position.X) <= 1048576 && core::Abs(position.Y) <= 1048576, "Random noise coordinates must be finite and within the supported range.");
+		const int64 x = static_cast<int64>(core::Floor(position.X));
+		const int64 y = static_cast<int64>(core::Floor(position.Y));
 		const T u = fade<T>(static_cast<T>(position.X) - x);
 		const T v = fade<T>(static_cast<T>(position.Y) - y);
 		const T a = noiseCorner<T>(seed, x, y, 0, false);
@@ -85,11 +85,11 @@ namespace rox::math
 	template <MathScalar T>
 	T ValueNoise3D(const Vector3<T>& position, uint64 seed) noexcept
 	{
-		ASSERT(position.IsFinite() && rox::core::Abs(position.X) <= 1048576 && rox::core::Abs(position.Y) <= 1048576 && rox::core::Abs(position.Z) <= 1048576,
+		ASSERT(position.IsFinite() && core::Abs(position.X) <= 1048576 && core::Abs(position.Y) <= 1048576 && core::Abs(position.Z) <= 1048576,
 		       "Random noise coordinates must be finite and within the supported range.");
-		const int64 x = static_cast<int64>(rox::core::Floor(position.X));
-		const int64 y = static_cast<int64>(rox::core::Floor(position.Y));
-		const int64 z = static_cast<int64>(rox::core::Floor(position.Z));
+		const int64 x = static_cast<int64>(core::Floor(position.X));
+		const int64 y = static_cast<int64>(core::Floor(position.Y));
+		const int64 z = static_cast<int64>(core::Floor(position.Z));
 		const T u = fade<T>(static_cast<T>(position.X) - x);
 		const T v = fade<T>(static_cast<T>(position.Y) - y);
 		const T w = fade<T>(static_cast<T>(position.Z) - z);
@@ -100,10 +100,10 @@ namespace rox::math
 			const T b = noiseCorner<T>(seed, x + 1, y, z + dz, true);
 			const T c = noiseCorner<T>(seed, x, y + 1, z + dz, true);
 			const T d = noiseCorner<T>(seed, x + 1, y + 1, z + dz, true);
-			slices[dz] = rox::core::LerpValue(rox::core::LerpValue(a, b, u), rox::core::LerpValue(c, d, u), v);
+			slices[dz] = core::LerpValue(core::LerpValue(a, b, u), core::LerpValue(c, d, u), v);
 		}
 
-		return rox::core::LerpValue(slices[0], slices[1], w);
+		return core::LerpValue(slices[0], slices[1], w);
 	}
 
 	template float32 RandomCounterFloat01(uint64 seed, uint64 counter, uint64 streamSelector) noexcept;

@@ -15,13 +15,13 @@ namespace rox::core
 	template <typename TKey> struct DefaultLess
 	{
 	private:
-		static constexpr bool TEXT_KEY = rox::core::IsSame<TKey, String> || rox::core::IsSame<TKey, StringView>;
+		static constexpr bool TEXT_KEY = IsSame<TKey, String> || IsSame<TKey, StringView>;
 
 	public:
 		template <typename TLeft, typename TRight>
 		[[nodiscard]] bool operator()(const TLeft& left, const TRight& right) const noexcept
-		    requires((TEXT_KEY && rox::core::IsNothrowConvertible<const TLeft&, StringView> && rox::core::IsNothrowConvertible<const TRight&, StringView>) ||
-		             (!TEXT_KEY && rox::core::IsNothrowInvocableR<bool, rox::core::Less<>, const TLeft&, const TRight&>))
+		    requires((TEXT_KEY && IsNothrowConvertible<const TLeft&, StringView> && IsNothrowConvertible<const TRight&, StringView>) ||
+		             (!TEXT_KEY && IsNothrowInvocableR<bool, core::Less<>, const TLeft&, const TRight&>))
 		{
 			if constexpr (TEXT_KEY)
 			{
@@ -30,7 +30,7 @@ namespace rox::core
 			}
 			else
 			{
-				return rox::core::Less<>{}(left, right);
+				return core::Less<>{}(left, right);
 			}
 		}
 	};

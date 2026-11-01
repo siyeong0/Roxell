@@ -55,6 +55,6 @@ namespace rox::math
 	static_assert(sizeof(Rect<float64>) == 4 * sizeof(float64) && alignof(Rect<float64>) == alignof(float64));
 	static_assert(offsetof(Rect<float32>, Min) == 0 && offsetof(Rect<float32>, Max) == 2 * sizeof(float32));
 	static_assert(offsetof(Rect<float64>, Min) == 0 && offsetof(Rect<float64>, Max) == 2 * sizeof(float64));
-	static_assert(rox::core::IsStandardLayout<Rect<float32>> && rox::core::IsTriviallyCopyable<Rect<float32>>);
-	static_assert(rox::core::IsStandardLayout<Rect<float64>> && rox::core::IsTriviallyCopyable<Rect<float64>>);
+	static_assert(core::IsStandardLayout<Rect<float32>> && core::IsTriviallyCopyable<Rect<float32>>);
+	static_assert(core::IsStandardLayout<Rect<float64>> && core::IsTriviallyCopyable<Rect<float64>>);
 } // namespace rox::math

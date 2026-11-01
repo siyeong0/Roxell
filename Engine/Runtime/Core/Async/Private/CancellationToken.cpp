@@ -11,11 +11,11 @@ namespace rox::core
 
 	bool CancellationToken::IsCancellationRequested() const noexcept
 	{
-		return m_State && m_State->DispatchPhase.load(rox::core::MemoryOrderAcquire) != detail::ECancellationDispatchPhase::Open;
+		return m_State && m_State->DispatchPhase.load(core::MemoryOrderAcquire) != detail::ECancellationDispatchPhase::Open;
 	}
 
 	CancellationToken::CancellationToken(SharedPtr<detail::CancellationState> state) noexcept
-	    : m_State(rox::core::Move(state))
+	    : m_State(core::Move(state))
 	{
 	}
 

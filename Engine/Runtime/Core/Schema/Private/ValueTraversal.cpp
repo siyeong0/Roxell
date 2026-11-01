@@ -23,7 +23,7 @@ namespace rox::core
 			ValueTraversalLimits Limits;
 
 			ValueTraversalSummary Summary;
-			rox::core::StaticArray<ValuePathSegment, ValueTraversalLimits::HARD_MAXIMUM_DEPTH> Path;
+			StaticArray<ValuePathSegment, ValueTraversalLimits::HARD_MAXIMUM_DEPTH> Path;
 
 			EWalkOutcome Visit(const Value& value, uint32 depth) noexcept
 			{
@@ -48,7 +48,7 @@ namespace rox::core
 
 				if (const Value::Array* array = value.GetArray())
 				{
-					for (rox::core::usize index = 0; index < array->Size(); ++index)
+					for (usize index = 0; index < array->Size(); ++index)
 					{
 						if (depth == Limits.MaximumDepth)
 						{
@@ -141,10 +141,10 @@ namespace rox::core
 					{
 						return copied;
 					}
-					output.AddRequired(rox::core::Move(copied).TakeValue());
+					output.AddRequired(core::Move(copied).TakeValue());
 				}
 
-				return Value::CreateArray(rox::core::Move(output));
+				return Value::CreateArray(core::Move(output));
 			}
 
 			if (const Value::Object* object = source.GetObject())
@@ -165,7 +165,7 @@ namespace rox::core
 					{
 						return copied;
 					}
-					output.Fields.InsertRequired(entry.GetKey(), rox::core::Move(copied).TakeValue());
+					output.Fields.InsertRequired(entry.GetKey(), core::Move(copied).TakeValue());
 				}
 
 				for (const Value::UnknownFieldMap::Entry& entry : object->UnknownFields)
@@ -183,10 +183,10 @@ namespace rox::core
 					{
 						return copied;
 					}
-					output.UnknownFields.InsertRequired(rox::core::Move(name).TakeValue(), rox::core::Move(copied).TakeValue());
+					output.UnknownFields.InsertRequired(core::Move(name).TakeValue(), core::Move(copied).TakeValue());
 				}
 
-				return Value::CreateObject(rox::core::Move(output), resource);
+				return Value::CreateObject(core::Move(output), resource);
 			}
 
 			return Result<Value>::Success(source);

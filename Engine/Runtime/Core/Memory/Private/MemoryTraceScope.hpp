@@ -31,7 +31,7 @@ namespace rox::core::detail
 		MemoryTraceScope(const MemoryTraceScope&) = delete;
 		MemoryTraceScope& operator=(const MemoryTraceScope&) = delete;
 
-		void Allocated(const void* address, rox::core::usize bytes) noexcept
+		void Allocated(const void* address, usize bytes) noexcept
 		{
 			if (m_bOuter)
 			{
@@ -39,7 +39,7 @@ namespace rox::core::detail
 			}
 		}
 
-		void Deallocating(const void* address, rox::core::usize bytes) noexcept
+		void Deallocating(const void* address, usize bytes) noexcept
 		{
 			if (m_bOuter)
 			{
@@ -55,8 +55,8 @@ namespace rox::core::detail
 #else
 	public:
 		explicit MemoryTraceScope(const void*) noexcept {}
-		void Allocated(const void*, rox::core::usize) noexcept {}
-		void Deallocating(const void*, rox::core::usize) noexcept {}
+		void Allocated(const void*, usize) noexcept {}
+		void Deallocating(const void*, usize) noexcept {}
 #endif
 	};
 }

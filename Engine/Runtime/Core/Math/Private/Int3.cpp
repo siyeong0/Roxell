@@ -93,36 +93,36 @@ namespace rox::math
 
 	Int3 Int3::Min(const Int3& other) const noexcept
 	{
-		return {rox::core::Min(X, other.X), rox::core::Min(Y, other.Y), rox::core::Min(Z, other.Z)};
+		return {core::Min(X, other.X), core::Min(Y, other.Y), core::Min(Z, other.Z)};
 	}
 
 	Int3 Int3::Max(const Int3& other) const noexcept
 	{
-		return {rox::core::Max(X, other.X), rox::core::Max(Y, other.Y), rox::core::Max(Z, other.Z)};
+		return {core::Max(X, other.X), core::Max(Y, other.Y), core::Max(Z, other.Z)};
 	}
 
 	Int3 Int3::Abs() const noexcept
 	{
-		return {detail::NarrowIntegerLane(rox::core::Abs(static_cast<int64>(X))),
-		        detail::NarrowIntegerLane(rox::core::Abs(static_cast<int64>(Y))),
-		        detail::NarrowIntegerLane(rox::core::Abs(static_cast<int64>(Z)))};
+		return {detail::NarrowIntegerLane(core::Abs(static_cast<int64>(X))),
+		        detail::NarrowIntegerLane(core::Abs(static_cast<int64>(Y))),
+		        detail::NarrowIntegerLane(core::Abs(static_cast<int64>(Z)))};
 	}
 
 	Int3 Int3::Clamped(const Int3& minimum, const Int3& maximum) const noexcept
 	{
 		ASSERT(minimum.X <= maximum.X && minimum.Y <= maximum.Y && minimum.Z <= maximum.Z, "Integer vector clamp bounds must be ordered.");
-		return {rox::core::ClampValue(X, minimum.X, maximum.X), 
-				rox::core::ClampValue(Y, minimum.Y, maximum.Y),
-		        rox::core::ClampValue(Z, minimum.Z, maximum.Z)};
+		return {core::ClampValue(X, minimum.X, maximum.X),
+				core::ClampValue(Y, minimum.Y, maximum.Y),
+		        core::ClampValue(Z, minimum.Z, maximum.Z)};
 	}
 
 	template <MathScalar T>
 	Int3 Int3::Floor(const Vector3<T>& value) noexcept
 	{
 		ASSERT(value.IsFinite(), "Integer vector conversion input must be finite.");
-		const T roundedX = rox::core::Floor(static_cast<T>(value.X));
-		const T roundedY = rox::core::Floor(static_cast<T>(value.Y));
-		const T roundedZ = rox::core::Floor(static_cast<T>(value.Z));
+		const T roundedX = core::Floor(static_cast<T>(value.X));
+		const T roundedY = core::Floor(static_cast<T>(value.Y));
+		const T roundedZ = core::Floor(static_cast<T>(value.Z));
 		ASSERT(detail::IsIntegerConversionRepresentable<T>(roundedX) && detail::IsIntegerConversionRepresentable<T>(roundedY) && detail::IsIntegerConversionRepresentable<T>(roundedZ),
 		       "Integer vector conversion result must be representable as int32.");
 		return {static_cast<int32>(roundedX), static_cast<int32>(roundedY), static_cast<int32>(roundedZ)};
@@ -132,9 +132,9 @@ namespace rox::math
 	Int3 Int3::Ceil(const Vector3<T>& value) noexcept
 	{
 		ASSERT(value.IsFinite(), "Integer vector conversion input must be finite.");
-		const T roundedX = rox::core::Ceil(static_cast<T>(value.X));
-		const T roundedY = rox::core::Ceil(static_cast<T>(value.Y));
-		const T roundedZ = rox::core::Ceil(static_cast<T>(value.Z));
+		const T roundedX = core::Ceil(static_cast<T>(value.X));
+		const T roundedY = core::Ceil(static_cast<T>(value.Y));
+		const T roundedZ = core::Ceil(static_cast<T>(value.Z));
 		ASSERT(detail::IsIntegerConversionRepresentable<T>(roundedX) && detail::IsIntegerConversionRepresentable<T>(roundedY) && detail::IsIntegerConversionRepresentable<T>(roundedZ),
 		       "Integer vector conversion result must be representable as int32.");
 		return {static_cast<int32>(roundedX), static_cast<int32>(roundedY), static_cast<int32>(roundedZ)};
@@ -144,9 +144,9 @@ namespace rox::math
 	Int3 Int3::Round(const Vector3<T>& value) noexcept
 	{
 		ASSERT(value.IsFinite(), "Integer vector conversion input must be finite.");
-		const T roundedX = rox::core::Round(static_cast<T>(value.X));
-		const T roundedY = rox::core::Round(static_cast<T>(value.Y));
-		const T roundedZ = rox::core::Round(static_cast<T>(value.Z));
+		const T roundedX = core::Round(static_cast<T>(value.X));
+		const T roundedY = core::Round(static_cast<T>(value.Y));
+		const T roundedZ = core::Round(static_cast<T>(value.Z));
 		ASSERT(detail::IsIntegerConversionRepresentable<T>(roundedX) && detail::IsIntegerConversionRepresentable<T>(roundedY) && detail::IsIntegerConversionRepresentable<T>(roundedZ),
 		       "Integer vector conversion result must be representable as int32.");
 		return {static_cast<int32>(roundedX), static_cast<int32>(roundedY), static_cast<int32>(roundedZ)};

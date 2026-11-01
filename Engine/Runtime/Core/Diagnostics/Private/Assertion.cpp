@@ -9,13 +9,13 @@ namespace rox::core
 {
 	namespace
 	{
-		rox::core::Atomic<AssertionFailureHandler> s_AssertionFailureHandler = nullptr;
+		Atomic<AssertionFailureHandler> s_AssertionFailureHandler = nullptr;
 		thread_local bool s_bReportingAssertion = false;
 	} // namespace
 
 	AssertionFailureHandler SetAssertionFailureHandler(const AssertionFailureHandler handler) noexcept
 	{
-		return s_AssertionFailureHandler.exchange(handler, rox::core::MemoryOrderAcqRel);
+		return s_AssertionFailureHandler.exchange(handler, core::MemoryOrderAcqRel);
 	}
 
 	void ReportAssertionFailure(const AssertionFailure& failure) noexcept
@@ -30,7 +30,7 @@ namespace rox::core
 		WriteLog({ELogLevel::Critical, "Assert", failure.Message, failure.Expression, failure.Source});
 		FlushLog();
 
-		if (const AssertionFailureHandler handler = s_AssertionFailureHandler.load(rox::core::MemoryOrderAcquire))
+		if (const AssertionFailureHandler handler = s_AssertionFailureHandler.load(core::MemoryOrderAcquire))
 		{
 			handler(failure);
 		}

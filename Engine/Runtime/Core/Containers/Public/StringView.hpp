@@ -17,7 +17,7 @@ namespace rox::core
 	class StringView
 	{
 	public:
-		static constexpr rox::core::usize NPOS = std::string_view::npos;
+		static constexpr usize NPOS = std::string_view::npos;
 
 		constexpr StringView() noexcept = default;
 
@@ -34,7 +34,7 @@ namespace rox::core
 		}
 
 		template <typename TPointer>
-		    requires rox::core::IsSame<TPointer, const char*> || rox::core::IsSame<TPointer, char*>
+		    requires IsSame<TPointer, const char*> || IsSame<TPointer, char*>
 		constexpr StringView(const TPointer& text) noexcept
 		    : StringView(std::string_view(text))
 		{
@@ -78,7 +78,7 @@ namespace rox::core
 		}
 
 
-		constexpr StringView(const char* data, const rox::core::usize size) noexcept
+		constexpr StringView(const char* data, const usize size) noexcept
 		    : m_Data(data)
 		    , m_Size(size)
 		{
@@ -94,7 +94,7 @@ namespace rox::core
 			ASSERT(m_Data != nullptr || m_Size == 0, "A non-empty StringView requires a valid data pointer.");
 		}
 
-		template <rox::core::usize Size>
+		template <usize Size>
 		constexpr StringView(const char (&text)[Size]) noexcept
 		    : m_Data(text)
 		    , m_Size(Size != 0 && text[Size - 1] == '\0' ? Size - 1 : Size)
@@ -103,15 +103,15 @@ namespace rox::core
 
 		[[nodiscard]] constexpr const char* Data() const noexcept { return m_Data; }
 
-		[[nodiscard]] constexpr rox::core::usize Size() const noexcept { return m_Size; }
+		[[nodiscard]] constexpr usize Size() const noexcept { return m_Size; }
 
 		[[nodiscard]] constexpr bool IsEmpty() const noexcept { return m_Size == 0; }
 
-		[[nodiscard]] constexpr StringView Substr(const rox::core::usize offset,
-		                                          const rox::core::usize count = NPOS) const noexcept
+		[[nodiscard]] constexpr StringView Substr(const usize offset,
+		                                          const usize count = NPOS) const noexcept
 		{
 			ASSERT(offset <= m_Size, "StringView::Substr offset must fit the viewed range.");
-			const rox::core::usize remaining = m_Size - offset;
+			const usize remaining = m_Size - offset;
 
 			StringView result = *this;
 			result.m_Data = m_Data == nullptr ? nullptr : m_Data + offset;
@@ -119,12 +119,12 @@ namespace rox::core
 			return result;
 		}
 
-		[[nodiscard]] constexpr rox::core::usize Find(const char value, const rox::core::usize start = 0) const noexcept
+		[[nodiscard]] constexpr usize Find(const char value, const usize start = 0) const noexcept
 		{
 			return static_cast<std::string_view>(*this).find(value, start);
 		}
 
-		[[nodiscard]] constexpr rox::core::usize Find(const StringView needle, const rox::core::usize start = 0) const noexcept
+		[[nodiscard]] constexpr usize Find(const StringView needle, const usize start = 0) const noexcept
 		{
 			return static_cast<std::string_view>(*this).find(static_cast<std::string_view>(needle), start);
 		}
@@ -143,7 +143,7 @@ namespace rox::core
 			return suffix.m_Size <= m_Size && (suffix.m_Size == 0 || CharacterTraits<char>::compare(m_Data + (m_Size - suffix.m_Size), suffix.m_Data, suffix.m_Size) == 0);
 		}
 
-		[[nodiscard]] constexpr char operator[](const rox::core::usize index) const noexcept
+		[[nodiscard]] constexpr char operator[](const usize index) const noexcept
 		{
 			ASSERT(index < m_Size, "StringView index must be within the viewed range.");
 			return m_Data[index];
@@ -220,7 +220,7 @@ namespace rox::core
 
 	private:
 		const char* m_Data = nullptr;
-		rox::core::usize m_Size = 0;
+		usize m_Size = 0;
 	};
 
 	[[nodiscard]] constexpr bool operator==(const StringView left, const StringView right) noexcept
@@ -236,7 +236,7 @@ namespace rox::core
 	}
 
 	// Bytes order as unsigned values, so the ordering matches Unicode code-point order for well-formed UTF-8.
-	[[nodiscard]] constexpr rox::core::StrongOrdering operator<=>(const StringView left, const StringView right) noexcept
+	[[nodiscard]] constexpr core::StrongOrdering operator<=>(const StringView left, const StringView right) noexcept
 	{
 		return static_cast<std::string_view>(left) <=> static_cast<std::string_view>(right);
 	}

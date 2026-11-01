@@ -68,6 +68,6 @@ namespace rox::math
 	static_assert(offsetof(AffineTransform2D<float64>, AxisX) == 0 && offsetof(AffineTransform2D<float64>, AxisY) == 2 * sizeof(float64));
 	static_assert(offsetof(AffineTransform2D<float32>, Translation) == 4 * sizeof(float32));
 	static_assert(offsetof(AffineTransform2D<float64>, Translation) == 4 * sizeof(float64));
-	static_assert(rox::core::IsStandardLayout<AffineTransform2D<float32>> && rox::core::IsTriviallyCopyable<AffineTransform2D<float32>>);
-	static_assert(rox::core::IsStandardLayout<AffineTransform2D<float64>> && rox::core::IsTriviallyCopyable<AffineTransform2D<float64>>);
+	static_assert(core::IsStandardLayout<AffineTransform2D<float32>> && core::IsTriviallyCopyable<AffineTransform2D<float32>>);
+	static_assert(core::IsStandardLayout<AffineTransform2D<float64>> && core::IsTriviallyCopyable<AffineTransform2D<float64>>);
 } // namespace rox::math

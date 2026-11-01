@@ -47,14 +47,14 @@ namespace rox::core
 		class BasicIterator final
 		{
 			template <bool> friend class BasicIterator;
-			using ListType = rox::core::Conditional<Const, const IntrusiveList, IntrusiveList>;
+			using ListType = core::Conditional<Const, const IntrusiveList, IntrusiveList>;
 
 		public:
-			using iterator_category = rox::core::ForwardIteratorTag;
+			using iterator_category = core::ForwardIteratorTag;
 			using value_type = T;
-			using difference_type = rox::core::isize;
-			using reference = rox::core::Conditional<Const, const T&, T&>;
-			using pointer = rox::core::Conditional<Const, const T*, T*>;
+			using difference_type = isize;
+			using reference = core::Conditional<Const, const T&, T&>;
+			using pointer = core::Conditional<Const, const T*, T*>;
 			BasicIterator() noexcept = default;
 			BasicIterator(const BasicIterator&) noexcept = default;
 			BasicIterator& operator=(const BasicIterator&) noexcept = default;
@@ -88,7 +88,7 @@ namespace rox::core
 		IntrusiveList(IntrusiveList&&) = delete;
 		IntrusiveList& operator=(IntrusiveList&&) = delete;
 
-		[[nodiscard]] rox::core::usize Size() const noexcept;
+		[[nodiscard]] usize Size() const noexcept;
 
 		[[nodiscard]] bool IsEmpty() const noexcept;
 
@@ -129,7 +129,7 @@ namespace rox::core
 	private:
 		T* m_First = nullptr;
 		T* m_Last = nullptr;
-		rox::core::usize m_Size = 0;
+		usize m_Size = 0;
 	};
 }
 
@@ -168,7 +168,7 @@ namespace rox::core
 	template <bool Const>
 	typename IntrusiveList<T, Member>::BasicIterator<Const>::pointer IntrusiveList<T, Member>::BasicIterator<Const>::operator->() const noexcept
 	{
-		return rox::core::AddressOf(operator*());
+		return core::AddressOf(operator*());
 	}
 
 	template <typename T, IntrusiveListHook<T> T::* Member>
@@ -212,7 +212,7 @@ namespace rox::core
 	}
 
 	template <typename T, IntrusiveListHook<T> T::* Member>
-	rox::core::usize IntrusiveList<T, Member>::Size() const noexcept
+	usize IntrusiveList<T, Member>::Size() const noexcept
 	{
 		return m_Size;
 	}
@@ -321,7 +321,7 @@ namespace rox::core
 	void IntrusiveList<T, Member>::InsertBefore(T& anchor, T& value) noexcept
 	{
 		ASSERT(Contains(anchor), "Intrusive operation requires membership in this list.");
-		insert(value, (anchor.*Member).m_Previous, rox::core::AddressOf(anchor));
+		insert(value, (anchor.*Member).m_Previous, core::AddressOf(anchor));
 	}
 
 	template <typename T, IntrusiveListHook<T> T::* Member>
@@ -399,7 +399,7 @@ namespace rox::core
 	void IntrusiveList<T, Member>::insert(T& value, T* previous, T* next) noexcept
 	{
 		ASSERT(!(value.*Member).IsLinked(), "Intrusive insertion requires an unlinked hook.");
-		ASSERT(m_Size < rox::core::NumericLimits<rox::core::usize>::max(), "Intrusive list size must remain representable.");
+		ASSERT(m_Size < NumericLimits<usize>::max(), "Intrusive list size must remain representable.");
 		auto& hook = value.*Member;
 		hook.m_Previous = previous;
 		hook.m_Next = next;
@@ -407,20 +407,20 @@ namespace rox::core
 
 		if (previous != nullptr)
 		{
-			(previous->*Member).m_Next = rox::core::AddressOf(value);
+			(previous->*Member).m_Next = core::AddressOf(value);
 		}
 		else
 		{
-			m_First = rox::core::AddressOf(value);
+			m_First = core::AddressOf(value);
 		}
 
 		if (next != nullptr)
 		{
-			(next->*Member).m_Previous = rox::core::AddressOf(value);
+			(next->*Member).m_Previous = core::AddressOf(value);
 		}
 		else
 		{
-			m_Last = rox::core::AddressOf(value);
+			m_Last = core::AddressOf(value);
 		}
 		++m_Size;
 	}

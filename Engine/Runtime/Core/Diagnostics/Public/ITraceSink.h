@@ -12,7 +12,7 @@ namespace rox::core
 
 		// Callbacks may overlap; queries must not change capture or filters. Recursive tracing is suppressed.
 		// Callbacks cannot replace the sink or alter active scopes. Zero disables collection; IDs reject stale scopes.
-		virtual rox::core::uint64 GetCaptureId() const noexcept { return 1; }
+		virtual uint64 GetCaptureId() const noexcept { return 1; }
 
 		// Filters run before clock and ID reads; scopes retain their initial decision.
 		virtual bool IsChannelEnabled(ETraceChannel) const noexcept { return true; }

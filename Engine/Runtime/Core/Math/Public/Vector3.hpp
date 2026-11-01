@@ -87,7 +87,7 @@ namespace rox::math
 
 		[[nodiscard]] bool IsFinite() const noexcept
 		{
-			return rox::core::IsFinite(X) && rox::core::IsFinite(Y) && rox::core::IsFinite(Z);
+			return core::IsFinite(X) && core::IsFinite(Y) && core::IsFinite(Z);
 		}
 
 		[[nodiscard]] bool TryNormalize(Vector3<T>* outNormalized, T epsilon = T(1.0e-8)) const noexcept;
@@ -135,9 +135,9 @@ namespace rox::math
 		// Alpha is unclamped; interpolation within [0,1] preserves finite endpoints without overflow.
 		[[nodiscard]] static constexpr Vector3<T> Lerp(const Vector3<T>& from, const Vector3<T>& to, T alpha) noexcept
 		{
-			return {rox::core::LerpValue(from.X, to.X, alpha), 
-					rox::core::LerpValue(from.Y, to.Y, alpha),
-			        rox::core::LerpValue(from.Z, to.Z, alpha)};
+			return {core::LerpValue(from.X, to.X, alpha),
+					core::LerpValue(from.Y, to.Y, alpha),
+			        core::LerpValue(from.Z, to.Z, alpha)};
 		}
 
 		[[nodiscard]] constexpr Vector3<T> operator+() const noexcept
@@ -234,6 +234,6 @@ namespace rox::math
 	static_assert(sizeof(Vector3<float64>) == sizeof(float64) * 3);
 	static_assert(offsetof(Vector3<float32>, Z) == sizeof(float32) * 2);
 	static_assert(offsetof(Vector3<float64>, Z) == sizeof(float64) * 2);
-	static_assert(rox::core::IsStandardLayout<Vector3<float32>> && rox::core::IsTriviallyCopyable<Vector3<float32>>);
-	static_assert(rox::core::IsStandardLayout<Vector3<float64>> && rox::core::IsTriviallyCopyable<Vector3<float64>>);
+	static_assert(core::IsStandardLayout<Vector3<float32>> && core::IsTriviallyCopyable<Vector3<float32>>);
+	static_assert(core::IsStandardLayout<Vector3<float64>> && core::IsTriviallyCopyable<Vector3<float64>>);
 } // namespace rox::math

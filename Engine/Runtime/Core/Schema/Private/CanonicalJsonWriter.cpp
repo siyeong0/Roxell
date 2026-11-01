@@ -48,8 +48,8 @@ namespace rox::core
 		struct Piece final
 		{
 			EPieceKind Kind = EPieceKind::Inline;
-			rox::core::StringView Text;
-			rox::core::usize Size = 0;
+			StringView Text;
+			usize Size = 0;
 			char Inline[64]{};
 		};
 
@@ -91,11 +91,11 @@ namespace rox::core
 
 			TypeId ObjectType;
 			TypeId ElementType;
-			rox::core::Span<const SchemaArrayDescriptor> NestedArrays;
+			Span<const SchemaArrayDescriptor> NestedArrays;
 			ESchemaValueKind Kind = ESchemaValueKind::Null;
 			ESchemaValueKind ElementKind = ESchemaValueKind::Null;
 
-			rox::core::usize Index = 0;
+			usize Index = 0;
 
 			bool bGeneric = false;
 			bool bFirst = true;
@@ -120,7 +120,7 @@ namespace rox::core
 				root.Schema = &schema;
 				root.Kind = ESchemaValueKind::Object;
 
-				if (!frames.Add(rox::core::Move(root)))
+				if (!frames.Add(core::Move(root)))
 				{
 					return allocationFailure<void>();
 				}
@@ -263,7 +263,7 @@ namespace rox::core
 						return failure<void>(EErrorCode::Unsupported, "ROX-CORE-JSON-WRITE-DEPTH-LIMIT", "The canonical JSON value exceeds the configured nesting depth.", "Reduce nesting or raise JsonWriteLimits::MaxDepth intentionally.");
 					}
 					// No references into frames survive growth; all payload views borrow immutable inputs.
-					if (!frames.Add(rox::core::Move(child)))
+					if (!frames.Add(core::Move(child)))
 					{
 						return allocationFailure<void>();
 					}
@@ -320,26 +320,26 @@ namespace rox::core
 					else
 					{
 						const char* const text = piece.Kind == EPieceKind::Inline ? piece.Inline : piece.Text.data();
-						rox::core::CopyBytes(cursor, text, piece.Size);
+						core::CopyBytes(cursor, text, piece.Size);
 						cursor += piece.Size;
 					}
 				}
 
 				ASSERT(cursor == reinterpret_cast<char*>(output.Data()) + m_ByteCount, "Canonical JSON emission must match its prepared exact byte count.");
-				return Result<Array<Byte>>::Success(rox::core::Move(output));
+				return Result<Array<Byte>>::Success(core::Move(output));
 			}
 
 		private:
 			Result<void> append(Piece piece)
 			{
-				rox::core::usize next = 0;
+				usize next = 0;
 
 				if (!AddMemorySize(m_ByteCount, piece.Size, &next) || static_cast<uint64>(next) > m_Limits.MaxBytes)
 				{
 					return byteLimitFailure();
 				}
 
-				if (!m_Pieces.Add(rox::core::Move(piece)))
+				if (!m_Pieces.Add(core::Move(piece)))
 				{
 					return allocationFailure<void>();
 				}
@@ -348,16 +348,16 @@ namespace rox::core
 				return Result<void>::Success();
 			}
 
-			Result<void> literal(const rox::core::StringView text)
+			Result<void> literal(const StringView text)
 			{
 				Piece piece;
 				piece.Kind = EPieceKind::Literal;
 				piece.Text = text;
 				piece.Size = text.size();
-				return append(rox::core::Move(piece));
+				return append(core::Move(piece));
 			}
 
-			Result<void> string(const rox::core::StringView text)
+			Result<void> string(const StringView text)
 			{
 				Piece piece;
 				piece.Kind = EPieceKind::EscapedString;
@@ -366,7 +366,7 @@ namespace rox::core
 
 				for (const unsigned char character : text)
 				{
-					const rox::core::usize bytes = escapedCharacter(character) != 0 ? 2 : character < 0x20 ? 6 : 1;
+					const usize bytes = escapedCharacter(character) != 0 ? 2 : character < 0x20 ? 6 : 1;
 
 					if (!AddMemorySize(piece.Size, bytes, &piece.Size))
 					{
@@ -374,10 +374,10 @@ namespace rox::core
 					}
 				}
 
-				return append(rox::core::Move(piece));
+				return append(core::Move(piece));
 			}
 
-			Result<void> key(const rox::core::StringView name, bool& bFirst)
+			Result<void> key(const StringView name, bool& bFirst)
 			{
 				if (!bFirst)
 				{
@@ -403,20 +403,20 @@ namespace rox::core
 			Result<void> integer(const T value)
 			{
 				Piece piece;
-				const ToCharsResult converted = rox::core::ToChars(piece.Inline, piece.Inline + sizeof(piece.Inline), value);
-				ASSERT(converted.ec == rox::core::EErrorCondition{}, "The integer buffer must hold every 64-bit decimal value.");
-				piece.Size = static_cast<rox::core::usize>(converted.ptr - piece.Inline);
-				return append(rox::core::Move(piece));
+				const ToCharsResult converted = core::ToChars(piece.Inline, piece.Inline + sizeof(piece.Inline), value);
+				ASSERT(converted.ec == core::EErrorCondition{}, "The integer buffer must hold every 64-bit decimal value.");
+				piece.Size = static_cast<usize>(converted.ptr - piece.Inline);
+				return append(core::Move(piece));
 			}
 
 			Result<void> floating(const float64 value)
 			{
-				ASSERT(rox::core::IsFinite(value), "Validated JSON numbers must be finite.");
+				ASSERT(core::IsFinite(value), "Validated JSON numbers must be finite.");
 				Piece piece;
 				// Only the pinned formatter is used; no library DOM, lexer or serializer owner is created.
 				const char* const end = nlohmann::detail::to_chars(piece.Inline, piece.Inline + sizeof(piece.Inline), value == 0.0 ? 0.0 : value);
-				piece.Size = static_cast<rox::core::usize>(end - piece.Inline);
-				return append(rox::core::Move(piece));
+				piece.Size = static_cast<usize>(end - piece.Inline);
+				return append(core::Move(piece));
 			}
 
 			Result<void> stableId(const StableValueId value)
@@ -433,7 +433,7 @@ namespace rox::core
 				}
 				piece.Inline[33] = '"';
 				piece.Size = 34;
-				return append(rox::core::Move(piece));
+				return append(core::Move(piece));
 			}
 
 			Result<void> prepareFields(const Value::Object& object, const SchemaDescriptor& schema,
@@ -454,7 +454,7 @@ namespace rox::core
 					}
 				}
 
-				rox::core::Sort(fields.begin(), fields.end(),
+				core::Sort(fields.begin(), fields.end(),
 				          [](const SchemaFieldDescriptor* left, const SchemaFieldDescriptor* right)
 				          {
 					          return left->ID < right->ID;
@@ -503,7 +503,7 @@ namespace rox::core
 						}
 
 						bFirst = false;
-						result = integer(rox::core::ToInteger<uint8>(byte));
+						result = integer(core::ToInteger<uint8>(byte));
 
 						if (!result)
 						{
@@ -524,7 +524,7 @@ namespace rox::core
 			const SchemaRegistry& m_Registry;
 			const JsonWriteLimits& m_Limits;
 
-			rox::core::usize m_ByteCount = 0;
+			usize m_ByteCount = 0;
 		};
 	} // namespace
 

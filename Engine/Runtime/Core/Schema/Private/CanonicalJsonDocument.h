@@ -15,7 +15,7 @@
 
 namespace rox::core
 {
-	inline constexpr rox::core::usize JSON_NO_NODE = rox::core::NumericLimits<rox::core::usize>::max();
+	inline constexpr usize JSON_NO_NODE = NumericLimits<usize>::max();
 
 	struct CanonicalJsonNode final
 	{
@@ -29,17 +29,17 @@ namespace rox::core
 			bool Boolean;
 		};
 
-		rox::core::usize Parent = JSON_NO_NODE;
-		rox::core::usize FirstChild = JSON_NO_NODE;
-		rox::core::usize LastChild = JSON_NO_NODE;
-		rox::core::usize NextSibling = JSON_NO_NODE;
-		rox::core::usize ChildCount = 0;
+		usize Parent = JSON_NO_NODE;
+		usize FirstChild = JSON_NO_NODE;
+		usize LastChild = JSON_NO_NODE;
+		usize NextSibling = JSON_NO_NODE;
+		usize ChildCount = 0;
 
-		rox::core::usize TextOffset = 0;
-		rox::core::usize TextSize = 0;
+		usize TextOffset = 0;
+		usize TextSize = 0;
 
-		rox::core::usize KeyOffset = 0;
-		rox::core::usize KeySize = 0;
+		usize KeyOffset = 0;
+		usize KeySize = 0;
 	};
 
 	struct CanonicalJsonDocument final
@@ -50,10 +50,10 @@ namespace rox::core
 		{
 		}
 
-		[[nodiscard]] rox::core::StringView GetText(rox::core::usize offset, rox::core::usize size) const noexcept
+		[[nodiscard]] StringView GetText(usize offset, usize size) const noexcept
 		{
 			ASSERT(offset <= Text.Size() && size <= Text.Size() - offset, "JSON text must stay inside decoded storage.");
-			return size == 0 ? rox::core::StringView{} : rox::core::StringView(Text.Data() + offset, size);
+			return size == 0 ? StringView{} : StringView(Text.Data() + offset, size);
 		}
 
 		Array<CanonicalJsonNode> Nodes;
@@ -63,7 +63,7 @@ namespace rox::core
 	class CanonicalJsonView final
 	{
 	public:
-		CanonicalJsonView(const CanonicalJsonDocument& document, const rox::core::usize index) noexcept
+		CanonicalJsonView(const CanonicalJsonDocument& document, const usize index) noexcept
 		    : m_Document(document)
 		    , m_Index(index)
 		{
@@ -112,18 +112,18 @@ namespace rox::core
 			                           : node().Floating;
 		}
 
-		[[nodiscard]] rox::core::StringView GetString() const noexcept
+		[[nodiscard]] StringView GetString() const noexcept
 		{
 			ASSERT(IsString(), "JSON string access requires string storage.");
 			return m_Document.GetText(node().TextOffset, node().TextSize);
 		}
 
-		[[nodiscard]] rox::core::StringView GetKey() const noexcept
+		[[nodiscard]] StringView GetKey() const noexcept
 		{
 			return m_Document.GetText(node().KeyOffset, node().KeySize);
 		}
 
-		[[nodiscard]] rox::core::usize Size() const noexcept
+		[[nodiscard]] usize Size() const noexcept
 		{
 			ASSERT(IsArray() || IsObject(), "JSON child count requires a container.");
 			return node().ChildCount;
@@ -132,7 +132,7 @@ namespace rox::core
 		class Iterator final
 		{
 		public:
-			Iterator(const CanonicalJsonDocument& document, const rox::core::usize index) noexcept
+			Iterator(const CanonicalJsonDocument& document, const usize index) noexcept
 			    : m_Document(document)
 			    , m_Index(index)
 			{
@@ -153,7 +153,7 @@ namespace rox::core
 
 		private:
 			const CanonicalJsonDocument& m_Document;
-			rox::core::usize m_Index;
+			usize m_Index;
 		};
 
 		[[nodiscard]] Iterator begin() const noexcept { return {m_Document, node().FirstChild}; }
@@ -164,8 +164,8 @@ namespace rox::core
 
 	private:
 		const CanonicalJsonDocument& m_Document;
-		rox::core::usize m_Index;
+		usize m_Index;
 	};
 
-	[[nodiscard]] Result<CanonicalJsonDocument> ParseCanonicalJsonDocument(rox::core::Span<const Byte> bytes, MemoryResource& resource);
+	[[nodiscard]] Result<CanonicalJsonDocument> ParseCanonicalJsonDocument(Span<const Byte> bytes, MemoryResource& resource);
 } // namespace rox::core

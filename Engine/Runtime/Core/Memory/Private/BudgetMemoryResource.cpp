@@ -53,7 +53,7 @@ namespace rox::core
 
 		if (bLimitExceeded)
 		{
-			if (m_RejectedAllocationCount != rox::core::NumericLimits<usize>::max())
+			if (m_RejectedAllocationCount != NumericLimits<usize>::max())
 			{
 				++m_RejectedAllocationCount;
 			}
@@ -75,7 +75,7 @@ namespace rox::core
 		if (memory != nullptr)
 		{
 			m_UsedByteCount += allocation.ByteCount;
-			m_PeakByteCount = rox::core::Max(m_PeakByteCount, m_UsedByteCount);
+			m_PeakByteCount = core::Max(m_PeakByteCount, m_UsedByteCount);
 		}
 
 		unlockState();

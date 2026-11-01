@@ -20,8 +20,8 @@ namespace rox::core
 	{
 		EValuePathKind Kind = EValuePathKind::Field;
 		FieldId Field;
-		rox::core::StringView UnknownField;
-		rox::core::usize Index = 0;
+		StringView UnknownField;
+		usize Index = 0;
 	};
 
 	enum class EValueVisitControl : uint8

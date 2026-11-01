@@ -13,12 +13,12 @@ namespace rox::core
 {
 	namespace
 	{
-		void executeRange(rox::core::usize begin, rox::core::usize end, FunctionRef<void(rox::core::usize, JobContext&) noexcept> body,
-		                  LinearMemoryResource& scratch, rox::core::usize workerIndex,
+		void executeRange(usize begin, usize end, FunctionRef<void(usize, JobContext&) noexcept> body,
+		                  LinearMemoryResource& scratch, usize workerIndex,
 		                  const CancellationToken& cancellation = {},
 		                  EJobExecutionContext executionContext = EJobExecutionContext::AnyThread) noexcept
 		{
-			for (rox::core::usize index = begin; index < end; ++index)
+			for (usize index = begin; index < end; ++index)
 			{
 				JobExecutionScope scope(scratch, workerIndex, cancellation, executionContext);
 				body(index, *CurrentJobExecution()->Context);
@@ -26,8 +26,8 @@ namespace rox::core
 		}
 	}
 
-	void JobScheduler::ParallelFor(rox::core::usize begin, rox::core::usize end, rox::core::usize grain,
-	                               FunctionRef<void(rox::core::usize, JobContext&) noexcept> body) noexcept
+	void JobScheduler::ParallelFor(usize begin, usize end, usize grain,
+	                               FunctionRef<void(usize, JobContext&) noexcept> body) noexcept
 	{
 		ASSERT(begin <= end && grain > 0, "ParallelFor requires an ordered range and positive grain.");
 
@@ -65,30 +65,30 @@ namespace rox::core
 		}
 
 		const usize count = end - begin;
-		rox::core::Atomic<rox::core::usize> next = 0;
+		Atomic<usize> next = 0;
 		auto runner = [&](JobContext& context) noexcept
 		{
-			usize offset = next.load(rox::core::MemoryOrderRelaxed);
+			usize offset = next.load(core::MemoryOrderRelaxed);
 
 			while (offset < count)
 			{
-				const usize chunkEnd = offset + rox::core::Min(grain, count - offset);
+				const usize chunkEnd = offset + core::Min(grain, count - offset);
 
-				if (!next.compare_exchange_weak(offset, chunkEnd, rox::core::MemoryOrderRelaxed))
+				if (!next.compare_exchange_weak(offset, chunkEnd, core::MemoryOrderRelaxed))
 				{
 					continue;
 				}
 
 				executeRange(begin + offset, begin + chunkEnd, body, *CurrentJobExecution()->Scratch, context.WorkerIndex);
-				offset = next.load(rox::core::MemoryOrderRelaxed);
+				offset = next.load(core::MemoryOrderRelaxed);
 			}
 		};
 
-		const usize runnerCount = rox::core::Min(state.Config.WorkerCount, count / grain + (count % grain != 0));
+		const usize runnerCount = core::Min(state.Config.WorkerCount, count / grain + (count % grain != 0));
 		SmallVector<TaskHandle, 16> accepted(*m_Resource);
 		accepted.ReserveRequired(runnerCount);
 
-		for (rox::core::usize index = 0; index < runnerCount; ++index)
+		for (usize index = 0; index < runnerCount; ++index)
 		{
 			TaskHandle handle = submitOwned("ParallelFor", UniqueFunction<void(JobContext&) noexcept>(*m_Resource, runner), {}, {});
 
@@ -97,7 +97,7 @@ namespace rox::core
 				break;
 			}
 
-			accepted.AddRequired(rox::core::Move(handle));
+			accepted.AddRequired(core::Move(handle));
 		}
 
 		{

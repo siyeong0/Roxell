@@ -66,8 +66,8 @@ namespace rox::core
 		ASSERT(executionContext == EJobExecutionContext::AnyThread || executionContext == EJobExecutionContext::MainThread, "Job execution context must be a supported value.");
 		ASSERT(static_cast<bool>(identity), "Job state requires a live scheduler identity.");
 
-		return TaskHandle(rox::core::ConstructAt(static_cast<JobState*>(identity->Acquire(resource)), resource, identity,
-		                                   name, rox::core::Move(target), prerequisites, priority, cancellation,
+		return TaskHandle(core::ConstructAt(static_cast<JobState*>(identity->Acquire(resource)), resource, identity,
+		                                   name, core::Move(target), prerequisites, priority, cancellation,
 		                                   executionContext));
 	}
 
@@ -79,14 +79,14 @@ namespace rox::core
 
 	void JobState::Retain() noexcept
 	{
-		const usize previous = m_ReferenceCount.fetch_add(1, rox::core::MemoryOrderRelaxed);
+		const usize previous = m_ReferenceCount.fetch_add(1, core::MemoryOrderRelaxed);
 		ASSERT(previous != 0, "Job completion state must retain a live reference.");
-		ASSERT(previous != rox::core::NumericLimits<rox::core::usize>::max(), "Job completion reference count must not overflow.");
+		ASSERT(previous != NumericLimits<usize>::max(), "Job completion reference count must not overflow.");
 	}
 
 	void JobState::Release() noexcept
 	{
-		const usize previous = m_ReferenceCount.fetch_sub(1, rox::core::MemoryOrderAcqRel);
+		const usize previous = m_ReferenceCount.fetch_sub(1, core::MemoryOrderAcqRel);
 		ASSERT(previous != 0, "Job completion state must retain a live reference.");
 
 		if (previous == 1)
@@ -94,7 +94,7 @@ namespace rox::core
 			// Keep the pool alive while destruction releases the state's identity reference.
 			SharedPtr<JobSchedulerIdentity> identity = m_Identity;
 			MemoryResource* const resource = m_Resource;
-			rox::core::DestroyAt(this);
+			core::DestroyAt(this);
 			identity->Recycle(this, *resource);
 		}
 	}
@@ -114,7 +114,7 @@ namespace rox::core
 		m_bComplete.store(true, MemoryOrderRelease);
 	}
 
-	void JobState::PrepareQueueAdmission(const rox::core::usize sequence) noexcept
+	void JobState::PrepareQueueAdmission(const usize sequence) noexcept
 	{
 		ASSERT(m_QueueState == EQueueState::Unregistered && !IsComplete(), "A job enters its queue exactly once before execution.");
 
@@ -127,7 +127,7 @@ namespace rox::core
 	{
 		ASSERT(m_QueueState == EQueueState::Prepared && m_RemainingPrerequisites == 0, "Dependency linking requires a freshly prepared queue admission.");
 
-		for (rox::core::usize index = 0; index < m_Prerequisites.Size(); ++index)
+		for (usize index = 0; index < m_Prerequisites.Size(); ++index)
 		{
 			JobState& prerequisite = From(m_Prerequisites[index]);
 			if (prerequisite.IsComplete())
@@ -192,7 +192,7 @@ namespace rox::core
 	    , m_Name(name, resource)
 	    , m_Prerequisites(copyPrerequisites(resource, prerequisites))
 	    , m_DependencyLinks(resource)
-	    , m_Target(rox::core::Move(target))
+	    , m_Target(core::Move(target))
 	{
 	}
 
@@ -209,7 +209,7 @@ namespace rox::core
 		return true;
 	}
 
-	void JobState::Execute(LinearMemoryResource& scratch, rox::core::usize workerIndex) noexcept
+	void JobState::Execute(LinearMemoryResource& scratch, usize workerIndex) noexcept
 	{
 		detail::CleanupScope cleanup;
 		ASSERT(!IsComplete(), "Job execution requires incomplete state.");
@@ -217,7 +217,7 @@ namespace rox::core
 
 		{
 			const StringView name = m_Name.View();
-			ROX_PROFILE_SCOPE("Job", (rox::core::StringView{name.Data(), name.Size()}));
+			ROX_PROFILE_SCOPE("Job", (StringView{name.Data(), name.Size()}));
 			JobExecutionScope scope(scratch, workerIndex, m_Cancellation, m_ExecutionContext);
 			m_bSkipped = m_Cancellation.IsCancellationRequested();
 
@@ -230,7 +230,7 @@ namespace rox::core
 			m_Prerequisites.Clear();
 		}
 
-		m_bComplete.store(true, rox::core::MemoryOrderRelease);
+		m_bComplete.store(true, core::MemoryOrderRelease);
 	}
 
 	bool JobState::WasSkipped() const noexcept

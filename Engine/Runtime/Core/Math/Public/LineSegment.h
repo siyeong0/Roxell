@@ -35,6 +35,6 @@ namespace rox::math
 
 	static_assert(sizeof(LineSegment<float32>) == 2 * sizeof(Vector3<float32>));
 	static_assert(sizeof(LineSegment<float64>) == 2 * sizeof(Vector3<float64>));
-	static_assert(rox::core::IsStandardLayout<LineSegment<float32>> && rox::core::IsTriviallyCopyable<LineSegment<float32>>);
-	static_assert(rox::core::IsStandardLayout<LineSegment<float64>> && rox::core::IsTriviallyCopyable<LineSegment<float64>>);
+	static_assert(core::IsStandardLayout<LineSegment<float32>> && core::IsTriviallyCopyable<LineSegment<float32>>);
+	static_assert(core::IsStandardLayout<LineSegment<float64>> && core::IsTriviallyCopyable<LineSegment<float64>>);
 } // namespace rox::math
