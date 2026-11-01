@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "name": "Shader",
+  "path": "Engine/Runtime/Shader",
+  "status": "candidate-implementation",
+  "summary": "Immutable compiled shader assets, properties, pass/kernel selection, reflected layouts and CPU buffer packing.",
+  "dependencies": [
+    "Core"
+  ],
+  "targets": [
+    {
+      "name": "Runtime-Shader",
+      "kind": "STATIC",
+      "dependencies": [
+        "Runtime-Core"
+      ]
+    }
+  ],
+  "publicHeaders": [
+    "Public/Shader.h",
+    "Public/ShaderBufferWriter.h",
+    "Public/ShaderBuilder.h",
+    "Public/ShaderKernel.h",
+    "Public/ShaderLayout.h",
+    "Public/ShaderOptions.h",
+    "Public/ShaderPass.h",
+    "Public/ShaderProperty.h"
+  ]
+}
