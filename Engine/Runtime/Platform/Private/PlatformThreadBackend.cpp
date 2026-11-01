@@ -13,19 +13,21 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 #if !defined(_WIN32)
 	namespace
 	{
-		core::ThreadId identity(pthread_t thread) noexcept
+		ThreadId identity(pthread_t thread) noexcept
 		{
-			static_assert(sizeof(thread) <= sizeof(core::uint64));
-			core::ThreadId id{};
-			core::CopyBytes(&id.Value, &thread, sizeof(thread));
+			static_assert(sizeof(thread) <= sizeof(uint64));
+			ThreadId id{};
+			CopyBytes(&id.Value, &thread, sizeof(thread));
 
 			return id;
 		}
 
-		class PosixThreadBackend final : public core::IThreadBackend
+		class PosixThreadBackend final : public IThreadBackend
 		{
 			struct Handle
 			{
@@ -33,53 +35,53 @@ namespace rox::os
 			};
 			static void* run(void* context) noexcept
 			{
-				const core::NativeThreadEntry& entry = *static_cast<core::NativeThreadEntry*>(context);
+				const NativeThreadEntry& entry = *static_cast<NativeThreadEntry*>(context);
 				entry.Function(entry.Context);
 
 				return nullptr;
 			}
 
 		public:
-			core::NativeThreadStartResult Start(core::NativeThreadEntry& entry) noexcept override
+			NativeThreadStartResult Start(NativeThreadEntry& entry) noexcept override
 			{
 				ASSERT(entry.Function != nullptr, "Native thread requires an entry function.");
-				core::SystemMemoryResource& memory = core::SystemMemoryResource::Get();
-				Handle* handle = core::CreateObject<Handle>(memory);
+				SystemMemoryResource& memory = SystemMemoryResource::Get();
+				Handle* handle = CreateObject<Handle>(memory);
 
 				if (handle == nullptr)
 				{
-					return { {}, {core::EThreadStartStatus::NativeFailure, core::NativeOutOfMemory} };
+					return { {}, {EThreadStartStatus::NativeFailure, NativeOutOfMemory} };
 				}
 
 				const int error = pthread_create(&handle->Thread, nullptr, run, &entry);
 
 				if (error != 0)
 				{
-					core::DestroyObject(memory, handle);
+					DestroyObject(memory, handle);
 
-					return { {}, {core::EThreadStartStatus::NativeFailure, static_cast<core::uint32>(error)} };
+					return { {}, {EThreadStartStatus::NativeFailure, static_cast<uint32>(error)} };
 				}
 
-				return { {handle, identity(handle->Thread)}, {core::EThreadStartStatus::Started, 0} };
+				return { {handle, identity(handle->Thread)}, {EThreadStartStatus::Started, 0} };
 			}
 
-			void Join(core::NativeThread thread) noexcept override
+			void Join(NativeThread thread) noexcept override
 			{
 				Handle* handle = static_cast<Handle*>(thread.Handle);
 				ASSERT(handle != nullptr, "Native join requires owned thread storage.");
 				const int error = pthread_join(handle->Thread, nullptr);
 				ASSERT(error == 0, "Native join must observe complete termination.");
-				core::DestroyObject(core::SystemMemoryResource::Get(), handle);
+				DestroyObject(SystemMemoryResource::Get(), handle);
 			}
 
-			core::ThreadId CurrentThreadId() const noexcept override
+			ThreadId CurrentThreadId() const noexcept override
 			{
 				return identity(pthread_self());
 			}
 		};
 	} // namespace
 #endif
-	core::IThreadBackend& GetPlatformThreadBackend() noexcept
+	IThreadBackend& GetPlatformThreadBackend() noexcept
 	{
 #if defined(_WIN32)
 		static WindowsThreadBackend backend;

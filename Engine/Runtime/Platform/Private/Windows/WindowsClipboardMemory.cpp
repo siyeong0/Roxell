@@ -7,6 +7,8 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	WindowsClipboardMemory::~WindowsClipboardMemory() noexcept
 	{
 		if (m_bLocked)
@@ -21,16 +23,16 @@ namespace rox::os
 	}
 
 	WindowsClipboardMemory::WindowsClipboardMemory(WindowsClipboardMemory&& other) noexcept
-		: m_Handle(rox::core::Exchange(other.m_Handle, nullptr))
-		, m_bLocked(rox::core::Exchange(other.m_bLocked, false))
+		: m_Handle(Exchange(other.m_Handle, nullptr))
+		, m_bLocked(Exchange(other.m_bLocked, false))
 	{
 	}
 
-	core::Result<WindowsClipboardMemory> WindowsClipboardMemory::Allocate(core::uint32 bytes)
+	Result<WindowsClipboardMemory> WindowsClipboardMemory::Allocate(uint32 bytes)
 	{
 		if (bytes == 0 || bytes > 2 * (1'048'576 + 1))
 		{
-			return core::Result<WindowsClipboardMemory>::Failure(core::EErrorCode::InvalidArgument, "platform.window.clipboard", "Clipboard movable allocation exceeds its bound.");
+			return Result<WindowsClipboardMemory>::Failure(EErrorCode::InvalidArgument, "platform.window.clipboard", "Clipboard movable allocation exceeds its bound.");
 		}
 
 		WindowsClipboardMemory result;
@@ -38,25 +40,25 @@ namespace rox::os
 
 		if (result.m_Handle == nullptr)
 		{
-			return core::Result<WindowsClipboardMemory>::Failure(makeMemoryError("GlobalAlloc", GetLastError()));
+			return Result<WindowsClipboardMemory>::Failure(makeMemoryError("GlobalAlloc", GetLastError()));
 		}
 
-		return core::Result<WindowsClipboardMemory>::Success(rox::core::Move(result));
+		return Result<WindowsClipboardMemory>::Success(Move(result));
 	}
 
-	core::Result<void*> WindowsClipboardMemory::Lock()
+	Result<void*> WindowsClipboardMemory::Lock()
 	{
 		ASSERT(m_Handle != nullptr && !m_bLocked, "Lock requires one unlocked owned clipboard allocation.");
 		void* const view = GlobalLock(m_Handle);
 
 		if (view == nullptr)
 		{
-			return core::Result<void*>::Failure(makeMemoryError("GlobalLock", GetLastError()));
+			return Result<void*>::Failure(makeMemoryError("GlobalLock", GetLastError()));
 		}
 
 		m_bLocked = true;
 
-		return core::Result<void*>::Success(view);
+		return Result<void*>::Success(view);
 	}
 
 	void WindowsClipboardMemory::Unlock() noexcept
@@ -74,11 +76,11 @@ namespace rox::os
 		m_Handle = nullptr;
 	}
 
-	core::Error WindowsClipboardMemory::makeMemoryError(const char* operation, DWORD error)
+	Error WindowsClipboardMemory::makeMemoryError(const char* operation, DWORD error)
 	{
 		char message[128];
-		rox::core::FormatText(message, sizeof(message), "%s failed (Windows error %lu).", operation, error);
+		FormatText(message, sizeof(message), "%s failed (Windows error %lu).", operation, error);
 
-		return core::MakeError(core::EErrorCode::ExternalFailure, "platform.window.clipboard", core::StringView(message, rox::core::CStringLength(message)));
+		return MakeError(EErrorCode::ExternalFailure, "platform.window.clipboard", StringView(message, CStringLength(message)));
 	}
 }

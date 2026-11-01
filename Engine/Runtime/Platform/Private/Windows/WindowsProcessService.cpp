@@ -27,6 +27,8 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	namespace
 	{
 		class ImageHandle final
@@ -58,39 +60,39 @@ namespace rox::os
 			HANDLE m_Value;
 		};
 
-		core::Result<core::Hash256> imageFailure(core::StringView message)
+		Result<Hash256> imageFailure(StringView message)
 		{
-			return core::Result<core::Hash256>::Failure(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-IMAGE-READ", message,
+			return Result<Hash256>::Failure(EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-IMAGE-READ", message,
 				"Restore read access to the running executable and retry.");
 		}
 
-		constexpr core::uint32 PROCESS_READER_BUFFER_BYTE_COUNT = 4'096;
-		constexpr core::uint32 PROCESS_WORKER_JOIN_TIMEOUT_MILLISECONDS = 5'000;
-		constexpr rox::core::usize MAXIMUM_WINDOWS_COMMAND_LINE_CODE_UNITS = 32'767;
-		constexpr rox::core::usize MAXIMUM_WINDOWS_PROCESS_TEXT_UTF8_BYTES = (MAXIMUM_WINDOWS_COMMAND_LINE_CODE_UNITS - 1) * 4;
+		constexpr uint32 PROCESS_READER_BUFFER_BYTE_COUNT = 4'096;
+		constexpr uint32 PROCESS_WORKER_JOIN_TIMEOUT_MILLISECONDS = 5'000;
+		constexpr usize MAXIMUM_WINDOWS_COMMAND_LINE_CODE_UNITS = 32'767;
+		constexpr usize MAXIMUM_WINDOWS_PROCESS_TEXT_UTF8_BYTES = (MAXIMUM_WINDOWS_COMMAND_LINE_CODE_UNITS - 1) * 4;
 
-		rox::core::Atomic<core::uint64> s_ProcessServiceOwner = 1;
+		Atomic<uint64> s_ProcessServiceOwner = 1;
 
-		[[nodiscard]] core::Error makeProcessError(const core::EErrorCode code, const core::StringView diagnosticID,
-			const core::StringView message, const core::StringView recoveryHint)
+		[[nodiscard]] Error makeProcessError(const EErrorCode code, const StringView diagnosticID,
+			const StringView message, const StringView recoveryHint)
 		{
-			ASSERT(code != core::EErrorCode::None, "A process failure requires a non-success error code.");
+			ASSERT(code != EErrorCode::None, "A process failure requires a non-success error code.");
 			ASSERT(!diagnosticID.IsEmpty(), "A process failure requires a diagnostic ID.");
 			ASSERT(!message.IsEmpty(), "A process failure requires a message.");
 
-			return core::MakeError(code, diagnosticID, message, recoveryHint);
+			return MakeError(code, diagnosticID, message, recoveryHint);
 		}
 
-		[[nodiscard]] core::Result<ProcessHandle> makeLaunchCancelledResult()
+		[[nodiscard]] Result<ProcessHandle> makeLaunchCancelledResult()
 		{
-			return core::Result<ProcessHandle>::Failure(makeProcessError(core::EErrorCode::Cancelled, "ROX-PLATFORM-PROCESS-CANCELLED",
+			return Result<ProcessHandle>::Failure(makeProcessError(EErrorCode::Cancelled, "ROX-PLATFORM-PROCESS-CANCELLED",
 				"The process launch was cancelled before publication.",
 				"Retry the launch with a live cancellation token."));
 		}
 
-		[[nodiscard]] core::Result<ProcessExit> makeWaitCancelledResult()
+		[[nodiscard]] Result<ProcessExit> makeWaitCancelledResult()
 		{
-			return core::Result<ProcessExit>::Failure(makeProcessError(core::EErrorCode::Cancelled, "ROX-PLATFORM-PROCESS-WAIT-CANCELLED",
+			return Result<ProcessExit>::Failure(makeProcessError(EErrorCode::Cancelled, "ROX-PLATFORM-PROCESS-WAIT-CANCELLED",
 				"The process Wait observation was cancelled.",
 				"Wait again or terminate the process explicitly."));
 		}
@@ -186,7 +188,7 @@ namespace rox::os
 			AllocationFailed
 		};
 
-		[[nodiscard]] bool containsNull(const core::StringView text) noexcept
+		[[nodiscard]] bool containsNull(const StringView text) noexcept
 		{
 			for (const char value : text)
 			{
@@ -199,28 +201,28 @@ namespace rox::os
 			return false;
 		}
 
-		[[nodiscard]] ETextBuildResult convertUtf8ToWide(core::MemoryResource& resource, const core::StringView text,
-			const bool bAllowEmpty, core::Array<wchar_t>* const outText) noexcept
+		[[nodiscard]] ETextBuildResult convertUtf8ToWide(MemoryResource& resource, const StringView text,
+			const bool bAllowEmpty, Array<wchar_t>* const outText) noexcept
 		{
 			ASSERT(outText != nullptr, "UTF-8 process text conversion requires an output array.");
 			ASSERT(&outText->GetResource() == &resource, "UTF-8 process text conversion must use the requested memory resource.");
 
-			if ((!bAllowEmpty && text.IsEmpty()) || containsNull(text) || !core::IsValidUtf8(text) ||
-				text.Size() > static_cast<rox::core::usize>(rox::core::NumericLimits<int>::max()))
+			if ((!bAllowEmpty && text.IsEmpty()) || containsNull(text) || !IsValidUtf8(text) ||
+				text.Size() > static_cast<usize>(NumericLimits<int>::max()))
 			{
 				return ETextBuildResult::Invalid;
 			}
 
 			if (text.IsEmpty())
 			{
-				core::Array<wchar_t> converted(resource);
+				Array<wchar_t> converted(resource);
 
 				if (!converted.Add(L'\0'))
 				{
 					return ETextBuildResult::AllocationFailed;
 				}
 
-				*outText = rox::core::Move(converted);
+				*outText = Move(converted);
 
 				return ETextBuildResult::Success;
 			}
@@ -233,9 +235,9 @@ namespace rox::os
 				return ETextBuildResult::Invalid;
 			}
 
-			core::Array<wchar_t> converted(resource);
+			Array<wchar_t> converted(resource);
 
-			if (!converted.Resize(static_cast<rox::core::usize>(requiredSize) + 1))
+			if (!converted.Resize(static_cast<usize>(requiredSize) + 1))
 			{
 				return ETextBuildResult::AllocationFailed;
 			}
@@ -247,8 +249,8 @@ namespace rox::os
 				return ETextBuildResult::Invalid;
 			}
 
-			converted[static_cast<rox::core::usize>(requiredSize)] = L'\0';
-			*outText = rox::core::Move(converted);
+			converted[static_cast<usize>(requiredSize)] = L'\0';
+			*outText = Move(converted);
 
 			return ETextBuildResult::Success;
 		}
@@ -258,7 +260,7 @@ namespace rox::os
 			return value == L'\\' || value == L'/';
 		}
 
-		[[nodiscard]] bool isAbsoluteWindowsPath(const core::Array<wchar_t>& path) noexcept
+		[[nodiscard]] bool isAbsoluteWindowsPath(const Array<wchar_t>& path) noexcept
 		{
 			if (path.Size() < 4 || path.Back() != L'\0')
 			{
@@ -270,7 +272,7 @@ namespace rox::os
 			return bDriveRooted || bNetworkRooted;
 		}
 
-		[[nodiscard]] bool tryAddCommandCodeUnit(core::Array<wchar_t>& commandLine, const wchar_t value) noexcept
+		[[nodiscard]] bool tryAddCommandCodeUnit(Array<wchar_t>& commandLine, const wchar_t value) noexcept
 		{
 			if (commandLine.Size() >= MAXIMUM_WINDOWS_COMMAND_LINE_CODE_UNITS - 1)
 			{
@@ -280,10 +282,10 @@ namespace rox::os
 			return commandLine.Add(value);
 		}
 
-		[[nodiscard]] bool tryAddRepeatedCommandCodeUnit(core::Array<wchar_t>& commandLine, const wchar_t value,
-			const rox::core::usize count) noexcept
+		[[nodiscard]] bool tryAddRepeatedCommandCodeUnit(Array<wchar_t>& commandLine, const wchar_t value,
+			const usize count) noexcept
 		{
-			for (rox::core::usize index = 0; index < count; ++index)
+			for (usize index = 0; index < count; ++index)
 			{
 				if (!tryAddCommandCodeUnit(commandLine, value))
 				{
@@ -294,7 +296,7 @@ namespace rox::os
 			return true;
 		}
 
-		[[nodiscard]] bool tryAddQuotedArgument(core::Array<wchar_t>& commandLine, const wchar_t* const text, const rox::core::usize textSize) noexcept
+		[[nodiscard]] bool tryAddQuotedArgument(Array<wchar_t>& commandLine, const wchar_t* const text, const usize textSize) noexcept
 		{
 			ASSERT(text != nullptr || textSize == 0, "A non-empty process argument requires UTF-16 text.");
 
@@ -303,11 +305,11 @@ namespace rox::os
 				return false;
 			}
 
-			rox::core::usize index = 0;
+			usize index = 0;
 
 			while (index < textSize)
 			{
-				rox::core::usize backslashCount = 0;
+				usize backslashCount = 0;
 
 				while (index < textSize && text[index] == L'\\')
 				{
@@ -346,7 +348,7 @@ namespace rox::os
 			return tryAddCommandCodeUnit(commandLine, L'\"');
 		}
 
-		[[nodiscard]] ETextBuildResult buildCommandLine(core::MemoryResource& resource, const core::Array<wchar_t>& executable, const core::Span<const core::StringView> arguments, core::Array<wchar_t>* const outCommandLine) noexcept
+		[[nodiscard]] ETextBuildResult buildCommandLine(MemoryResource& resource, const Array<wchar_t>& executable, const Span<const StringView> arguments, Array<wchar_t>* const outCommandLine) noexcept
 		{
 			ASSERT(outCommandLine != nullptr, "Process command-line construction requires an output array.");
 			ASSERT(executable.Size() >= 2 && executable.Back() == L'\0', "Process command-line construction requires a terminated executable path.");
@@ -356,16 +358,16 @@ namespace rox::os
 				return ETextBuildResult::Invalid;
 			}
 
-			core::Array<wchar_t> commandLine(resource);
+			Array<wchar_t> commandLine(resource);
 
 			if (!tryAddQuotedArgument(commandLine, executable.Data(), executable.Size() - 1))
 			{
 				return commandLine.Size() >= MAXIMUM_WINDOWS_COMMAND_LINE_CODE_UNITS - 1 ? ETextBuildResult::Invalid : ETextBuildResult::AllocationFailed;
 			}
 
-			for (const core::StringView argument : arguments)
+			for (const StringView argument : arguments)
 			{
-				core::Array<wchar_t> converted(resource);
+				Array<wchar_t> converted(resource);
 				const ETextBuildResult conversion = convertUtf8ToWide(resource, argument, true, &converted);
 
 				if (conversion != ETextBuildResult::Success)
@@ -385,7 +387,7 @@ namespace rox::os
 			}
 
 			ASSERT(commandLine.Size() <= MAXIMUM_WINDOWS_COMMAND_LINE_CODE_UNITS, "A published Windows command line must remain within the native limit.");
-			*outCommandLine = rox::core::Move(commandLine);
+			*outCommandLine = Move(commandLine);
 
 			return ETextBuildResult::Success;
 		}
@@ -413,8 +415,8 @@ namespace rox::os
 				return false;
 			}
 
-			*outParentRead = rox::core::Move(parent);
-			*outChildWrite = rox::core::Move(child);
+			*outParentRead = Move(parent);
+			*outChildWrite = Move(child);
 
 			return true;
 		}
@@ -431,8 +433,8 @@ namespace rox::os
 				}
 			}
 
-			[[nodiscard]] ETextBuildResult TryInitialize(core::MemoryResource& resource, HANDLE* const handles,
-				const rox::core::usize handleCount) noexcept
+			[[nodiscard]] ETextBuildResult TryInitialize(MemoryResource& resource, HANDLE* const handles,
+				const usize handleCount) noexcept
 			{
 				ASSERT(handles != nullptr && handleCount != 0, "A process attribute list requires inherited handles.");
 				SIZE_T byteCount = 0;
@@ -443,7 +445,7 @@ namespace rox::os
 					return ETextBuildResult::Invalid;
 				}
 
-				if (!core::MemoryBlock::CreateInto(resource, &m_Storage, { byteCount, core::DEFAULT_MEMORY_ALIGNMENT }))
+				if (!MemoryBlock::CreateInto(resource, &m_Storage, { byteCount, DEFAULT_MEMORY_ALIGNMENT }))
 				{
 					return ETextBuildResult::AllocationFailed;
 				}
@@ -472,18 +474,18 @@ namespace rox::os
 			}
 
 		private:
-			core::MemoryBlock m_Storage;
+			MemoryBlock m_Storage;
 			LPPROC_THREAD_ATTRIBUTE_LIST m_List = nullptr;
 		};
 
 		class PendingProcessWait final
 		{
 		public:
-			PendingProcessWait(core::TaskSource<ProcessExit> source, core::MemoryResource& resultResource,
-				core::Result<ProcessExit> cancellationResult) noexcept
-				: m_Source(rox::core::Move(source))
+			PendingProcessWait(TaskSource<ProcessExit> source, MemoryResource& resultResource,
+				Result<ProcessExit> cancellationResult) noexcept
+				: m_Source(Move(source))
 				, m_ResultResource(resultResource)
-				, m_CancellationResult(rox::core::Move(cancellationResult))
+				, m_CancellationResult(Move(cancellationResult))
 			{
 			}
 
@@ -491,34 +493,34 @@ namespace rox::os
 			{
 				bool bExpected = false;
 
-				return m_bCompletionClaimed.compare_exchange_strong(bExpected, true, rox::core::MemoryOrderAcqRel,
-					rox::core::MemoryOrderAcquire);
+				return m_bCompletionClaimed.compare_exchange_strong(bExpected, true, MemoryOrderAcqRel,
+					MemoryOrderAcquire);
 			}
 
 			[[nodiscard]] bool IsCompletionClaimed() const noexcept
 			{
-				return m_bCompletionClaimed.load(rox::core::MemoryOrderAcquire);
+				return m_bCompletionClaimed.load(MemoryOrderAcquire);
 			}
 
 			[[nodiscard]] bool IsCancellationClaimed() const noexcept
 			{
-				return m_bCancellationClaimed.load(rox::core::MemoryOrderAcquire);
+				return m_bCancellationClaimed.load(MemoryOrderAcquire);
 			}
 
-			[[nodiscard]] core::MemoryResource& ResultResource() const noexcept
+			[[nodiscard]] MemoryResource& ResultResource() const noexcept
 			{
 				return m_ResultResource;
 			}
 
-			[[nodiscard]] core::CancellationRegistration& Registration() noexcept
+			[[nodiscard]] CancellationRegistration& Registration() noexcept
 			{
 				return m_Registration;
 			}
 
-			void CompleteClaimed(core::Result<ProcessExit> result) noexcept
+			void CompleteClaimed(Result<ProcessExit> result) noexcept
 			{
 				ASSERT(IsCompletionClaimed(), "A process Wait result requires the completion claim.");
-				m_Source.SetResult(rox::core::Move(result));
+				m_Source.SetResult(Move(result));
 			}
 
 			static void OnCancellation(void* const context) noexcept
@@ -528,18 +530,18 @@ namespace rox::os
 
 				if (pending.TryClaimCompletion())
 				{
-					pending.m_bCancellationClaimed.store(true, rox::core::MemoryOrderRelease);
-					pending.CompleteClaimed(rox::core::Move(pending.m_CancellationResult));
+					pending.m_bCancellationClaimed.store(true, MemoryOrderRelease);
+					pending.CompleteClaimed(Move(pending.m_CancellationResult));
 				}
 			}
 
 		private:
-			core::TaskSource<ProcessExit> m_Source;
-			core::MemoryResource& m_ResultResource;
-			core::Result<ProcessExit> m_CancellationResult;
-			core::CancellationRegistration m_Registration;
-			rox::core::Atomic<bool> m_bCompletionClaimed = false;
-			rox::core::Atomic<bool> m_bCancellationClaimed = false;
+			TaskSource<ProcessExit> m_Source;
+			MemoryResource& m_ResultResource;
+			Result<ProcessExit> m_CancellationResult;
+			CancellationRegistration m_Registration;
+			Atomic<bool> m_bCompletionClaimed = false;
+			Atomic<bool> m_bCancellationClaimed = false;
 		};
 
 		enum class ENativeProcessPhase
@@ -551,7 +553,7 @@ namespace rox::os
 		class NativeProcess final
 		{
 		public:
-			NativeProcess(core::MemoryResource& resource, const rox::core::usize maximumCapturedOutputBytes) noexcept
+			NativeProcess(MemoryResource& resource, const usize maximumCapturedOutputBytes) noexcept
 				: m_Resource(resource)
 				, m_MaximumCapturedOutputBytes(maximumCapturedOutputBytes)
 				, m_StandardOutput(resource)
@@ -637,17 +639,17 @@ namespace rox::os
 				joinReader(&m_StandardErrorThread, &m_StandardErrorRead);
 			}
 
-			[[nodiscard]] core::Task<ProcessExit> Wait(core::MemoryResource& resultResource, const core::CancellationToken cancellation)
+			[[nodiscard]] Task<ProcessExit> Wait(MemoryResource& resultResource, const CancellationToken cancellation)
 			{
 				if (cancellation.IsCancellationRequested())
 				{
-					return core::MakeReadyTask(makeWaitCancelledResult());
+					return MakeReadyTask(makeWaitCancelledResult());
 				}
 
-				core::SharedPtr<PendingProcessWait> detachedPending;
+				SharedPtr<PendingProcessWait> detachedPending;
 				bool bExited = false;
 				{
-					rox::core::LockGuard lock(m_Mutex);
+					LockGuard lock(m_Mutex);
 
 					if (m_PendingWait)
 					{
@@ -666,18 +668,18 @@ namespace rox::os
 
 				if (bExited)
 				{
-					return core::MakeReadyTask(buildExitResult(resultResource));
+					return MakeReadyTask(buildExitResult(resultResource));
 				}
 
-				core::TaskSource<ProcessExit> completion(m_Resource);
-				core::Task<ProcessExit> task = completion.GetTask();
-				core::SharedPtr<PendingProcessWait> pending;
+				TaskSource<ProcessExit> completion(m_Resource);
+				Task<ProcessExit> task = completion.GetTask();
+				SharedPtr<PendingProcessWait> pending;
 
-				if (!core::MakeSharedInto<PendingProcessWait>(m_Resource, &pending, rox::core::Move(completion), resultResource,
+				if (!MakeSharedInto<PendingProcessWait>(m_Resource, &pending, Move(completion), resultResource,
 					makeWaitCancelledResult()))
 				{
-					completion.SetResult(core::Result<ProcessExit>::Failure(
-						makeProcessError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-MEMORY",
+					completion.SetResult(Result<ProcessExit>::Failure(
+						makeProcessError(EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-MEMORY",
 							"Memory allocation for the pending process Wait failed.",
 							"Release bounded process-service memory and retry Wait.")));
 					return task;
@@ -686,7 +688,7 @@ namespace rox::os
 				(void)pending->Registration().Register(cancellation, &PendingProcessWait::OnCancellation, pending.Get());
 				bool bCompleteExited = false;
 				{
-					rox::core::LockGuard lock(m_Mutex);
+					LockGuard lock(m_Mutex);
 
 					if (m_PendingWait)
 					{
@@ -718,14 +720,14 @@ namespace rox::os
 				return task;
 			}
 
-			[[nodiscard]] core::Result<void> RequestTermination() noexcept
+			[[nodiscard]] Result<void> RequestTermination() noexcept
 			{
 				{
-					rox::core::LockGuard lock(m_Mutex);
+					LockGuard lock(m_Mutex);
 
 					if (m_Phase == ENativeProcessPhase::Exited || m_bTerminationIssued)
 					{
-						return core::Result<void>::Success();
+						return Result<void>::Success();
 					}
 
 					m_bTerminationRequested = true;
@@ -733,33 +735,33 @@ namespace rox::os
 
 				if (TerminateJobObject(m_Job, ERROR_PROCESS_ABORTED) != FALSE)
 				{
-					rox::core::LockGuard lock(m_Mutex);
+					LockGuard lock(m_Mutex);
 					m_bTerminationIssued = true;
 					LOG_INFO("Platform.Process", "A Windows process tree termination was requested.");
 
-					return core::Result<void>::Success();
+					return Result<void>::Success();
 				}
 
 				{
-					rox::core::LockGuard lock(m_Mutex);
+					LockGuard lock(m_Mutex);
 
 					if (m_Phase == ENativeProcessPhase::Exited || WaitForSingleObject(m_Process, 0) == WAIT_OBJECT_0)
 					{
-						return core::Result<void>::Success();
+						return Result<void>::Success();
 					}
 				}
 
 				LOG_ERROR("Platform.Process", "Windows could not terminate an owned process tree.");
 
-				return core::Result<void>::Failure(makeProcessError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-TERMINATE",
+				return Result<void>::Failure(makeProcessError(EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-TERMINATE",
 					"Windows could not terminate the owned process tree.",
 					"Inspect process security and Job Object state before retrying."));
 			}
 
-			[[nodiscard]] bool CanRelease(core::SharedPtr<PendingProcessWait>* const outDetached) noexcept
+			[[nodiscard]] bool CanRelease(SharedPtr<PendingProcessWait>* const outDetached) noexcept
 			{
 				ASSERT(outDetached != nullptr, "Process release requires detached Wait storage.");
-				rox::core::LockGuard lock(m_Mutex);
+				LockGuard lock(m_Mutex);
 
 				if (m_Phase != ENativeProcessPhase::Exited)
 				{
@@ -784,10 +786,10 @@ namespace rox::os
 
 			void CancelPendingForShutdown() noexcept
 			{
-				core::SharedPtr<PendingProcessWait> pending;
+				SharedPtr<PendingProcessWait> pending;
 				bool bClaimed = false;
 				{
-					rox::core::LockGuard lock(m_Mutex);
+					LockGuard lock(m_Mutex);
 					pending = m_PendingWait;
 					m_PendingWait.Reset();
 
@@ -809,7 +811,7 @@ namespace rox::os
 			}
 
 		private:
-			void appendCaptured(core::Array<core::Byte>& output, bool* const outTruncated, bool* const outAllocationFailed, const core::Byte* const data, const rox::core::usize byteCount) noexcept
+			void appendCaptured(Array<Byte>& output, bool* const outTruncated, bool* const outAllocationFailed, const Byte* const data, const usize byteCount) noexcept
 			{
 				ASSERT(outTruncated != nullptr && outAllocationFailed != nullptr, "Process output capture requires status storage.");
 				ASSERT(data != nullptr || byteCount == 0, "Non-empty process output capture requires bytes.");
@@ -826,9 +828,9 @@ namespace rox::os
 					return;
 				}
 
-				const rox::core::usize remaining = m_MaximumCapturedOutputBytes - output.Size();
-				const rox::core::usize copySize = (rox::core::Min)(remaining, byteCount);
-				const rox::core::usize originalSize = output.Size();
+				const usize remaining = m_MaximumCapturedOutputBytes - output.Size();
+				const usize copySize = (Min)(remaining, byteCount);
+				const usize originalSize = output.Size();
 
 				if (!output.Resize(originalSize + copySize))
 				{
@@ -838,7 +840,7 @@ namespace rox::os
 					return;
 				}
 
-				rox::core::CopyBytes(output.Data() + originalSize, data, copySize);
+				CopyBytes(output.Data() + originalSize, data, copySize);
 
 				if (copySize != byteCount)
 				{
@@ -846,10 +848,10 @@ namespace rox::os
 				}
 			}
 
-			void runReader(const HANDLE pipe, core::Array<core::Byte>& output, bool* const outTruncated, bool* const outReadFailed, bool* const outAllocationFailed) noexcept
+			void runReader(const HANDLE pipe, Array<Byte>& output, bool* const outTruncated, bool* const outReadFailed, bool* const outAllocationFailed) noexcept
 			{
 				ASSERT(isNativeHandleValid(pipe), "A process output reader requires a pipe handle.");
-				core::Byte buffer[PROCESS_READER_BUFFER_BYTE_COUNT]{};
+				Byte buffer[PROCESS_READER_BUFFER_BYTE_COUNT]{};
 
 				for (;;)
 				{
@@ -877,7 +879,7 @@ namespace rox::os
 				}
 			}
 
-			[[nodiscard]] bool tryCloneOutput(const core::Array<core::Byte>& source, const bool bTruncated, const bool bReadFailed, const bool bAllocationFailed, ProcessOutput* const outOutput) const noexcept
+			[[nodiscard]] bool tryCloneOutput(const Array<Byte>& source, const bool bTruncated, const bool bReadFailed, const bool bAllocationFailed, ProcessOutput* const outOutput) const noexcept
 			{
 				ASSERT(outOutput != nullptr, "Process exit publication requires output storage.");
 
@@ -888,7 +890,7 @@ namespace rox::os
 
 				if (!source.IsEmpty())
 				{
-					rox::core::CopyBytes(outOutput->Bytes.Data(), source.Data(), source.Size());
+					CopyBytes(outOutput->Bytes.Data(), source.Data(), source.Size());
 				}
 
 				outOutput->bTruncated = bTruncated;
@@ -898,12 +900,12 @@ namespace rox::os
 				return true;
 			}
 
-			[[nodiscard]] core::Result<ProcessExit> buildExitResult(core::MemoryResource& resultResource) const
+			[[nodiscard]] Result<ProcessExit> buildExitResult(MemoryResource& resultResource) const
 			{
 				if (m_bWaitFailed)
 				{
-					return core::Result<ProcessExit>::Failure(makeProcessError(
-						core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-WAIT", "Windows could not observe the owned process exit.",
+					return Result<ProcessExit>::Failure(makeProcessError(
+						EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-WAIT", "Windows could not observe the owned process exit.",
 						"Inspect native handle lifetime and retry the process operation."));
 				}
 
@@ -915,13 +917,13 @@ namespace rox::os
 					m_bStandardOutputAllocationFailed, &result.StandardOutput) ||
 					!tryCloneOutput(m_StandardError, m_bStandardErrorTruncated, m_bStandardErrorReadFailed, m_bStandardErrorAllocationFailed, &result.StandardError))
 				{
-					return core::Result<ProcessExit>::Failure(
-						makeProcessError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-RESULT-MEMORY",
+					return Result<ProcessExit>::Failure(
+						makeProcessError(EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-RESULT-MEMORY",
 							"Process output could not be cloned into the result memory resource.",
 							"Release result memory or retry Wait with a larger memory budget."));
 				}
 
-				return core::Result<ProcessExit>::Success(rox::core::Move(result));
+				return Result<ProcessExit>::Success(Move(result));
 			}
 
 			void joinReader(HANDLE* const thread, HANDLE* const pipe) noexcept
@@ -980,10 +982,10 @@ namespace rox::os
 				joinReader(&m_StandardOutputThread, &m_StandardOutputRead);
 				joinReader(&m_StandardErrorThread, &m_StandardErrorRead);
 
-				core::SharedPtr<PendingProcessWait> pending;
+				SharedPtr<PendingProcessWait> pending;
 				bool bClaimed = false;
 				{
-					rox::core::LockGuard lock(m_Mutex);
+					LockGuard lock(m_Mutex);
 					m_ExitCode = exitCode;
 					m_bWaitFailed = bWaitFailed;
 					m_Phase = ENativeProcessPhase::Exited;
@@ -1004,8 +1006,8 @@ namespace rox::os
 					{
 						if (bWaitFailed)
 						{
-							pending->CompleteClaimed(core::Result<ProcessExit>::Failure(
-								makeProcessError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-WAIT",
+							pending->CompleteClaimed(Result<ProcessExit>::Failure(
+								makeProcessError(EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-WAIT",
 									"Windows could not observe the owned process exit.",
 									"Inspect native handle lifetime and retry the process operation.")));
 						}
@@ -1049,8 +1051,8 @@ namespace rox::os
 			}
 
 		private:
-			core::MemoryResource& m_Resource;
-			rox::core::usize m_MaximumCapturedOutputBytes = 0;
+			MemoryResource& m_Resource;
+			usize m_MaximumCapturedOutputBytes = 0;
 			HANDLE m_Process = nullptr;
 			HANDLE m_Job = nullptr;
 			HANDLE m_StandardOutputRead = nullptr;
@@ -1058,12 +1060,12 @@ namespace rox::os
 			HANDLE m_StandardOutputThread = nullptr;
 			HANDLE m_StandardErrorThread = nullptr;
 			HANDLE m_MonitorThread = nullptr;
-			core::Array<core::Byte> m_StandardOutput;
-			core::Array<core::Byte> m_StandardError;
-			rox::core::Mutex m_Mutex;
-			core::SharedPtr<PendingProcessWait> m_PendingWait;
+			Array<Byte> m_StandardOutput;
+			Array<Byte> m_StandardError;
+			Mutex m_Mutex;
+			SharedPtr<PendingProcessWait> m_PendingWait;
 			ENativeProcessPhase m_Phase = ENativeProcessPhase::Running;
-			core::uint32 m_ExitCode = 0;
+			uint32 m_ExitCode = 0;
 			bool m_bTerminationRequested = false;
 			bool m_bTerminationIssued = false;
 			bool m_bWaitFailed = false;
@@ -1079,7 +1081,7 @@ namespace rox::os
 		{
 		public:
 			NativeProcess* Process = nullptr;
-			core::uint32 Generation = 1;
+			uint32 Generation = 1;
 			bool bReserved = false;
 			bool bGenerationExhausted = false;
 		};
@@ -1088,13 +1090,13 @@ namespace rox::os
 	class WindowsProcessService::State final
 	{
 	public:
-		State(core::MemoryResource& resource, const WindowsProcessServiceOptions options) noexcept
+		State(MemoryResource& resource, const WindowsProcessServiceOptions options) noexcept
 			: m_Resource(resource)
 			, m_Options(options)
 			, m_Slots(resource)
 		{
-			m_Owner = s_ProcessServiceOwner.fetch_add(1, rox::core::MemoryOrderRelaxed);
-			ASSERT(m_Owner != 0 && m_Owner != rox::core::NumericLimits<core::uint64>::max(),
+			m_Owner = s_ProcessServiceOwner.fetch_add(1, MemoryOrderRelaxed);
+			ASSERT(m_Owner != 0 && m_Owner != NumericLimits<uint64>::max(),
 				"Process service owner identity space must not be exhausted.");
 		}
 
@@ -1108,11 +1110,11 @@ namespace rox::os
 			return m_Slots.Resize(m_Options.MaximumProcesses);
 		}
 
-		[[nodiscard]] core::Task<ProcessHandle> Launch(const ProcessLaunchDesc& desc, const core::CancellationToken cancellation)
+		[[nodiscard]] Task<ProcessHandle> Launch(const ProcessLaunchDesc& desc, const CancellationToken cancellation)
 		{
 			if (cancellation.IsCancellationRequested())
 			{
-				return core::MakeReadyTask(makeLaunchCancelledResult());
+				return MakeReadyTask(makeLaunchCancelledResult());
 			}
 
 			if (desc.MaximumCapturedOutputBytesPerStream == 0 ||
@@ -1121,32 +1123,32 @@ namespace rox::os
 				desc.ExecutablePath.Size() > MAXIMUM_WINDOWS_PROCESS_TEXT_UTF8_BYTES ||
 				desc.WorkingDirectoryPath.Size() > MAXIMUM_WINDOWS_PROCESS_TEXT_UTF8_BYTES)
 			{
-				return core::MakeReadyTask(core::Result<ProcessHandle>::Failure(
-					makeProcessError(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-PROCESS-DESC",
+				return MakeReadyTask(Result<ProcessHandle>::Failure(
+					makeProcessError(EErrorCode::InvalidArgument, "ROX-PLATFORM-PROCESS-DESC",
 						"The process descriptor exceeds its argument or output-capture bound.",
 						"Use the documented nonzero bounded process descriptor values.")));
 			}
 
-			for (const core::StringView argument : desc.Arguments)
+			for (const StringView argument : desc.Arguments)
 			{
 				if (argument.Size() > MAXIMUM_WINDOWS_PROCESS_TEXT_UTF8_BYTES)
 				{
-					return core::MakeReadyTask(core::Result<ProcessHandle>::Failure(
-						makeProcessError(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-PROCESS-DESC",
+					return MakeReadyTask(Result<ProcessHandle>::Failure(
+						makeProcessError(EErrorCode::InvalidArgument, "ROX-PLATFORM-PROCESS-DESC",
 							"A process argument exceeds the bounded UTF-8 input size.",
 							"Pass individual arguments within the Windows command-line bound.")));
 				}
 			}
 
-			core::Array<wchar_t> executable(m_Resource);
+			Array<wchar_t> executable(m_Resource);
 			const ETextBuildResult executableResult = convertUtf8ToWide(m_Resource, desc.ExecutablePath, false, &executable);
 
 			if (executableResult != ETextBuildResult::Success || !isAbsoluteWindowsPath(executable))
 			{
-				return core::MakeReadyTask(makeTextFailure(executableResult, "The executable path is not a valid absolute UTF-8 Windows path."));
+				return MakeReadyTask(makeTextFailure(executableResult, "The executable path is not a valid absolute UTF-8 Windows path."));
 			}
 
-			core::Array<wchar_t> workingDirectory(m_Resource);
+			Array<wchar_t> workingDirectory(m_Resource);
 
 			if (!desc.WorkingDirectoryPath.IsEmpty())
 			{
@@ -1154,89 +1156,89 @@ namespace rox::os
 
 				if (workingDirectoryResult != ETextBuildResult::Success || !isAbsoluteWindowsPath(workingDirectory))
 				{
-					return core::MakeReadyTask(makeTextFailure(workingDirectoryResult, "The working directory is not a valid absolute UTF-8 Windows path."));
+					return MakeReadyTask(makeTextFailure(workingDirectoryResult, "The working directory is not a valid absolute UTF-8 Windows path."));
 				}
 			}
 
-			core::Array<wchar_t> commandLine(m_Resource);
+			Array<wchar_t> commandLine(m_Resource);
 			const ETextBuildResult commandLineResult = buildCommandLine(m_Resource, executable, desc.Arguments, &commandLine);
 
 			if (commandLineResult != ETextBuildResult::Success)
 			{
-				return core::MakeReadyTask(makeTextFailure(commandLineResult, "The arguments are invalid or exceed the Windows command-line limit."));
+				return MakeReadyTask(makeTextFailure(commandLineResult, "The arguments are invalid or exceed the Windows command-line limit."));
 			}
 
-			rox::core::LockGuard lock(m_Mutex);
+			LockGuard lock(m_Mutex);
 
 			if (m_bStopping)
 			{
-				return core::MakeReadyTask(makeLaunchCancelledResult());
+				return MakeReadyTask(makeLaunchCancelledResult());
 			}
 
 			ProcessSlot* const slot = reserveSlot();
 
 			if (slot == nullptr)
 			{
-				return core::MakeReadyTask(core::Result<ProcessHandle>::Failure(makeProcessError(
-					core::EErrorCode::Conflict, "ROX-PLATFORM-PROCESS-CAPACITY", "Every configured process-service slot is occupied.",
+				return MakeReadyTask(Result<ProcessHandle>::Failure(makeProcessError(
+					EErrorCode::Conflict, "ROX-PLATFORM-PROCESS-CAPACITY", "Every configured process-service slot is occupied.",
 					"Release an exited process or increase the reviewed service bound.")));
 			}
 
-			const core::uint32 slotIndex = static_cast<core::uint32>(slot - m_Slots.Data());
+			const uint32 slotIndex = static_cast<uint32>(slot - m_Slots.Data());
 
-			core::Result<ProcessHandle> launchResult = launchReserved(*slot, slotIndex, desc, executable, workingDirectory, commandLine, cancellation);
+			Result<ProcessHandle> launchResult = launchReserved(*slot, slotIndex, desc, executable, workingDirectory, commandLine, cancellation);
 
 			if (!launchResult)
 			{
 				slot->bReserved = false;
 			}
 
-			return core::MakeReadyTask(rox::core::Move(launchResult));
+			return MakeReadyTask(Move(launchResult));
 		}
 
-		[[nodiscard]] core::Task<ProcessExit> Wait(const ProcessHandle process, core::MemoryResource& resultResource, const core::CancellationToken cancellation)
+		[[nodiscard]] Task<ProcessExit> Wait(const ProcessHandle process, MemoryResource& resultResource, const CancellationToken cancellation)
 		{
-			rox::core::LockGuard lock(m_Mutex);
-			core::Result<NativeProcess*> resolved = resolve(process);
+			LockGuard lock(m_Mutex);
+			Result<NativeProcess*> resolved = resolve(process);
 
 			if (!resolved)
 			{
-				return core::MakeReadyTask(core::Result<ProcessExit>::Failure(resolved.GetError()));
+				return MakeReadyTask(Result<ProcessExit>::Failure(resolved.GetError()));
 			}
 
 			return resolved.Value()->Wait(resultResource, cancellation);
 		}
 
-		[[nodiscard]] core::Result<void> RequestTermination(const ProcessHandle process)
+		[[nodiscard]] Result<void> RequestTermination(const ProcessHandle process)
 		{
-			rox::core::LockGuard lock(m_Mutex);
-			core::Result<NativeProcess*> resolved = resolve(process);
+			LockGuard lock(m_Mutex);
+			Result<NativeProcess*> resolved = resolve(process);
 
 			if (!resolved)
 			{
-				return core::Result<void>::Failure(resolved.GetError());
+				return Result<void>::Failure(resolved.GetError());
 			}
 
 			return resolved.Value()->RequestTermination();
 		}
 
-		[[nodiscard]] core::Result<void> Release(const ProcessHandle process)
+		[[nodiscard]] Result<void> Release(const ProcessHandle process)
 		{
-			rox::core::LockGuard lock(m_Mutex);
-			core::Result<NativeProcess*> resolved = resolve(process);
+			LockGuard lock(m_Mutex);
+			Result<NativeProcess*> resolved = resolve(process);
 
 			if (!resolved)
 			{
-				return core::Result<void>::Failure(resolved.GetError());
+				return Result<void>::Failure(resolved.GetError());
 			}
 
 			ProcessSlot& slot = m_Slots[process.Slot];
-			core::SharedPtr<PendingProcessWait> detachedPending;
+			SharedPtr<PendingProcessWait> detachedPending;
 
 			if (!resolved.Value()->CanRelease(&detachedPending))
 			{
-				return core::Result<void>::Failure(
-					makeProcessError(core::EErrorCode::Conflict, "ROX-PLATFORM-PROCESS-RELEASE-ACTIVE",
+				return Result<void>::Failure(
+					makeProcessError(EErrorCode::Conflict, "ROX-PLATFORM-PROCESS-RELEASE-ACTIVE",
 						"The process is still running or has a pending Wait operation.",
 						"Wait for process exit and consume or cancel the pending observation before release."));
 			}
@@ -1247,10 +1249,10 @@ namespace rox::os
 			}
 
 			resolved.Value()->JoinForRelease();
-			core::DestroyObject(m_Resource, slot.Process);
+			DestroyObject(m_Resource, slot.Process);
 			slot.Process = nullptr;
 
-			if (slot.Generation == rox::core::NumericLimits<core::uint32>::max())
+			if (slot.Generation == NumericLimits<uint32>::max())
 			{
 				slot.bGenerationExhausted = true;
 				LOG_WARNING("Platform.Process", "A process slot exhausted its generation space.");
@@ -1260,12 +1262,12 @@ namespace rox::os
 				++slot.Generation;
 			}
 
-			return core::Result<void>::Success();
+			return Result<void>::Success();
 		}
 
 		void Shutdown() noexcept
 		{
-			rox::core::LockGuard lock(m_Mutex);
+			LockGuard lock(m_Mutex);
 
 			if (m_bStopping)
 			{
@@ -1285,7 +1287,7 @@ namespace rox::os
 				slot.Process->CancelPendingForShutdown();
 				(void)slot.Process->RequestTermination();
 				slot.Process->JoinForRelease();
-				core::DestroyObject(m_Resource, slot.Process);
+				DestroyObject(m_Resource, slot.Process);
 				slot.Process = nullptr;
 				slot.bReserved = false;
 			}
@@ -1294,17 +1296,17 @@ namespace rox::os
 		}
 
 	private:
-		[[nodiscard]] core::Result<ProcessHandle> makeTextFailure(const ETextBuildResult result, const core::StringView message) const
+		[[nodiscard]] Result<ProcessHandle> makeTextFailure(const ETextBuildResult result, const StringView message) const
 		{
 			if (result == ETextBuildResult::AllocationFailed)
 			{
-				return core::Result<ProcessHandle>::Failure(makeProcessError(
-					core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-MEMORY", "Memory allocation for process launch text failed.",
+				return Result<ProcessHandle>::Failure(makeProcessError(
+					EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-MEMORY", "Memory allocation for process launch text failed.",
 					"Release bounded process-service memory and retry launch."));
 			}
 
-			return core::Result<ProcessHandle>::Failure(
-				makeProcessError(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-PROCESS-DESC", message,
+			return Result<ProcessHandle>::Failure(
+				makeProcessError(EErrorCode::InvalidArgument, "ROX-PLATFORM-PROCESS-DESC", message,
 					"Provide valid absolute UTF-8 paths and individual bounded arguments."));
 		}
 
@@ -1323,14 +1325,14 @@ namespace rox::os
 			return nullptr;
 		}
 
-		[[nodiscard]] core::Result<ProcessHandle> launchReserved(
+		[[nodiscard]] Result<ProcessHandle> launchReserved(
 			ProcessSlot& slot,
-			const core::uint32 slotIndex,
+			const uint32 slotIndex,
 			const ProcessLaunchDesc& desc,
-			const core::Array<wchar_t>& executable,
-			const core::Array<wchar_t>& workingDirectory,
-			core::Array<wchar_t>& commandLine,
-			const core::CancellationToken cancellation)
+			const Array<wchar_t>& executable,
+			const Array<wchar_t>& workingDirectory,
+			Array<wchar_t>& commandLine,
+			const CancellationToken cancellation)
 		{
 			ASSERT(slot.bReserved && slot.Process == nullptr, "A native process launch requires one reserved empty slot.");
 
@@ -1341,8 +1343,8 @@ namespace rox::os
 
 			if (!createOutputPipe(&standardOutputRead, &standardOutputWrite) || !createOutputPipe(&standardErrorRead, &standardErrorWrite))
 			{
-				return core::Result<ProcessHandle>::Failure(makeProcessError(
-					core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-CREATE",
+				return Result<ProcessHandle>::Failure(makeProcessError(
+					EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-CREATE",
 					"Windows could not create redirected process output pipes.", "Release native handle pressure and retry launch."));
 			}
 
@@ -1353,8 +1355,8 @@ namespace rox::os
 
 			if (!standardInput.IsValid())
 			{
-				return core::Result<ProcessHandle>::Failure(makeProcessError(
-					core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-CREATE",
+				return Result<ProcessHandle>::Failure(makeProcessError(
+					EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-CREATE",
 					"Windows could not open the child process input sink.", "Inspect native handle pressure and retry launch."));
 			}
 
@@ -1364,9 +1366,9 @@ namespace rox::os
 
 			if (attributeResult != ETextBuildResult::Success)
 			{
-				return core::Result<ProcessHandle>::Failure(makeProcessError(
-					attributeResult == ETextBuildResult::AllocationFailed ? core::EErrorCode::ExternalFailure
-					: core::EErrorCode::ExternalFailure,
+				return Result<ProcessHandle>::Failure(makeProcessError(
+					attributeResult == ETextBuildResult::AllocationFailed ? EErrorCode::ExternalFailure
+					: EErrorCode::ExternalFailure,
 					attributeResult == ETextBuildResult::AllocationFailed ? "ROX-PLATFORM-PROCESS-MEMORY" : "ROX-PLATFORM-PROCESS-CREATE",
 					"Windows process handle-inheritance setup failed.", "Release native or memory pressure and retry launch."));
 			}
@@ -1377,8 +1379,8 @@ namespace rox::os
 
 			if (!job.IsValid() || SetInformationJobObject(job.Get(), JobObjectExtendedLimitInformation, &jobInformation, sizeof(jobInformation)) == FALSE)
 			{
-				return core::Result<ProcessHandle>::Failure(makeProcessError(
-					core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-JOB", "Windows could not create the owned process Job Object.",
+				return Result<ProcessHandle>::Failure(makeProcessError(
+					EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-JOB", "Windows could not create the owned process Job Object.",
 					"Inspect Job Object support and native handle pressure before retrying."));
 			}
 
@@ -1416,21 +1418,21 @@ namespace rox::os
 				(void)TerminateProcess(process.Get(), ERROR_PROCESS_ABORTED);
 				(void)WaitForSingleObject(process.Get(), PROCESS_WORKER_JOIN_TIMEOUT_MILLISECONDS);
 
-				return core::Result<ProcessHandle>::Failure(
-					makeProcessError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-JOB",
+				return Result<ProcessHandle>::Failure(
+					makeProcessError(EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-JOB",
 						"Windows could not assign the suspended process to its Job Object.",
 						"Inspect parent Job Object restrictions before retrying."));
 			}
 
-			NativeProcess* const nativeProcess = core::CreateObject<NativeProcess>(m_Resource, m_Resource, desc.MaximumCapturedOutputBytesPerStream);
+			NativeProcess* const nativeProcess = CreateObject<NativeProcess>(m_Resource, m_Resource, desc.MaximumCapturedOutputBytesPerStream);
 
 			if (nativeProcess == nullptr)
 			{
 				(void)TerminateJobObject(job.Get(), ERROR_PROCESS_ABORTED);
 				(void)WaitForSingleObject(process.Get(), PROCESS_WORKER_JOIN_TIMEOUT_MILLISECONDS);
 
-				return core::Result<ProcessHandle>::Failure(makeProcessError(
-					core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-MEMORY", "Memory allocation for process ownership failed.",
+				return Result<ProcessHandle>::Failure(makeProcessError(
+					EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-MEMORY", "Memory allocation for process ownership failed.",
 					"Release bounded process-service memory and retry launch."));
 			}
 
@@ -1439,17 +1441,17 @@ namespace rox::os
 			if (!nativeProcess->StartWorkers())
 			{
 				nativeProcess->AbortUnpublished();
-				core::DestroyObject(m_Resource, nativeProcess);
+				DestroyObject(m_Resource, nativeProcess);
 
-				return core::Result<ProcessHandle>::Failure(makeProcessError(
-					core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-THREAD",
+				return Result<ProcessHandle>::Failure(makeProcessError(
+					EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-THREAD",
 					"Windows could not start the bounded process worker threads.", "Release native thread pressure and retry launch."));
 			}
 
 			if (cancellation.IsCancellationRequested())
 			{
 				nativeProcess->AbortUnpublished();
-				core::DestroyObject(m_Resource, nativeProcess);
+				DestroyObject(m_Resource, nativeProcess);
 
 				return makeLaunchCancelledResult();
 			}
@@ -1457,66 +1459,66 @@ namespace rox::os
 			slot.Process = nativeProcess;
 			slot.bReserved = false;
 
-			if (ResumeThread(primaryThread.Get()) == rox::core::NumericLimits<DWORD>::max())
+			if (ResumeThread(primaryThread.Get()) == NumericLimits<DWORD>::max())
 			{
 				slot.Process = nullptr;
 				nativeProcess->AbortUnpublished();
-				core::DestroyObject(m_Resource, nativeProcess);
+				DestroyObject(m_Resource, nativeProcess);
 
-				return core::Result<ProcessHandle>::Failure(
-					makeProcessError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-RESUME",
+				return Result<ProcessHandle>::Failure(
+					makeProcessError(EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-RESUME",
 						"Windows could not resume the suspended child process.",
 						"Inspect process security and native thread state before retrying."));
 			}
 
 			LOG_INFO("Platform.Process", "A Windows process tree was launched.");
 
-			return core::Result<ProcessHandle>::Success({ m_Owner, slotIndex, slot.Generation });
+			return Result<ProcessHandle>::Success({ m_Owner, slotIndex, slot.Generation });
 		}
 
-		[[nodiscard]] core::Result<ProcessHandle> makeCreateProcessFailure(const DWORD error) const
+		[[nodiscard]] Result<ProcessHandle> makeCreateProcessFailure(const DWORD error) const
 		{
 			if (error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND || error == ERROR_BAD_PATHNAME)
 			{
-				return core::Result<ProcessHandle>::Failure(
-					makeProcessError(core::EErrorCode::NotFound, "ROX-PLATFORM-PROCESS-NOT-FOUND",
+				return Result<ProcessHandle>::Failure(
+					makeProcessError(EErrorCode::NotFound, "ROX-PLATFORM-PROCESS-NOT-FOUND",
 						"Windows could not locate the explicit executable or working directory.",
 						"Provide existing absolute executable and working-directory paths."));
 			}
 
 			if (error == ERROR_ACCESS_DENIED || error == ERROR_ELEVATION_REQUIRED)
 			{
-				return core::Result<ProcessHandle>::Failure(
-					makeProcessError(core::EErrorCode::PermissionDenied, "ROX-PLATFORM-PROCESS-ACCESS",
+				return Result<ProcessHandle>::Failure(
+					makeProcessError(EErrorCode::PermissionDenied, "ROX-PLATFORM-PROCESS-ACCESS",
 						"Windows denied creation of the requested executable.",
 						"Check executable permissions, policy, and elevation requirements."));
 			}
 
-			return core::Result<ProcessHandle>::Failure(
-				makeProcessError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-CREATE",
+			return Result<ProcessHandle>::Failure(
+				makeProcessError(EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-CREATE",
 					"Windows process creation failed.",
 					"Inspect the executable, working directory, policy, and native process limits."));
 		}
 
-		[[nodiscard]] core::Result<NativeProcess*> resolve(const ProcessHandle handle) const
+		[[nodiscard]] Result<NativeProcess*> resolve(const ProcessHandle handle) const
 		{
 			if (!handle.IsValid())
 			{
-				return core::Result<NativeProcess*>::Failure(
-					makeProcessError(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-PROCESS-HANDLE",
+				return Result<NativeProcess*>::Failure(
+					makeProcessError(EErrorCode::InvalidArgument, "ROX-PLATFORM-PROCESS-HANDLE",
 						"The process handle is structurally invalid.", "Use a handle returned by this process service."));
 			}
 
 			if (handle.Owner != m_Owner)
 			{
-				return core::Result<NativeProcess*>::Failure(makeProcessError(
-					core::EErrorCode::PermissionDenied, "ROX-PLATFORM-PROCESS-HANDLE",
+				return Result<NativeProcess*>::Failure(makeProcessError(
+					EErrorCode::PermissionDenied, "ROX-PLATFORM-PROCESS-HANDLE",
 					"The process handle belongs to another service instance.", "Use the process service that created the handle."));
 			}
 
 			if (handle.Slot >= m_Slots.Size())
 			{
-				return core::Result<NativeProcess*>::Failure(makeProcessError(core::EErrorCode::NotFound, "ROX-PLATFORM-PROCESS-HANDLE",
+				return Result<NativeProcess*>::Failure(makeProcessError(EErrorCode::NotFound, "ROX-PLATFORM-PROCESS-HANDLE",
 					"The process handle slot is outside this service.",
 					"Discard the invalid process handle."));
 			}
@@ -1525,32 +1527,32 @@ namespace rox::os
 
 			if (handle.Generation != slot.Generation)
 			{
-				return core::Result<NativeProcess*>::Failure(makeProcessError(core::EErrorCode::Conflict, "ROX-PLATFORM-PROCESS-HANDLE",
+				return Result<NativeProcess*>::Failure(makeProcessError(EErrorCode::Conflict, "ROX-PLATFORM-PROCESS-HANDLE",
 					"The process handle generation is stale.",
 					"Use the current handle returned by a later launch."));
 			}
 
 			if (slot.Process == nullptr)
 			{
-				return core::Result<NativeProcess*>::Failure(
-					makeProcessError(core::EErrorCode::NotFound, "ROX-PLATFORM-PROCESS-HANDLE",
+				return Result<NativeProcess*>::Failure(
+					makeProcessError(EErrorCode::NotFound, "ROX-PLATFORM-PROCESS-HANDLE",
 						"The process handle no longer identifies a live service record.",
 						"Launch another process and retain its returned handle."));
 			}
 
-			return core::Result<NativeProcess*>::Success(slot.Process);
+			return Result<NativeProcess*>::Success(slot.Process);
 		}
 
 	private:
-		core::MemoryResource& m_Resource;
+		MemoryResource& m_Resource;
 		WindowsProcessServiceOptions m_Options;
-		core::Array<ProcessSlot> m_Slots;
-		core::uint64 m_Owner = 0;
-		rox::core::Mutex m_Mutex;
+		Array<ProcessSlot> m_Slots;
+		uint64 m_Owner = 0;
+		Mutex m_Mutex;
 		bool m_bStopping = false;
 	};
 
-	WindowsProcessService::WindowsProcessService(core::MemoryResource& resource, State* const state) noexcept
+	WindowsProcessService::WindowsProcessService(MemoryResource& resource, State* const state) noexcept
 		: m_Resource(&resource)
 		, m_State(state)
 	{
@@ -1563,7 +1565,7 @@ namespace rox::os
 		if (m_State != nullptr)
 		{
 			m_State->Shutdown();
-			core::DestroyObject(*m_Resource, m_State);
+			DestroyObject(*m_Resource, m_State);
 			m_State = nullptr;
 			m_Resource = nullptr;
 		}
@@ -1586,7 +1588,7 @@ namespace rox::os
 			if (m_State != nullptr)
 			{
 				m_State->Shutdown();
-				core::DestroyObject(*m_Resource, m_State);
+				DestroyObject(*m_Resource, m_State);
 			}
 
 			m_Resource = other.m_Resource;
@@ -1601,39 +1603,39 @@ namespace rox::os
 		return *this;
 	}
 
-	core::Result<void> WindowsProcessService::TryCreate(core::MemoryResource& resource, const WindowsProcessServiceOptions options,
+	Result<void> WindowsProcessService::TryCreate(MemoryResource& resource, const WindowsProcessServiceOptions options,
 		WindowsProcessService* const outService)
 	{
 		ASSERT(outService != nullptr, "Windows process service creation requires an output object.");
 		ASSERT(!outService->IsValid(), "Windows process service creation requires an empty output object.");
-		ASSERT(resource.GetThreadSafety() == core::EMemoryResourceThreadSafety::ThreadSafe, "Windows process services require a thread-safe memory resource.");
+		ASSERT(resource.GetThreadSafety() == EMemoryResourceThreadSafety::ThreadSafe, "Windows process services require a thread-safe memory resource.");
 
 		if (options.MaximumProcesses == 0 || options.MaximumProcesses > MAXIMUM_PROCESS_COUNT)
 		{
-			return core::Result<void>::Failure(makeProcessError(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-PROCESS-DESC",
+			return Result<void>::Failure(makeProcessError(EErrorCode::InvalidArgument, "ROX-PLATFORM-PROCESS-DESC",
 				"The Windows process-service capacity is outside the supported bound.",
 				"Select a process count between one and sixty-four."));
 		}
 
-		State* const state = core::CreateObject<State>(resource, resource, options);
+		State* const state = CreateObject<State>(resource, resource, options);
 
 		if (state == nullptr || !state->Initialize())
 		{
-			core::DestroyObject(resource, state);
+			DestroyObject(resource, state);
 
-			return core::Result<void>::Failure(makeProcessError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-MEMORY",
+			return Result<void>::Failure(makeProcessError(EErrorCode::ExternalFailure, "ROX-PLATFORM-PROCESS-MEMORY",
 				"Memory allocation for the Windows process service failed.",
 				"Release bounded service memory and retry creation."));
 		}
 
 		WindowsProcessService replacement(resource, state);
-		*outService = rox::core::Move(replacement);
+		*outService = Move(replacement);
 		LOG_INFO("Platform.Process", "The Windows process service started.");
 
-		return core::Result<void>::Success();
+		return Result<void>::Success();
 	}
 
-	core::Task<ProcessHandle> WindowsProcessService::Launch(const ProcessLaunchDesc& desc, const core::CancellationToken cancellation)
+	Task<ProcessHandle> WindowsProcessService::Launch(const ProcessLaunchDesc& desc, const CancellationToken cancellation)
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Process launch requires a valid Windows process service.");
@@ -1641,16 +1643,16 @@ namespace rox::os
 		return m_State->Launch(desc, cancellation);
 	}
 
-	core::Task<ProcessExit> WindowsProcessService::Wait(const ProcessHandle process, core::MemoryResource& resultResource,
-		const core::CancellationToken cancellation)
+	Task<ProcessExit> WindowsProcessService::Wait(const ProcessHandle process, MemoryResource& resultResource,
+		const CancellationToken cancellation)
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Process Wait requires a valid Windows process service.");
-		ASSERT(resultResource.GetThreadSafety() == core::EMemoryResourceThreadSafety::ThreadSafe, "Process Wait requires a thread-safe result memory resource.");
+		ASSERT(resultResource.GetThreadSafety() == EMemoryResourceThreadSafety::ThreadSafe, "Process Wait requires a thread-safe result memory resource.");
 		return m_State->Wait(process, resultResource, cancellation);
 	}
 
-	core::Result<void> WindowsProcessService::RequestTermination(const ProcessHandle process)
+	Result<void> WindowsProcessService::RequestTermination(const ProcessHandle process)
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Process termination requires a valid Windows process service.");
@@ -1658,7 +1660,7 @@ namespace rox::os
 		return m_State->RequestTermination(process);
 	}
 
-	core::Result<void> WindowsProcessService::Release(const ProcessHandle process)
+	Result<void> WindowsProcessService::Release(const ProcessHandle process)
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Process release requires a valid Windows process service.");
@@ -1679,19 +1681,19 @@ namespace rox::os
 			"A Windows process service must retain its memory resource and state together.");
 	}
 
-	core::Result<core::Hash256> ReadCurrentWindowsProcessImageHash(core::uint64 maximumBytes)
+	Result<Hash256> ReadCurrentWindowsProcessImageHash(uint64 maximumBytes)
 	{
 		if (maximumBytes == 0 || maximumBytes > MAXIMUM_PROCESS_IMAGE_HASH_BYTES)
 		{
-			return core::Result<core::Hash256>::Failure(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-PROCESS-IMAGE-LIMIT",
+			return Result<Hash256>::Failure(EErrorCode::InvalidArgument, "ROX-PLATFORM-PROCESS-IMAGE-LIMIT",
 				"The process image hash limit is outside its supported range.",
 				"Supply a positive limit no larger than MAXIMUM_PROCESS_IMAGE_HASH_BYTES.");
 		}
 
 		wchar_t path[32768];
-		const DWORD length = GetModuleFileNameW(nullptr, path, static_cast<DWORD>(rox::core::Size(path)));
+		const DWORD length = GetModuleFileNameW(nullptr, path, static_cast<DWORD>(Size(path)));
 
-		if (length == 0 || length >= rox::core::Size(path))
+		if (length == 0 || length >= Size(path))
 		{
 			return imageFailure("The current process executable path could not be read without truncation.");
 		}
@@ -1710,9 +1712,9 @@ namespace rox::os
 			return imageFailure("The current process executable size could not be read.");
 		}
 
-		if (size.QuadPart <= 0 || static_cast<core::uint64>(size.QuadPart) > maximumBytes)
+		if (size.QuadPart <= 0 || static_cast<uint64>(size.QuadPart) > maximumBytes)
 		{
-			return core::Result<core::Hash256>::Failure(core::EErrorCode::Unsupported, "ROX-PLATFORM-PROCESS-IMAGE-LIMIT",
+			return Result<Hash256>::Failure(EErrorCode::Unsupported, "ROX-PLATFORM-PROCESS-IMAGE-LIMIT",
 				"The current executable is empty or exceeds the image hash byte limit.",
 				"Use an executable within the configured process image hash bound.");
 		}
@@ -1731,11 +1733,11 @@ namespace rox::os
 			return imageFailure("The current process executable mapping could not be viewed.");
 		}
 
-		const core::Hash256 hash = core::ComputeSha256({ static_cast<const core::Byte*>(view), static_cast<rox::core::usize>(size.QuadPart) });
+		const Hash256 hash = ComputeSha256({ static_cast<const Byte*>(view), static_cast<usize>(size.QuadPart) });
 		const BOOL unmapped = UnmapViewOfFile(view);
 		ASSERT(unmapped != FALSE, "A process image view must unmap successfully.");
 
-		return core::Result<core::Hash256>::Success(hash);
+		return Result<Hash256>::Success(hash);
 	}
 
 } // namespace rox::os

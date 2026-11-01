@@ -3,24 +3,26 @@
 
 namespace rox::os
 {
-	core::Result<core::Array<core::Byte>> IFileSystem::ReadFile(core::StringView relativePath, core::uint64 maximumBytes) const
+	using namespace core;
+
+	Result<Array<Byte>> IFileSystem::ReadFile(StringView relativePath, uint64 maximumBytes) const
 	{
-		return ReadFile(relativePath, maximumBytes, core::SystemMemoryResource::Get());
+		return ReadFile(relativePath, maximumBytes, SystemMemoryResource::Get());
 	}
 
-	core::Result<ExclusiveFileLock> ExclusiveFileLock::Acquire(IFileSystem& fileSystem, const rox::core::StringView relativePath)
+	Result<ExclusiveFileLock> ExclusiveFileLock::Acquire(IFileSystem& fileSystem, const StringView relativePath)
 	{
-		core::Result<core::uintptr> tokenResult = fileSystem.tryAcquireExclusiveFileLock(relativePath);
+		Result<uintptr> tokenResult = fileSystem.tryAcquireExclusiveFileLock(relativePath);
 
 		if (!tokenResult)
 		{
-			return core::Result<ExclusiveFileLock>::Failure(tokenResult.GetError());
+			return Result<ExclusiveFileLock>::Failure(tokenResult.GetError());
 		}
 
-		return core::Result<ExclusiveFileLock>::Success(ExclusiveFileLock(fileSystem, tokenResult.Value()));
+		return Result<ExclusiveFileLock>::Success(ExclusiveFileLock(fileSystem, tokenResult.Value()));
 	}
 
-	ExclusiveFileLock::ExclusiveFileLock(IFileSystem& fileSystem, const core::uintptr token) noexcept
+	ExclusiveFileLock::ExclusiveFileLock(IFileSystem& fileSystem, const uintptr token) noexcept
 		: m_FileSystem(&fileSystem)
 		, m_Token(token)
 	{
@@ -61,7 +63,7 @@ namespace rox::os
 	void ExclusiveFileLock::Reset() noexcept
 	{
 		IFileSystem* const fileSystem = m_FileSystem;
-		const core::uintptr token = m_Token;
+		const uintptr token = m_Token;
 		m_FileSystem = nullptr;
 		m_Token = 0;
 
@@ -85,7 +87,7 @@ namespace rox::os
 		return m_Owner.Get();
 	}
 
-	core::MemoryResource* FileSystemOwner::GetResource() const noexcept
+	MemoryResource* FileSystemOwner::GetResource() const noexcept
 	{
 		return m_Owner.GetResource();
 	}

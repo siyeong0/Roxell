@@ -15,10 +15,12 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	namespace
 	{
-		constexpr rox::core::usize MAXIMUM_LOG_PATH_CHARACTERS = 1024;
-		constexpr rox::core::usize MAXIMUM_DEBUG_LINE_BYTES = 8192;
+		constexpr usize MAXIMUM_LOG_PATH_CHARACTERS = 1024;
+		constexpr usize MAXIMUM_DEBUG_LINE_BYTES = 8192;
 	} // namespace
 
 	WindowsLogSink::~WindowsLogSink()
@@ -26,14 +28,14 @@ namespace rox::os
 		Close();
 	}
 
-	bool WindowsLogSink::TryOpen(const core::StringView utf8Path) noexcept
+	bool WindowsLogSink::TryOpen(const StringView utf8Path) noexcept
 	{
-		if (IsOpen() || utf8Path.IsEmpty() || utf8Path.Size() > static_cast<rox::core::usize>(rox::core::NumericLimits<int>::max()))
+		if (IsOpen() || utf8Path.IsEmpty() || utf8Path.Size() > static_cast<usize>(NumericLimits<int>::max()))
 		{
 			return false;
 		}
 
-		rox::core::StaticArray<wchar_t, MAXIMUM_LOG_PATH_CHARACTERS> widePath = {};
+		StaticArray<wchar_t, MAXIMUM_LOG_PATH_CHARACTERS> widePath = {};
 		const int characterCount = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8Path.Data(), static_cast<int>(utf8Path.Size()),
 			widePath.data(), static_cast<int>(widePath.size() - 1));
 
@@ -42,7 +44,7 @@ namespace rox::os
 			return false;
 		}
 
-		widePath[static_cast<rox::core::usize>(characterCount)] = L'\0';
+		widePath[static_cast<usize>(characterCount)] = L'\0';
 
 		const HANDLE file = CreateFileW(widePath.data(), FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_ALWAYS,
 			FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -53,20 +55,20 @@ namespace rox::os
 		}
 
 		m_FileHandle = file;
-		m_bWriteFailed.store(false, rox::core::MemoryOrderRelease);
+		m_bWriteFailed.store(false, MemoryOrderRelease);
 
 		return true;
 	}
 
-	bool WindowsLogSink::TryOpenCreatingDirectories(const core::StringView utf8Path) noexcept
+	bool WindowsLogSink::TryOpenCreatingDirectories(const StringView utf8Path) noexcept
 	{
 		if (IsOpen() || utf8Path.IsEmpty() || utf8Path.Size() >= MAXIMUM_LOG_PATH_CHARACTERS ||
-			utf8Path.Find('\0') != core::StringView::NPOS)
+			utf8Path.Find('\0') != StringView::NPOS)
 		{
 			return false;
 		}
 
-		rox::core::StaticArray<wchar_t, MAXIMUM_LOG_PATH_CHARACTERS> supplied{}, full{};
+		StaticArray<wchar_t, MAXIMUM_LOG_PATH_CHARACTERS> supplied{}, full{};
 		const int size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8Path.Data(), static_cast<int>(utf8Path.Size()),
 			supplied.data(), static_cast<int>(supplied.size() - 1));
 
@@ -82,16 +84,16 @@ namespace rox::os
 			return false;
 		}
 
-		const core::usize root = RootPathSize({ full.data(), count });
+		const usize root = RootPathSize({ full.data(), count });
 
 		if (root == 0 || root >= count)
 		{
 			return false;
 		}
 
-		rox::core::usize begin = root;
+		usize begin = root;
 
-		for (rox::core::usize index = root; index <= count; ++index)
+		for (usize index = root; index <= count; ++index)
 		{
 			if (index != count && full[index] == L':')
 			{
@@ -162,20 +164,20 @@ namespace rox::os
 		}
 
 		m_FileHandle = file;
-		m_bWriteFailed.store(false, rox::core::MemoryOrderRelease);
+		m_bWriteFailed.store(false, MemoryOrderRelease);
 
 		return true;
 	}
 
-	bool WindowsLogSink::TryOpenRelativeToExecutable(const core::StringView utf8RelativePath) noexcept
+	bool WindowsLogSink::TryOpenRelativeToExecutable(const StringView utf8RelativePath) noexcept
 	{
 		if (IsOpen() || utf8RelativePath.IsEmpty() ||
-			utf8RelativePath.Size() > static_cast<rox::core::usize>(rox::core::NumericLimits<int>::max()))
+			utf8RelativePath.Size() > static_cast<usize>(NumericLimits<int>::max()))
 		{
 			return false;
 		}
 
-		rox::core::StaticArray<wchar_t, MAXIMUM_LOG_PATH_CHARACTERS> modulePath = {};
+		StaticArray<wchar_t, MAXIMUM_LOG_PATH_CHARACTERS> modulePath = {};
 		const DWORD moduleLength = GetModuleFileNameW(nullptr, modulePath.data(), static_cast<DWORD>(modulePath.size()));
 
 		if (moduleLength == 0 || moduleLength >= static_cast<DWORD>(modulePath.size()))
@@ -183,7 +185,7 @@ namespace rox::os
 			return false;
 		}
 
-		rox::core::usize directoryLength = static_cast<rox::core::usize>(moduleLength);
+		usize directoryLength = static_cast<usize>(moduleLength);
 
 		while (directoryLength > 0 && modulePath[directoryLength - 1] != L'\\' && modulePath[directoryLength - 1] != L'/')
 		{
@@ -195,7 +197,7 @@ namespace rox::os
 			return false;
 		}
 
-		rox::core::StaticArray<wchar_t, MAXIMUM_LOG_PATH_CHARACTERS> relativePath = {};
+		StaticArray<wchar_t, MAXIMUM_LOG_PATH_CHARACTERS> relativePath = {};
 		const int relativeCount =
 			MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8RelativePath.Data(), static_cast<int>(utf8RelativePath.Size()),
 				relativePath.data(), static_cast<int>(relativePath.size() - 1));
@@ -205,24 +207,24 @@ namespace rox::os
 			return false;
 		}
 
-		const rox::core::usize relativeLength = static_cast<rox::core::usize>(relativeCount);
+		const usize relativeLength = static_cast<usize>(relativeCount);
 
 		if (directoryLength + relativeLength + 1 >= modulePath.size())
 		{
 			return false;
 		}
 
-		rox::core::StaticArray<wchar_t, MAXIMUM_LOG_PATH_CHARACTERS> fullPath = {};
-		rox::core::CopyN(modulePath.data(), directoryLength, fullPath.data());
-		rox::core::CopyN(relativePath.data(), relativeLength, fullPath.data() + directoryLength);
-		const rox::core::usize fullLength = directoryLength + relativeLength;
+		StaticArray<wchar_t, MAXIMUM_LOG_PATH_CHARACTERS> fullPath = {};
+		CopyN(modulePath.data(), directoryLength, fullPath.data());
+		CopyN(relativePath.data(), relativeLength, fullPath.data() + directoryLength);
+		const usize fullLength = directoryLength + relativeLength;
 		fullPath[fullLength] = L'\0';
 
 		// Every intermediate directory is created in turn, because CreateFileW with
 		// OPEN_ALWAYS creates a file and never a directory. An already-present
 		// directory is a success, which is what makes a second run of a relocated
 		// executable behave like the first.
-		for (rox::core::usize index = directoryLength; index < fullLength; ++index)
+		for (usize index = directoryLength; index < fullLength; ++index)
 		{
 			if (fullPath[index] != L'\\' && fullPath[index] != L'/')
 			{
@@ -250,7 +252,7 @@ namespace rox::os
 		}
 
 		m_FileHandle = file;
-		m_bWriteFailed.store(false, rox::core::MemoryOrderRelease);
+		m_bWriteFailed.store(false, MemoryOrderRelease);
 
 		return true;
 	}
@@ -265,12 +267,12 @@ namespace rox::os
 
 			if (FlushFileBuffers(file) == FALSE)
 			{
-				m_bWriteFailed.store(true, rox::core::MemoryOrderRelease);
+				m_bWriteFailed.store(true, MemoryOrderRelease);
 			}
 
 			if (CloseHandle(file) == FALSE)
 			{
-				m_bWriteFailed.store(true, rox::core::MemoryOrderRelease);
+				m_bWriteFailed.store(true, MemoryOrderRelease);
 			}
 
 			m_FileHandle = nullptr;
@@ -286,17 +288,17 @@ namespace rox::os
 
 	bool WindowsLogSink::HasWriteFailure() const noexcept
 	{
-		return m_bWriteFailed.load(rox::core::MemoryOrderAcquire);
+		return m_bWriteFailed.load(MemoryOrderAcquire);
 	}
 
-	void WindowsLogSink::Write(const core::LogEvent& event, const rox::core::DiagnosticText jsonLine) noexcept
+	void WindowsLogSink::Write(const LogEvent& event, const DiagnosticText jsonLine) noexcept
 	{
 		ASSERT(!jsonLine.empty(), "Windows log sink requires a non-empty JSON record.");
 		ASSERT(jsonLine.size() <= MAXIMUM_DEBUG_LINE_BYTES, "Core diagnostics must provide a bounded JSON record to the Windows sink.");
 		ASSERT(jsonLine.back() == '\n', "Each structured log record must end with one newline.");
-		rox::core::StaticArray<char, MAXIMUM_DEBUG_LINE_BYTES + 1> debugLine = {};
-		const rox::core::usize debugByteCount = (rox::core::Min)(jsonLine.size(), MAXIMUM_DEBUG_LINE_BYTES);
-		rox::core::CopyN(jsonLine.data(), debugByteCount, debugLine.data());
+		StaticArray<char, MAXIMUM_DEBUG_LINE_BYTES + 1> debugLine = {};
+		const usize debugByteCount = (Min)(jsonLine.size(), MAXIMUM_DEBUG_LINE_BYTES);
+		CopyN(jsonLine.data(), debugByteCount, debugLine.data());
 		debugLine[debugByteCount] = '\0';
 
 		if (IsDebuggerPresent() != FALSE)
@@ -314,12 +316,12 @@ namespace rox::os
 			if (WriteFile(static_cast<HANDLE>(m_FileHandle), debugLine.data(), requestedBytes, &bytesWritten, nullptr) == FALSE ||
 				bytesWritten != requestedBytes)
 			{
-				m_bWriteFailed.store(true, rox::core::MemoryOrderRelease);
+				m_bWriteFailed.store(true, MemoryOrderRelease);
 			}
 
-			if (event.Record.Level >= core::ELogLevel::Error && FlushFileBuffers(static_cast<HANDLE>(m_FileHandle)) == FALSE)
+			if (event.Record.Level >= ELogLevel::Error && FlushFileBuffers(static_cast<HANDLE>(m_FileHandle)) == FALSE)
 			{
-				m_bWriteFailed.store(true, rox::core::MemoryOrderRelease);
+				m_bWriteFailed.store(true, MemoryOrderRelease);
 			}
 		}
 
@@ -332,7 +334,7 @@ namespace rox::os
 
 		if (m_FileHandle != nullptr && FlushFileBuffers(static_cast<HANDLE>(m_FileHandle)) == FALSE)
 		{
-			m_bWriteFailed.store(true, rox::core::MemoryOrderRelease);
+			m_bWriteFailed.store(true, MemoryOrderRelease);
 		}
 
 		unlock();
@@ -340,7 +342,7 @@ namespace rox::os
 
 	void WindowsLogSink::lock() noexcept
 	{
-		while (m_OutputLock.test_and_set(rox::core::MemoryOrderAcquire))
+		while (m_OutputLock.test_and_set(MemoryOrderAcquire))
 		{
 			YieldProcessor();
 		}
@@ -348,6 +350,6 @@ namespace rox::os
 
 	void WindowsLogSink::unlock() noexcept
 	{
-		m_OutputLock.clear(rox::core::MemoryOrderRelease);
+		m_OutputLock.clear(MemoryOrderRelease);
 	}
 } // namespace rox::os

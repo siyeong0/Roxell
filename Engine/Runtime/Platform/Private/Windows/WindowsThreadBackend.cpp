@@ -11,18 +11,20 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	namespace
 	{
 		unsigned __stdcall runThread(void* context) noexcept
 		{
-			const core::NativeThreadEntry& entry = *static_cast<const core::NativeThreadEntry*>(context);
+			const NativeThreadEntry& entry = *static_cast<const NativeThreadEntry*>(context);
 			entry.Function(entry.Context);
 
 			return 0;
 		}
 	}
 
-	core::NativeThreadStartResult WindowsThreadBackend::Start(core::NativeThreadEntry& entry) noexcept
+	NativeThreadStartResult WindowsThreadBackend::Start(NativeThreadEntry& entry) noexcept
 	{
 		ASSERT(entry.Function != nullptr, "Native thread entry requires a function.");
 		unsigned identifier = 0;
@@ -31,15 +33,15 @@ namespace rox::os
 
 		if (handle == 0)
 		{
-			const core::uint32 error = static_cast<rox::core::uint32>(core::NativeErrorNumber());
+			const uint32 error = static_cast<uint32>(NativeErrorNumber());
 
-			return { {}, {core::EThreadStartStatus::NativeFailure, error} };
+			return { {}, {EThreadStartStatus::NativeFailure, error} };
 		}
 
-		return { {reinterpret_cast<void*>(handle), {identifier}}, {core::EThreadStartStatus::Started, 0} };
+		return { {reinterpret_cast<void*>(handle), {identifier}}, {EThreadStartStatus::Started, 0} };
 	}
 
-	void WindowsThreadBackend::Join(const core::NativeThread thread) noexcept
+	void WindowsThreadBackend::Join(const NativeThread thread) noexcept
 	{
 		ASSERT(thread.Handle != nullptr && thread.Id.Value != 0, "Native thread join requires an owned handle and identifier.");
 
@@ -56,7 +58,7 @@ namespace rox::os
 		ASSERT(closed != FALSE, "Native thread join must close its owned handle.");
 	}
 
-	core::ThreadId WindowsThreadBackend::CurrentThreadId() const noexcept
+	ThreadId WindowsThreadBackend::CurrentThreadId() const noexcept
 	{
 		return { GetCurrentThreadId() };
 	}

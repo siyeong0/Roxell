@@ -20,26 +20,28 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	namespace
 	{
-		core::Error streamError(
-			core::MemoryResource& resource,
-			const core::EErrorCode code,
-			const core::StringView id,
-			const core::StringView message,
+		Error streamError(
+			MemoryResource& resource,
+			const EErrorCode code,
+			const StringView id,
+			const StringView message,
 			const DWORD nativeError = 0,
-			const rox::core::usize completedBytes = 0)
+			const usize completedBytes = 0)
 		{
 			char detail[160]{};
-			const int count = rox::core::FormatText(detail, sizeof(detail), "native=%lu; completed-prefix=%zu. Keep owners until close completes; retire failed streams.", static_cast<unsigned long>(nativeError), completedBytes);
-			const core::StringView hint(detail, count > 0 ? rox::core::Min(static_cast<rox::core::usize>(count), sizeof(detail) - 1) : 0);
+			const int count = FormatText(detail, sizeof(detail), "native=%lu; completed-prefix=%zu. Keep owners until close completes; retire failed streams.", static_cast<unsigned long>(nativeError), completedBytes);
+			const StringView hint(detail, count > 0 ? Min(static_cast<usize>(count), sizeof(detail) - 1) : 0);
 
-			return { code, core::MakeLossyString(id, resource), core::MakeLossyString(message, resource), core::MakeLossyString(hint, resource) };
+			return { code, MakeLossyString(id, resource), MakeLossyString(message, resource), MakeLossyString(hint, resource) };
 		}
 
-		core::Error allocationError(core::MemoryResource& resource)
+		Error allocationError(MemoryResource& resource)
 		{
-			return streamError(resource, core::EErrorCode::ExternalFailure, "ROX-PLATFORM-STREAM-ALLOCATION", "Standard stream operation storage could not be allocated.");
+			return streamError(resource, EErrorCode::ExternalFailure, "ROX-PLATFORM-STREAM-ALLOCATION", "Standard stream operation storage could not be allocated.");
 		}
 
 		struct StreamOperation final
@@ -47,24 +49,24 @@ namespace rox::os
 		public:
 			// Array/Token ownership and metadata are owner-only. The worker receives the stable raw
 			// pointer/size below and never calls a Core allocator or completes a TaskSource.
-			core::Array<core::Byte> Buffer;
-			core::CancellationToken Cancellation;
-			core::NativeThreadEntry Entry;
-			core::NativeThread Thread;
+			Array<Byte> Buffer;
+			CancellationToken Cancellation;
+			NativeThreadEntry Entry;
+			NativeThread Thread;
 			HANDLE Pipe = nullptr;
 			OVERLAPPED Overlapped{};
-			core::Byte* Data = nullptr;
-			rox::core::usize Size = 0;
+			Byte* Data = nullptr;
+			usize Size = 0;
 			bool bWrite = false;
 			bool bJoined = false;
-			rox::core::Atomic<bool> bCancel = false;
-			rox::core::Atomic<bool> bFinished = false;
+			Atomic<bool> bCancel = false;
+			Atomic<bool> bFinished = false;
 			DWORD NativeError = ERROR_SUCCESS;
-			rox::core::usize CompletedBytes = 0;
+			usize CompletedBytes = 0;
 			bool bEof = false;
 
 		public:
-			StreamOperation(core::MemoryResource& bufferResource, const bool bWrite) noexcept
+			StreamOperation(MemoryResource& bufferResource, const bool bWrite) noexcept
 				: Buffer(bufferResource)
 				, bWrite(bWrite)
 			{
@@ -88,7 +90,7 @@ namespace rox::os
 			StreamOperation& operation = *static_cast<StreamOperation*>(context);
 			do
 			{
-				if (operation.bCancel.load(rox::core::MemoryOrderAcquire))
+				if (operation.bCancel.load(MemoryOrderAcquire))
 				{
 					operation.NativeError = ERROR_OPERATION_ABORTED;
 					break;
@@ -104,7 +106,7 @@ namespace rox::os
 					break;
 				}
 
-				const DWORD requested = static_cast<DWORD>(rox::core::Min<rox::core::usize>(operation.Size - operation.CompletedBytes, 65'536));
+				const DWORD requested = static_cast<DWORD>(Min<usize>(operation.Size - operation.CompletedBytes, 65'536));
 				// The cancellation window here cannot be closed by another flag check. The owner
 				// latches cancellation and repeats both targeted requests until this worker exits.
 				DWORD transferred = 0;
@@ -159,23 +161,23 @@ namespace rox::os
 					break;
 				}
 			} while (operation.CompletedBytes < operation.Size);
-			operation.bFinished.store(true, rox::core::MemoryOrderRelease);
+			operation.bFinished.store(true, MemoryOrderRelease);
 		}
 
-		core::Result<HANDLE> duplicatePipe(core::MemoryResource& resource, const DWORD selector)
+		Result<HANDLE> duplicatePipe(MemoryResource& resource, const DWORD selector)
 		{
 			const HANDLE original = GetStdHandle(selector);
 
 			if (original == nullptr || original == INVALID_HANDLE_VALUE)
 			{
-				return core::Result<HANDLE>::Failure(streamError(resource, core::EErrorCode::InvalidArgument, "ROX-PLATFORM-STREAM-HANDLE", "The current standard stream handle is missing or invalid."));
+				return Result<HANDLE>::Failure(streamError(resource, EErrorCode::InvalidArgument, "ROX-PLATFORM-STREAM-HANDLE", "The current standard stream handle is missing or invalid."));
 			}
 
 			HANDLE duplicate = nullptr;
 
 			if (DuplicateHandle(GetCurrentProcess(), original, GetCurrentProcess(), &duplicate, 0, FALSE, DUPLICATE_SAME_ACCESS) == FALSE)
 			{
-				return core::Result<HANDLE>::Failure(streamError(resource, core::EErrorCode::ExternalFailure,
+				return Result<HANDLE>::Failure(streamError(resource, EErrorCode::ExternalFailure,
 					"ROX-PLATFORM-STREAM-DUPLICATE",
 					"A standard stream handle could not be duplicated.", GetLastError()));
 			}
@@ -198,31 +200,31 @@ namespace rox::os
 				const BOOL closed = CloseHandle(duplicate);
 				ASSERT(closed != FALSE, "An unpublished duplicate must close after unsupported stream detection.");
 
-				return core::Result<HANDLE>::Failure(streamError(resource, core::EErrorCode::Unsupported, "ROX-PLATFORM-STREAM-SUPPORT", "Standard streams require queryable byte-mode blocking pipes.", error));
+				return Result<HANDLE>::Failure(streamError(resource, EErrorCode::Unsupported, "ROX-PLATFORM-STREAM-SUPPORT", "Standard streams require queryable byte-mode blocking pipes.", error));
 			}
 
-			return core::Result<HANDLE>::Success(duplicate);
+			return Result<HANDLE>::Success(duplicate);
 		}
 	} // namespace
 
 	class WindowsStandardStreams::State final
 	{
 	public:
-		core::MemoryResource& Resource;
+		MemoryResource& Resource;
 		StandardStreamsOptions Options;
 		HANDLE Input = nullptr;
 		HANDLE Output = nullptr;
 		DWORD OwnerThread = GetCurrentThreadId();
 		WindowsThreadBackend Threads;
-		core::UniquePtr<StreamOperation> ReadOperation;
-		core::UniquePtr<StreamOperation> WriteOperation;
+		UniquePtr<StreamOperation> ReadOperation;
+		UniquePtr<StreamOperation> WriteOperation;
 		bool bClosing = false;
 		bool bClosed = false;
 		bool bReadRetired = false;
 		bool bWriteRetired = false;
 
 	public:
-		State(core::MemoryResource& resource, const StandardStreamsOptions options, const HANDLE input, const HANDLE output) noexcept
+		State(MemoryResource& resource, const StandardStreamsOptions options, const HANDLE input, const HANDLE output) noexcept
 			: Resource(resource)
 			, Options(options)
 			, Input(input)
@@ -241,39 +243,39 @@ namespace rox::os
 			ASSERT(OwnerThread == GetCurrentThreadId(), "Standard streams must be operated on their creating thread.");
 		}
 
-		core::Result<void> Admit(const bool bWrite, const rox::core::usize size, core::MemoryResource& bufferResource, const core::Span<const core::Byte> input, core::CancellationToken cancellation)
+		Result<void> Admit(const bool bWrite, const usize size, MemoryResource& bufferResource, const Span<const Byte> input, CancellationToken cancellation)
 		{
 			AssertOwner();
-			core::UniquePtr<StreamOperation>& slot = bWrite ? WriteOperation : ReadOperation;
+			UniquePtr<StreamOperation>& slot = bWrite ? WriteOperation : ReadOperation;
 
 			if (bClosing || bClosed || slot || (bWrite ? bWriteRetired : bReadRetired))
 			{
-				return core::Result<void>::Failure(streamError(Resource, core::EErrorCode::Conflict, "ROX-PLATFORM-STREAM-BUSY", "The stream is closing, retired, or retains an unconsumed operation."));
+				return Result<void>::Failure(streamError(Resource, EErrorCode::Conflict, "ROX-PLATFORM-STREAM-BUSY", "The stream is closing, retired, or retains an unconsumed operation."));
 			}
 
 			if (size == 0 || size > (bWrite ? Options.MaximumWriteBytes : Options.MaximumReadBytes) || (bWrite && input.Data() == nullptr))
 			{
-				return core::Result<void>::Failure(streamError(Resource, core::EErrorCode::InvalidArgument, "ROX-PLATFORM-STREAM-BOUNDS", "The standard stream byte count is empty or exceeds its explicit bound."));
+				return Result<void>::Failure(streamError(Resource, EErrorCode::InvalidArgument, "ROX-PLATFORM-STREAM-BOUNDS", "The standard stream byte count is empty or exceeds its explicit bound."));
 			}
 
 			if (cancellation.IsCancellationRequested())
 			{
-				return core::Result<void>::Failure(streamError(Resource, core::EErrorCode::Cancelled, "ROX-PLATFORM-STREAM-CANCELLED", "Standard stream admission was already cancelled."));
+				return Result<void>::Failure(streamError(Resource, EErrorCode::Cancelled, "ROX-PLATFORM-STREAM-CANCELLED", "Standard stream admission was already cancelled."));
 			}
 
-			core::UniquePtr<StreamOperation> operation = core::MakeUnique<StreamOperation>(Resource, bufferResource, bWrite);
+			UniquePtr<StreamOperation> operation = MakeUnique<StreamOperation>(Resource, bufferResource, bWrite);
 
 			if (!operation || !operation->Buffer.ResizeUninitialized(size))
 			{
-				return core::Result<void>::Failure(allocationError(Resource));
+				return Result<void>::Failure(allocationError(Resource));
 			}
 
 			if (bWrite)
 			{
-				rox::core::CopyBytes(operation->Buffer.Data(), input.Data(), size);
+				CopyBytes(operation->Buffer.Data(), input.Data(), size);
 			}
 
-			operation->Cancellation = rox::core::Move(cancellation);
+			operation->Cancellation = Move(cancellation);
 			operation->Pipe = bWrite ? Output : Input;
 			operation->Data = operation->Buffer.Data();
 			operation->Size = size;
@@ -281,40 +283,40 @@ namespace rox::os
 
 			if (operation->Overlapped.hEvent == nullptr)
 			{
-				return core::Result<void>::Failure(streamError(Resource, core::EErrorCode::ExternalFailure, "ROX-PLATFORM-STREAM-EVENT", "A stream completion event could not be created.", GetLastError()));
+				return Result<void>::Failure(streamError(Resource, EErrorCode::ExternalFailure, "ROX-PLATFORM-STREAM-EVENT", "A stream completion event could not be created.", GetLastError()));
 			}
 
 			operation->Entry = { &runStreamOperation, operation.Get() };
-			const core::NativeThreadStartResult started = Threads.Start(operation->Entry);
+			const NativeThreadStartResult started = Threads.Start(operation->Entry);
 
-			if (started.Result.Status != core::EThreadStartStatus::Started)
+			if (started.Result.Status != EThreadStartStatus::Started)
 			{
-				return core::Result<void>::Failure(streamError(Resource, core::EErrorCode::ExternalFailure, "ROX-PLATFORM-STREAM-THREAD", "A standard stream worker could not start.", started.Result.NativeError));
+				return Result<void>::Failure(streamError(Resource, EErrorCode::ExternalFailure, "ROX-PLATFORM-STREAM-THREAD", "A standard stream worker could not start.", started.Result.NativeError));
 			}
 
 			operation->Thread = started.Thread;
-			slot = rox::core::Move(operation);
+			slot = Move(operation);
 
-			return core::Result<void>::Success();
+			return Result<void>::Success();
 		}
 
-		core::Result<void> PollOperation(StreamOperation* operation)
+		Result<void> PollOperation(StreamOperation* operation)
 		{
 			if (operation == nullptr || operation->bJoined)
 			{
-				return core::Result<void>::Success();
+				return Result<void>::Success();
 			}
 
 			DWORD waited = WaitForSingleObject(operation->Thread.Handle, 0);
 
 			if (waited == WAIT_FAILED)
 			{
-				return core::Result<void>::Failure(streamError(Resource, core::EErrorCode::ExternalFailure, "ROX-PLATFORM-STREAM-POLL", "A stream worker termination could not be observed.", GetLastError()));
+				return Result<void>::Failure(streamError(Resource, EErrorCode::ExternalFailure, "ROX-PLATFORM-STREAM-POLL", "A stream worker termination could not be observed.", GetLastError()));
 			}
 
 			if (waited == WAIT_OBJECT_0)
 			{
-				ASSERT(operation->bFinished.load(rox::core::MemoryOrderAcquire), "A terminated I/O worker must publish its native result.");
+				ASSERT(operation->bFinished.load(MemoryOrderAcquire), "A terminated I/O worker must publish its native result.");
 				// Join is entered only after the native thread object is signaled. No blocking I/O
 				// or unbounded destructor wait is hidden in the public polling contract.
 				Threads.Join(operation->Thread);
@@ -326,17 +328,17 @@ namespace rox::os
 					(operation->bWrite ? bWriteRetired : bReadRetired) = true;
 				}
 
-				return core::Result<void>::Success();
+				return Result<void>::Success();
 			}
 
 			if (bClosing || operation->Cancellation.IsCancellationRequested())
 			{
-				operation->bCancel.store(true, rox::core::MemoryOrderRelease);
+				operation->bCancel.store(true, MemoryOrderRelease);
 			}
 
-			if (!operation->bCancel.load(rox::core::MemoryOrderAcquire))
+			if (!operation->bCancel.load(MemoryOrderAcquire))
 			{
-				return core::Result<void>::Success();
+				return Result<void>::Success();
 			}
 
 			DWORD cancelError = ERROR_SUCCESS;
@@ -364,24 +366,24 @@ namespace rox::os
 
 			if (cancelError != ERROR_SUCCESS)
 			{
-				return core::Result<void>::Failure(
-					streamError(Resource, core::EErrorCode::ExternalFailure, "ROX-PLATFORM-STREAM-CANCEL-POLL",
+				return Result<void>::Failure(
+					streamError(Resource, EErrorCode::ExternalFailure, "ROX-PLATFORM-STREAM-CANCEL-POLL",
 						"A native stream cancellation request failed; the operation remains owned.", cancelError));
 			}
 
-			return core::Result<void>::Success();
+			return Result<void>::Success();
 		}
 
-		core::Error OperationError(StreamOperation& operation)
+		Error OperationError(StreamOperation& operation)
 		{
 			const bool bCancelled = operation.NativeError == ERROR_OPERATION_ABORTED;
-			const core::StringView diagnostic = bCancelled ? core::StringView("ROX-PLATFORM-STREAM-CANCELLED")
-				: (operation.bWrite ? core::StringView("ROX-PLATFORM-STREAM-WRITE")
-					: core::StringView("ROX-PLATFORM-STREAM-READ"));
-			const core::StringView message =
-				operation.bWrite ? core::StringView("Standard output did not complete; retire the output without retransmission.")
-				: core::StringView("Standard input did not complete; retire the input stream.");
-			return streamError(operation.Buffer.GetResource(), bCancelled ? core::EErrorCode::Cancelled : core::EErrorCode::ExternalFailure,
+			const StringView diagnostic = bCancelled ? StringView("ROX-PLATFORM-STREAM-CANCELLED")
+				: (operation.bWrite ? StringView("ROX-PLATFORM-STREAM-WRITE")
+					: StringView("ROX-PLATFORM-STREAM-READ"));
+			const StringView message =
+				operation.bWrite ? StringView("Standard output did not complete; retire the output without retransmission.")
+				: StringView("Standard input did not complete; retire the input stream.");
+			return streamError(operation.Buffer.GetResource(), bCancelled ? EErrorCode::Cancelled : EErrorCode::ExternalFailure,
 				diagnostic, message, operation.NativeError, operation.CompletedBytes);
 		}
 
@@ -393,38 +395,38 @@ namespace rox::os
 		{
 			m_State->AssertOwner();
 			ASSERT(m_State->bClosed, "Windows standard streams require completed explicit close.");
-			core::DestroyObject(*m_Resource, m_State);
+			DestroyObject(*m_Resource, m_State);
 		}
 	}
 
-	core::Result<StandardStreamsOwner> WindowsStandardStreams::Create(core::MemoryResource& resource, const StandardStreamsOptions options)
+	Result<StandardStreamsOwner> WindowsStandardStreams::Create(MemoryResource& resource, const StandardStreamsOptions options)
 	{
 		if (options.MaximumReadBytes == 0 || options.MaximumWriteBytes == 0 || options.MaximumReadBytes > MAXIMUM_STANDARD_STREAM_BYTES || options.MaximumWriteBytes > MAXIMUM_STANDARD_STREAM_BYTES)
 		{
-			return core::Result<StandardStreamsOwner>::Failure(
-				streamError(resource, core::EErrorCode::InvalidArgument, "ROX-PLATFORM-STREAM-BOUNDS",
+			return Result<StandardStreamsOwner>::Failure(
+				streamError(resource, EErrorCode::InvalidArgument, "ROX-PLATFORM-STREAM-BOUNDS",
 					"Standard stream creation requires positive bounded read/write capacities."));
 		}
 
-		core::Result<HANDLE> input = duplicatePipe(resource, STD_INPUT_HANDLE);
+		Result<HANDLE> input = duplicatePipe(resource, STD_INPUT_HANDLE);
 
 		if (!input)
 		{
-			return core::Result<StandardStreamsOwner>::Failure(input.GetError());
+			return Result<StandardStreamsOwner>::Failure(input.GetError());
 		}
 
-		core::Result<HANDLE> output = duplicatePipe(resource, STD_OUTPUT_HANDLE);
+		Result<HANDLE> output = duplicatePipe(resource, STD_OUTPUT_HANDLE);
 
 		if (!output)
 		{
 			const BOOL closed = CloseHandle(input.Value());
 			ASSERT(closed != FALSE, "A first standard stream duplicate must close when the second is refused.");
 
-			return core::Result<StandardStreamsOwner>::Failure(output.GetError());
+			return Result<StandardStreamsOwner>::Failure(output.GetError());
 		}
 
 		StandardStreamsOwner owner = StandardStreamsOwner::TryCreate<WindowsStandardStreams>(resource);
-		State* state = owner ? core::CreateObject<State>(resource, resource, options, input.Value(), output.Value()) : nullptr;
+		State* state = owner ? CreateObject<State>(resource, resource, options, input.Value(), output.Value()) : nullptr;
 
 		if (state == nullptr)
 		{
@@ -432,36 +434,36 @@ namespace rox::os
 			const BOOL outputClosed = CloseHandle(output.Value());
 			ASSERT(inputClosed != FALSE && outputClosed != FALSE, "Unpublished stream duplicates must close after allocation failure.");
 
-			return core::Result<StandardStreamsOwner>::Failure(allocationError(resource));
+			return Result<StandardStreamsOwner>::Failure(allocationError(resource));
 		}
 
 		WindowsStandardStreams* streams = static_cast<WindowsStandardStreams*>(owner.Get());
 		streams->m_Resource = &resource;
 		streams->m_State = state;
 
-		return core::Result<StandardStreamsOwner>::Success(rox::core::Move(owner));
+		return Result<StandardStreamsOwner>::Success(Move(owner));
 	}
 
-	core::Result<void> WindowsStandardStreams::ReadSome(const rox::core::usize maximumBytes, core::MemoryResource& resultResource, core::CancellationToken cancellation)
+	Result<void> WindowsStandardStreams::ReadSome(const usize maximumBytes, MemoryResource& resultResource, CancellationToken cancellation)
 	{
 		ASSERT(m_State != nullptr, "ReadSome requires a created Windows standard stream service.");
 
-		return m_State->Admit(false, maximumBytes, resultResource, {}, rox::core::Move(cancellation));
+		return m_State->Admit(false, maximumBytes, resultResource, {}, Move(cancellation));
 	}
 
-	core::Result<void> WindowsStandardStreams::Write(const core::Span<const core::Byte> bytes, core::CancellationToken cancellation)
+	Result<void> WindowsStandardStreams::Write(const Span<const Byte> bytes, CancellationToken cancellation)
 	{
 		ASSERT(m_State != nullptr, "Write requires a created Windows standard stream service.");
 
-		return m_State->Admit(true, bytes.Size(), *m_Resource, bytes, rox::core::Move(cancellation));
+		return m_State->Admit(true, bytes.Size(), *m_Resource, bytes, Move(cancellation));
 	}
 
-	core::Result<void> WindowsStandardStreams::Poll()
+	Result<void> WindowsStandardStreams::Poll()
 	{
 		ASSERT(m_State != nullptr, "Poll requires a created Windows standard stream service.");
 		m_State->AssertOwner();
-		core::Result<void> read = m_State->PollOperation(m_State->ReadOperation.Get());
-		core::Result<void> write = m_State->PollOperation(m_State->WriteOperation.Get());
+		Result<void> read = m_State->PollOperation(m_State->ReadOperation.Get());
+		Result<void> write = m_State->PollOperation(m_State->WriteOperation.Get());
 
 		if (!read)
 		{
@@ -471,71 +473,71 @@ namespace rox::os
 		return write;
 	}
 
-	core::Result<rox::core::Optional<StandardReadResult>> WindowsStandardStreams::TakeRead()
+	Result<Optional<StandardReadResult>> WindowsStandardStreams::TakeRead()
 	{
 		ASSERT(m_State != nullptr, "TakeRead requires a created Windows standard stream service.");
 		m_State->AssertOwner();
-		using Result = core::Result<rox::core::Optional<StandardReadResult>>;
-		core::UniquePtr<StreamOperation>& operation = m_State->ReadOperation;
+		using Result = Result<Optional<StandardReadResult>>;
+		UniquePtr<StreamOperation>& operation = m_State->ReadOperation;
 
 		if (!operation)
 		{
-			return Result::Failure(streamError(*m_Resource, core::EErrorCode::Conflict, "ROX-PLATFORM-STREAM-NO-READ",
+			return Result::Failure(streamError(*m_Resource, EErrorCode::Conflict, "ROX-PLATFORM-STREAM-NO-READ",
 				"No standard input operation remains to consume."));
 		}
 
 		if (!operation->bJoined)
 		{
-			return Result::Success(rox::core::NullOptional);
+			return Result::Success(NullOptional);
 		}
 
 		if (operation->NativeError != ERROR_SUCCESS)
 		{
-			core::Error error = m_State->OperationError(*operation);
+			Error error = m_State->OperationError(*operation);
 			operation.Reset();
 
-			return Result::Failure(rox::core::Move(error));
+			return Result::Failure(Move(error));
 		}
 
 		StandardReadResult result(operation->Buffer.GetResource());
 		result.Status = operation->bEof ? EStandardReadStatus::EndOfStream : EStandardReadStatus::Data;
 		operation->Buffer.ResizeRequired(operation->CompletedBytes);
-		result.Bytes = rox::core::Move(operation->Buffer);
+		result.Bytes = Move(operation->Buffer);
 		operation.Reset();
 
-		return Result::Success(rox::core::Optional<StandardReadResult>(rox::core::Move(result)));
+		return Result::Success(Optional<StandardReadResult>(Move(result)));
 	}
 
-	core::Result<rox::core::Optional<StandardWriteResult>> WindowsStandardStreams::TakeWrite()
+	Result<Optional<StandardWriteResult>> WindowsStandardStreams::TakeWrite()
 	{
 		ASSERT(m_State != nullptr, "TakeWrite requires a created Windows standard stream service.");
 		m_State->AssertOwner();
-		using Result = core::Result<rox::core::Optional<StandardWriteResult>>;
-		core::UniquePtr<StreamOperation>& operation = m_State->WriteOperation;
+		using Result = Result<Optional<StandardWriteResult>>;
+		UniquePtr<StreamOperation>& operation = m_State->WriteOperation;
 
 		if (!operation)
 		{
-			return Result::Failure(streamError(*m_Resource, core::EErrorCode::Conflict, "ROX-PLATFORM-STREAM-NO-WRITE", "No standard output operation remains to consume."));
+			return Result::Failure(streamError(*m_Resource, EErrorCode::Conflict, "ROX-PLATFORM-STREAM-NO-WRITE", "No standard output operation remains to consume."));
 		}
 
 		if (!operation->bJoined)
 		{
-			return Result::Success(rox::core::NullOptional);
+			return Result::Success(NullOptional);
 		}
 
 		if (operation->NativeError != ERROR_SUCCESS)
 		{
-			core::Error error = m_State->OperationError(*operation);
+			Error error = m_State->OperationError(*operation);
 			operation.Reset();
 
-			return Result::Failure(rox::core::Move(error));
+			return Result::Failure(Move(error));
 		}
 
 		ASSERT(operation->CompletedBytes == operation->Size, "A successful stream write must complete all bytes.");
 		const StandardWriteResult result{ operation->CompletedBytes };
 		operation.Reset();
 
-		return Result::Success(rox::core::Optional<StandardWriteResult>(result));
+		return Result::Success(Optional<StandardWriteResult>(result));
 	}
 
 	void WindowsStandardStreams::RequestClose() noexcept
@@ -546,28 +548,28 @@ namespace rox::os
 
 		if (m_State->ReadOperation)
 		{
-			m_State->ReadOperation->bCancel.store(true, rox::core::MemoryOrderRelease);
+			m_State->ReadOperation->bCancel.store(true, MemoryOrderRelease);
 		}
 
 		if (m_State->WriteOperation)
 		{
-			m_State->WriteOperation->bCancel.store(true, rox::core::MemoryOrderRelease);
+			m_State->WriteOperation->bCancel.store(true, MemoryOrderRelease);
 		}
 	}
 
-	core::Result<bool> WindowsStandardStreams::PollClose()
+	Result<bool> WindowsStandardStreams::PollClose()
 	{
 		RequestClose();
-		core::Result<void> polled = Poll();
+		Result<void> polled = Poll();
 
 		if (!polled)
 		{
-			return core::Result<bool>::Failure(polled.GetError());
+			return Result<bool>::Failure(polled.GetError());
 		}
 
 		if ((m_State->ReadOperation && !m_State->ReadOperation->bJoined) || (m_State->WriteOperation && !m_State->WriteOperation->bJoined))
 		{
-			return core::Result<bool>::Success(false);
+			return Result<bool>::Success(false);
 		}
 
 		for (HANDLE* handle : { &m_State->Input, &m_State->Output })
@@ -576,8 +578,8 @@ namespace rox::os
 			{
 				if (CloseHandle(*handle) == FALSE)
 				{
-					return core::Result<bool>::Failure(
-						streamError(*m_Resource, core::EErrorCode::ExternalFailure, "ROX-PLATFORM-STREAM-CLOSE", "A completed standard stream duplicate could not close.", GetLastError()));
+					return Result<bool>::Failure(
+						streamError(*m_Resource, EErrorCode::ExternalFailure, "ROX-PLATFORM-STREAM-CLOSE", "A completed standard stream duplicate could not close.", GetLastError()));
 				}
 
 				*handle = nullptr;
@@ -586,7 +588,7 @@ namespace rox::os
 
 		m_State->bClosed = true;
 
-		return core::Result<bool>::Success(true);
+		return Result<bool>::Success(true);
 	}
 
 	bool WindowsStandardStreams::IsClosed() const noexcept

@@ -34,17 +34,19 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	namespace
 	{
-		constexpr core::uint32 PHYSICAL_KEY_STATE_COUNT = 0xE8;
-		constexpr core::uint32 POINTER_BUTTON_STATE_COUNT = 5;
-		constexpr core::uint32 REPLACEMENT_CHARACTER = 0xFFFD;
-		constexpr core::uint32 HIGH_SURROGATE_FIRST = 0xD800;
-		constexpr core::uint32 HIGH_SURROGATE_LAST = 0xDBFF;
-		constexpr core::uint32 LOW_SURROGATE_FIRST = 0xDC00;
-		constexpr core::uint32 LOW_SURROGATE_LAST = 0xDFFF;
-		constexpr core::uint32 SUPPLEMENTARY_PLANE_FIRST = 0x10000;
-		constexpr core::uint32 UNICODE_SCALAR_LAST = 0x10FFFF;
+		constexpr uint32 PHYSICAL_KEY_STATE_COUNT = 0xE8;
+		constexpr uint32 POINTER_BUTTON_STATE_COUNT = 5;
+		constexpr uint32 REPLACEMENT_CHARACTER = 0xFFFD;
+		constexpr uint32 HIGH_SURROGATE_FIRST = 0xD800;
+		constexpr uint32 HIGH_SURROGATE_LAST = 0xDBFF;
+		constexpr uint32 LOW_SURROGATE_FIRST = 0xDC00;
+		constexpr uint32 LOW_SURROGATE_LAST = 0xDFFF;
+		constexpr uint32 SUPPLEMENTARY_PLANE_FIRST = 0x10000;
+		constexpr uint32 UNICODE_SCALAR_LAST = 0x10FFFF;
 
 		enum class EWindowInitializeResult
 		{
@@ -53,40 +55,40 @@ namespace rox::os
 			ClassFailed
 		};
 
-		rox::core::Atomic<core::uint64> s_WindowSystemOwner = 1;
+		Atomic<uint64> s_WindowSystemOwner = 1;
 
-		[[nodiscard]] core::Error makeWindowError(const core::EErrorCode code, const core::StringView diagnosticID, const core::StringView message, const core::StringView recoveryHint)
+		[[nodiscard]] Error makeWindowError(const EErrorCode code, const StringView diagnosticID, const StringView message, const StringView recoveryHint)
 		{
-			ASSERT(code != core::EErrorCode::None, "A window failure requires a non-success error code.");
+			ASSERT(code != EErrorCode::None, "A window failure requires a non-success error code.");
 			ASSERT(!diagnosticID.IsEmpty(), "A window failure requires a diagnostic ID.");
 			ASSERT(!message.IsEmpty(), "A window failure requires a message.");
 
-			return core::MakeError(code, diagnosticID, message, recoveryHint);
+			return MakeError(code, diagnosticID, message, recoveryHint);
 		}
 
-		[[nodiscard]] bool isHighSurrogate(const core::uint32 codeUnit) noexcept
+		[[nodiscard]] bool isHighSurrogate(const uint32 codeUnit) noexcept
 		{
 			return codeUnit >= HIGH_SURROGATE_FIRST && codeUnit <= HIGH_SURROGATE_LAST;
 		}
 
-		[[nodiscard]] bool isLowSurrogate(const core::uint32 codeUnit) noexcept
+		[[nodiscard]] bool isLowSurrogate(const uint32 codeUnit) noexcept
 		{
 			return codeUnit >= LOW_SURROGATE_FIRST && codeUnit <= LOW_SURROGATE_LAST;
 		}
 
-		[[nodiscard]] core::uint32 combineSurrogates(const core::uint32 high, const core::uint32 low) noexcept
+		[[nodiscard]] uint32 combineSurrogates(const uint32 high, const uint32 low) noexcept
 		{
 			ASSERT(isHighSurrogate(high), "Unicode surrogate composition requires a high surrogate.");
 			ASSERT(isLowSurrogate(low), "Unicode surrogate composition requires a low surrogate.");
-			const core::uint32 codePoint = SUPPLEMENTARY_PLANE_FIRST + ((high - HIGH_SURROGATE_FIRST) << 10) + (low - LOW_SURROGATE_FIRST);
+			const uint32 codePoint = SUPPLEMENTARY_PLANE_FIRST + ((high - HIGH_SURROGATE_FIRST) << 10) + (low - LOW_SURROGATE_FIRST);
 			ASSERT(codePoint <= UNICODE_SCALAR_LAST, "A composed UTF-16 surrogate pair must produce a Unicode scalar value.");
 
 			return codePoint;
 		}
 
-		[[nodiscard]] core::uint32 pointerButtonIndex(const EPointerButton button) noexcept
+		[[nodiscard]] uint32 pointerButtonIndex(const EPointerButton button) noexcept
 		{
-			const core::uint32 index = static_cast<core::uint32>(button);
+			const uint32 index = static_cast<uint32>(button);
 			ASSERT(index < POINTER_BUTTON_STATE_COUNT, "A pointer-button state index must be within the admitted button set.");
 
 			return index;
@@ -94,14 +96,14 @@ namespace rox::os
 
 		// Use bounded stack storage to report recoverable failures without allocating.
 		// The key-value payload shares the log message bound because Error and LogRecord carry no structured payload.
-		constexpr rox::core::usize POINTER_MESSAGE_BUFFER_BYTES = 512;
-		constexpr rox::core::usize MAXIMUM_POINTER_SENTENCE_BYTES = 80;
-		constexpr core::uint32 CURSOR_HIDE_LOOP_BOUND = 64;
-		constexpr core::uint16 RAW_INPUT_MOUSE_USAGE_PAGE = 0x01;
-		constexpr core::uint16 RAW_INPUT_MOUSE_USAGE = 0x02;
+		constexpr usize POINTER_MESSAGE_BUFFER_BYTES = 512;
+		constexpr usize MAXIMUM_POINTER_SENTENCE_BYTES = 80;
+		constexpr uint32 CURSOR_HIDE_LOOP_BOUND = 64;
+		constexpr uint16 RAW_INPUT_MOUSE_USAGE_PAGE = 0x01;
+		constexpr uint16 RAW_INPUT_MOUSE_USAGE = 0x02;
 
 		// Limit pointer diagnostics to the known sentence table.
-		enum class EPointerMessage : core::uint8
+		enum class EPointerMessage : uint8
 		{
 			RawInputRegistrationRefused,
 			ConfinementChangeRefused,
@@ -114,7 +116,7 @@ namespace rox::os
 			Count
 		};
 
-		enum class EPointerOperation : core::uint8
+		enum class EPointerOperation : uint8
 		{
 			RegisterRawInputDevices,
 			ClipCursor,
@@ -126,13 +128,13 @@ namespace rox::os
 			None
 		};
 
-		enum class EPointerDirection : core::uint8
+		enum class EPointerDirection : uint8
 		{
 			TowardApplied,
 			TowardAbsent
 		};
 
-		constexpr core::StringView POINTER_MESSAGE_TABLE[] = { "Windows refused the raw-input registration change.",
+		constexpr StringView POINTER_MESSAGE_TABLE[] = { "Windows refused the raw-input registration change.",
 															   "Windows refused to change the cursor confinement.",
 															   "Windows could not report the current cursor confinement.",
 															   "The cursor confinement was not ours to release and was left alone.",
@@ -140,13 +142,13 @@ namespace rox::os
 															   "The arbiter thread handle could not be acquired.",
 															   "Relative pointer mode entered natively.",
 															   "Relative pointer mode left natively." };
-		constexpr core::StringView POINTER_OPERATION_TABLE[] = { "RegisterRawInputDevices", "ClipCursor", "GetClipCursor", "ShowCursorLoop", "DuplicateHandle" };
-		constexpr core::StringView POINTER_DIRECTION_TABLE[] = { "TowardApplied", "TowardAbsent" };
-		constexpr core::StringView POINTER_CONFINEMENT_TABLE[] = { "Absent", "Current", "Stale" };
+		constexpr StringView POINTER_OPERATION_TABLE[] = { "RegisterRawInputDevices", "ClipCursor", "GetClipCursor", "ShowCursorLoop", "DuplicateHandle" };
+		constexpr StringView POINTER_DIRECTION_TABLE[] = { "TowardApplied", "TowardAbsent" };
+		constexpr StringView POINTER_CONFINEMENT_TABLE[] = { "Absent", "Current", "Stale" };
 
 		[[nodiscard]] constexpr bool everyPointerSentenceFitsItsBound() noexcept
 		{
-			for (const core::StringView sentence : POINTER_MESSAGE_TABLE)
+			for (const StringView sentence : POINTER_MESSAGE_TABLE)
 			{
 				if (sentence.Size() > MAXIMUM_POINTER_SENTENCE_BYTES)
 				{
@@ -157,10 +159,10 @@ namespace rox::os
 			return true;
 		}
 
-		static_assert(rox::core::Size(POINTER_MESSAGE_TABLE) == static_cast<rox::core::usize>(EPointerMessage::Count), "Every pointer-message enumerator requires its own sentence literal.");
-		static_assert(rox::core::Size(POINTER_OPERATION_TABLE) == static_cast<rox::core::usize>(EPointerOperation::None), "Every reportable pointer operation requires its own enumerator name.");
-		static_assert(rox::core::Size(POINTER_DIRECTION_TABLE) == static_cast<rox::core::usize>(EPointerDirection::TowardAbsent) + 1, "Every reconciliation direction requires its own enumerator name.");
-		static_assert(rox::core::Size(POINTER_CONFINEMENT_TABLE) == static_cast<rox::core::usize>(EConfinement::Stale) + 1, "Every confinement value requires its own enumerator name.");
+		static_assert(Size(POINTER_MESSAGE_TABLE) == static_cast<usize>(EPointerMessage::Count), "Every pointer-message enumerator requires its own sentence literal.");
+		static_assert(Size(POINTER_OPERATION_TABLE) == static_cast<usize>(EPointerOperation::None), "Every reportable pointer operation requires its own enumerator name.");
+		static_assert(Size(POINTER_DIRECTION_TABLE) == static_cast<usize>(EPointerDirection::TowardAbsent) + 1, "Every reconciliation direction requires its own enumerator name.");
+		static_assert(Size(POINTER_CONFINEMENT_TABLE) == static_cast<usize>(EConfinement::Stale) + 1, "Every confinement value requires its own enumerator name.");
 		static_assert(everyPointerSentenceFitsItsBound(), "Every pointer-message sentence must fit the proven eighty-byte sentence bound.");
 
 		struct PointerDiagnosticPayload final
@@ -171,22 +173,22 @@ namespace rox::os
 			EPointerDirection Direction = EPointerDirection::TowardApplied;
 			WindowId Window;
 			WindowId Claimant;
-			core::uint32 NativeError = 0;
+			uint32 NativeError = 0;
 
 			EPointerOperation ContextOperation = EPointerOperation::None;
-			core::uint32 ContextNativeError = 0;
+			uint32 ContextNativeError = 0;
 
 			RECT AppliedRect = {};
 			RECT CurrentRect = {};
 
-			core::uint32 LoopCallsMade = 0;
-			core::uint32 LoopCallsUndone = 0;
-			core::int32 LoopDisplayCount = 0;
+			uint32 LoopCallsMade = 0;
+			uint32 LoopCallsUndone = 0;
+			int32 LoopDisplayCount = 0;
 
 			WindowId RemainingClaimant;
 			WindowId RemainingRegisteredTarget;
 			EConfinement RemainingConfinement = EConfinement::Absent;
-			core::uint32 RemainingCursorHideCalls = 0;
+			uint32 RemainingCursorHideCalls = 0;
 
 			bool bHasNativeError = false;
 			bool bHasAppliedRect = false;
@@ -203,7 +205,7 @@ namespace rox::os
 				ASSERT(m_Buffer != nullptr, "A pointer-message writer requires its bounded buffer.");
 			}
 
-			void Append(const core::StringView text) noexcept
+			void Append(const StringView text) noexcept
 			{
 				ASSERT(m_Length + text.Size() <= POINTER_MESSAGE_BUFFER_BYTES, "A pointer diagnostic message must fit the proven message bound.");
 
@@ -214,20 +216,20 @@ namespace rox::os
 				}
 			}
 
-			void AppendUnsigned(const core::uint64 value) noexcept
+			void AppendUnsigned(const uint64 value) noexcept
 			{
 				char digits[24] = {};
-				const rox::core::ToCharsResult converted = rox::core::ToChars(digits, digits + sizeof(digits), value);
-				ASSERT(converted.ec == rox::core::EErrorCondition(), "A bounded decimal rendering of an unsigned value must succeed.");
-				Append(core::StringView(digits, static_cast<rox::core::usize>(converted.ptr - digits)));
+				const ToCharsResult converted = ToChars(digits, digits + sizeof(digits), value);
+				ASSERT(converted.ec == EErrorCondition(), "A bounded decimal rendering of an unsigned value must succeed.");
+				Append(StringView(digits, static_cast<usize>(converted.ptr - digits)));
 			}
 
-			void AppendSigned(const core::int64 value) noexcept
+			void AppendSigned(const int64 value) noexcept
 			{
 				char digits[24] = {};
-				const rox::core::ToCharsResult converted = rox::core::ToChars(digits, digits + sizeof(digits), value);
-				ASSERT(converted.ec == rox::core::EErrorCondition(), "A bounded decimal rendering of a signed value must succeed.");
-				Append(core::StringView(digits, static_cast<rox::core::usize>(converted.ptr - digits)));
+				const ToCharsResult converted = ToChars(digits, digits + sizeof(digits), value);
+				ASSERT(converted.ec == EErrorCondition(), "A bounded decimal rendering of a signed value must succeed.");
+				Append(StringView(digits, static_cast<usize>(converted.ptr - digits)));
 			}
 
 			// Include the owner; spell absent identifiers as invalid.
@@ -258,35 +260,35 @@ namespace rox::os
 				AppendSigned(rect.bottom);
 			}
 
-			[[nodiscard]] rox::core::usize Length() const noexcept
+			[[nodiscard]] usize Length() const noexcept
 			{
 				return m_Length;
 			}
 
 		private:
 			char* m_Buffer = nullptr;
-			rox::core::usize m_Length = 0;
+			usize m_Length = 0;
 		};
 
 		// The sentence carries its own terminal period and every tail key carries its own leading
 		// space, so nothing is written between them. An absent field is omitted with its key rather
 		// than written empty, which is what makes context-operation present mean exactly the failed
 		// query preceding a failed release, and loop present mean exactly ShowCursorLoop.
-		[[nodiscard]] rox::core::usize encodePointerMessage(const PointerDiagnosticPayload& payload,
+		[[nodiscard]] usize encodePointerMessage(const PointerDiagnosticPayload& payload,
 			char(&buffer)[POINTER_MESSAGE_BUFFER_BYTES]) noexcept
 		{
 			ASSERT(payload.Message < EPointerMessage::Count, "A pointer diagnostic sentence must name an entry of the closed sentence table.");
 			PointerMessageWriter writer(buffer);
-			writer.Append(POINTER_MESSAGE_TABLE[static_cast<rox::core::usize>(payload.Message)]);
+			writer.Append(POINTER_MESSAGE_TABLE[static_cast<usize>(payload.Message)]);
 
 			if (payload.Operation != EPointerOperation::None)
 			{
 				writer.Append(" operation=");
-				writer.Append(POINTER_OPERATION_TABLE[static_cast<rox::core::usize>(payload.Operation)]);
+				writer.Append(POINTER_OPERATION_TABLE[static_cast<usize>(payload.Operation)]);
 			}
 
 			writer.Append(" direction=");
-			writer.Append(POINTER_DIRECTION_TABLE[static_cast<rox::core::usize>(payload.Direction)]);
+			writer.Append(POINTER_DIRECTION_TABLE[static_cast<usize>(payload.Direction)]);
 			writer.Append(" window=");
 			writer.AppendWindowId(payload.Window);
 			writer.Append(" claimant=");
@@ -301,7 +303,7 @@ namespace rox::os
 			if (payload.ContextOperation != EPointerOperation::None)
 			{
 				writer.Append(" context-operation=");
-				writer.Append(POINTER_OPERATION_TABLE[static_cast<rox::core::usize>(payload.ContextOperation)]);
+				writer.Append(POINTER_OPERATION_TABLE[static_cast<usize>(payload.ContextOperation)]);
 				writer.Append(" context-error=");
 				writer.AppendUnsigned(payload.ContextNativeError);
 			}
@@ -333,7 +335,7 @@ namespace rox::os
 			writer.Append("/");
 			writer.AppendWindowId(payload.RemainingRegisteredTarget);
 			writer.Append("/");
-			writer.Append(POINTER_CONFINEMENT_TABLE[static_cast<rox::core::usize>(payload.RemainingConfinement)]);
+			writer.Append(POINTER_CONFINEMENT_TABLE[static_cast<usize>(payload.RemainingConfinement)]);
 			writer.Append("/");
 			writer.AppendUnsigned(payload.RemainingCursorHideCalls);
 
@@ -343,9 +345,9 @@ namespace rox::os
 		struct CursorHideLoopResult final
 		{
 		public:
-			core::uint32 CallsMade = 0;
-			core::uint32 CallsUndone = 0;
-			core::int32 DisplayCount = 0;
+			uint32 CallsMade = 0;
+			uint32 CallsUndone = 0;
+			int32 DisplayCount = 0;
 			bool bHidden = false;
 		};
 
@@ -391,28 +393,28 @@ namespace rox::os
 			State* Owner = nullptr;
 			HWND NativeWindow = nullptr;
 
-			core::UniquePtr<WindowsAccessibility> Accessibility;
-			core::InterfaceOwner<WindowsTextInput> TextInput;
+			UniquePtr<WindowsAccessibility> Accessibility;
+			InterfaceOwner<WindowsTextInput> TextInput;
 			bool bTextServiceKeyHandled = false;
 
 			WindowId ID;
 			WindowState StateSnapshot;
 
-			core::uint32 PendingHighSurrogate = 0;
-			core::uint64 TextSession = 0;
+			uint32 PendingHighSurrogate = 0;
+			uint64 TextSession = 0;
 			bool bTextInputEnabled = false;
 			bool bManagedTextInput = false;
 			bool bCompositionActive = false;
 
-			core::int32 LastPointerX = 0;
-			core::int32 LastPointerY = 0;
+			int32 LastPointerX = 0;
+			int32 LastPointerY = 0;
 
 			// Absolute pointer differencing tracks one device and coordinate space.
 			HANDLE LastAbsoluteDevice = nullptr;
-			core::int32 LastAbsoluteX = 0;
-			core::int32 LastAbsoluteY = 0;
+			int32 LastAbsoluteX = 0;
+			int32 LastAbsoluteY = 0;
 
-			core::uint32 Generation = 1;
+			uint32 Generation = 1;
 
 			bool Keys[PHYSICAL_KEY_STATE_COUNT] = {};
 			bool PointerButtons[POINTER_BUTTON_STATE_COUNT] = {};
@@ -442,7 +444,7 @@ namespace rox::os
 		{
 		public:
 			// Held for every record read and every record write, and never held across a Win32 call.
-			rox::core::Mutex Mutex;
+			Mutex Mutex;
 
 			// The reservation held by a live window; invalid otherwise.
 			WindowId Claimant;
@@ -461,25 +463,25 @@ namespace rox::os
 			// An outstanding ShowCursor(FALSE) contribution on the arbiter queue. It does NOT mean
 			// the cursor is hidden: another writer on the same queue can raise the counter and Win32
 			// offers no ownership query for it.
-			core::uint32 CursorHideCalls = 0;
+			uint32 CursorHideCalls = 0;
 
 			// The last two fields are the only ones that outlive a clear record. A thread id names
 			// its thread only until that thread terminates, so a stored id alone would admit a later
 			// thread that inherited the number. The handle is the identity and the liveness; the id
 			// is a cached comparison that is sound only while the handle reports running.
 			HANDLE ArbiterThread = nullptr;
-			core::uint32 ArbiterThreadId = 0;
+			uint32 ArbiterThreadId = 0;
 		};
 
-		State(core::MemoryResource& resource, const WindowsWindowSystemOptions options) noexcept
+		State(MemoryResource& resource, const WindowsWindowSystemOptions options) noexcept
 			: m_Resource(resource)
 			, m_Options(options)
 			, m_Records(resource)
 			, m_PendingEvents(resource)
 			, m_PublishedEvents(resource)
 		{
-			m_Owner = s_WindowSystemOwner.fetch_add(1, rox::core::MemoryOrderRelaxed);
-			ASSERT(m_Owner != 0 && m_Owner != rox::core::NumericLimits<core::uint64>::max(), "Window-system owner identity space must not be exhausted.");
+			m_Owner = s_WindowSystemOwner.fetch_add(1, MemoryOrderRelaxed);
+			ASSERT(m_Owner != 0 && m_Owner != NumericLimits<uint64>::max(), "Window-system owner identity space must not be exhausted.");
 			m_OwnerThread = GetCurrentThreadId();
 			ASSERT(m_OwnerThread != 0, "A Windows window system requires a valid owner-thread ID.");
 		}
@@ -499,7 +501,7 @@ namespace rox::os
 			}
 
 			const int classNameLength = swprintf_s(m_ClassName, L"RoxellWindow_%016llX", static_cast<unsigned long long>(m_Owner));
-			ASSERT(classNameLength > 0 && static_cast<rox::core::usize>(classNameLength) < sizeof(m_ClassName) / sizeof(m_ClassName[0]), "A Windows window class name must fit its bounded storage.");
+			ASSERT(classNameLength > 0 && static_cast<usize>(classNameLength) < sizeof(m_ClassName) / sizeof(m_ClassName[0]), "A Windows window class name must fit its bounded storage.");
 
 			m_Instance = GetModuleHandleW(nullptr);
 
@@ -520,28 +522,28 @@ namespace rox::os
 			return m_Class != 0 ? EWindowInitializeResult::Success : EWindowInitializeResult::ClassFailed;
 		}
 
-		[[nodiscard]] core::Result<WindowId> CreateWindow(const WindowDesc& desc)
+		[[nodiscard]] Result<WindowId> CreateWindow(const WindowDesc& desc)
 		{
 			assertOwnerThread();
-			core::Result<void> validated = validateDesc(desc);
+			Result<void> validated = validateDesc(desc);
 
 			if (!validated)
 			{
-				return core::Result<WindowId>::Failure(validated.GetError());
+				return Result<WindowId>::Failure(validated.GetError());
 			}
 
 			WindowRecord* const record = reserveRecord();
 
 			if (record == nullptr)
 			{
-				return core::Result<WindowId>::Failure(makeWindowError(
-					core::EErrorCode::Conflict, "ROX-PLATFORM-WINDOW-CAPACITY", "Every configured Windows window slot is occupied.",
+				return Result<WindowId>::Failure(makeWindowError(
+					EErrorCode::Conflict, "ROX-PLATFORM-WINDOW-CAPACITY", "Every configured Windows window slot is occupied.",
 					"Destroy an existing window or increase the reviewed window-system bound."));
 			}
 
 			wchar_t title[MAXIMUM_WINDOW_TITLE_UTF8_BYTE_COUNT + 1] = {};
 			const int titleLength = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, desc.Title.Data(), static_cast<int>(desc.Title.Size()), title, static_cast<int>(MAXIMUM_WINDOW_TITLE_UTF8_BYTE_COUNT));
-			ASSERT(titleLength > 0 && static_cast<rox::core::usize>(titleLength) <= MAXIMUM_WINDOW_TITLE_UTF8_BYTE_COUNT, "A validated bounded UTF-8 window title must convert to bounded UTF-16.");
+			ASSERT(titleLength > 0 && static_cast<usize>(titleLength) <= MAXIMUM_WINDOW_TITLE_UTF8_BYTE_COUNT, "A validated bounded UTF-8 window title must convert to bounded UTF-16.");
 			title[titleLength] = L'\0';
 
 			DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
@@ -558,7 +560,7 @@ namespace rox::os
 			{
 				releaseReservedRecord(*record);
 
-				return core::Result<WindowId>::Failure(makeWindowError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-CREATE",
+				return Result<WindowId>::Failure(makeWindowError(EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-CREATE",
 					"Windows could not calculate the requested client-area window size.",
 					"Retry with a supported window size on the owner thread."));
 			}
@@ -569,8 +571,8 @@ namespace rox::os
 			{
 				releaseReservedRecord(*record);
 
-				return core::Result<WindowId>::Failure(
-					makeWindowError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-CREATE",
+				return Result<WindowId>::Failure(
+					makeWindowError(EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-CREATE",
 						"Windows could not enter per-monitor-v2 DPI awareness for window creation.",
 						"Run on a supported Windows desktop and retry creation."));
 			}
@@ -584,8 +586,8 @@ namespace rox::os
 				releaseReservedRecord(*record);
 				LOG_ERROR("Platform.Window", "Windows failed to create a top-level window.");
 
-				return core::Result<WindowId>::Failure(
-					makeWindowError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-CREATE",
+				return Result<WindowId>::Failure(
+					makeWindowError(EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-CREATE",
 						"Windows failed to create the requested top-level window.",
 						"Check desktop availability and retry with a supported descriptor."));
 			}
@@ -602,34 +604,34 @@ namespace rox::os
 
 			if (desc.bVisible)
 			{
-				core::Result<void> visible = SetWindowVisibility(record->ID, true);
+				Result<void> visible = SetWindowVisibility(record->ID, true);
 
 				if (!visible)
 				{
-					core::Result<void> destroyed = DestroyWindow(record->ID);
+					Result<void> destroyed = DestroyWindow(record->ID);
 					ASSERT(destroyed.HasValue(), "A newly created window must roll back after visibility publication fails.");
 
-					return core::Result<WindowId>::Failure(visible.GetError());
+					return Result<WindowId>::Failure(visible.GetError());
 				}
 			}
 
-			return core::Result<WindowId>::Success(record->ID);
+			return Result<WindowId>::Success(record->ID);
 		}
 
-		[[nodiscard]] core::Result<void> DestroyWindow(const WindowId window)
+		[[nodiscard]] Result<void> DestroyWindow(const WindowId window)
 		{
 			assertOwnerThread();
-			core::Result<WindowRecord*> resolved = resolveRecord(window);
+			Result<WindowRecord*> resolved = resolveRecord(window);
 
 			if (!resolved)
 			{
-				return core::Result<void>::Failure(resolved.GetError());
+				return Result<void>::Failure(resolved.GetError());
 			}
 
 			WindowRecord& record = *resolved.Value();
 			ASSERT(record.NativeWindow != nullptr, "A live window record must retain its native window until explicit destruction.");
 			const WindowId destroyed = record.ID;
-			core::Result<void> reconciled = core::Result<void>::Success();
+			Result<void> reconciled = Result<void>::Success();
 
 			if (isPointerClaimant(destroyed))
 			{
@@ -649,7 +651,7 @@ namespace rox::os
 			{
 				LOG_ERROR("Platform.Window", "Windows failed to destroy an owned top-level window.");
 
-				return core::Result<void>::Failure(makeWindowError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-DESTROY",
+				return Result<void>::Failure(makeWindowError(EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-DESTROY",
 					"Windows failed to destroy the owned top-level window.",
 					"Release native consumers and retry destruction on the owner thread."));
 			}
@@ -680,14 +682,14 @@ namespace rox::os
 			return reconciled;
 		}
 
-		[[nodiscard]] core::Result<void> SetWindowVisibility(const WindowId window, const bool bVisible)
+		[[nodiscard]] Result<void> SetWindowVisibility(const WindowId window, const bool bVisible)
 		{
 			assertOwnerThread();
-			core::Result<WindowRecord*> resolved = resolveRecord(window);
+			Result<WindowRecord*> resolved = resolveRecord(window);
 
 			if (!resolved)
 			{
-				return core::Result<void>::Failure(resolved.GetError());
+				return Result<void>::Failure(resolved.GetError());
 			}
 
 			WindowRecord& record = *resolved.Value();
@@ -702,30 +704,30 @@ namespace rox::os
 
 			if (record.StateSnapshot.bVisible != bVisible)
 			{
-				return core::Result<void>::Failure(makeWindowError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-VISIBILITY",
+				return Result<void>::Failure(makeWindowError(EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-VISIBILITY",
 					"Windows did not apply the requested top-level window visibility.",
 					"Retry visibility after restoring the interactive desktop."));
 			}
 
-			return core::Result<void>::Success();
+			return Result<void>::Success();
 		}
 
-		[[nodiscard]] core::Result<void> ResizeWindow(const WindowId window, const WindowExtent clientExtent)
+		[[nodiscard]] Result<void> ResizeWindow(const WindowId window, const WindowExtent clientExtent)
 		{
 			assertOwnerThread();
 
 			if (!isValidExtent(clientExtent))
 			{
-				return core::Result<void>::Failure(makeWindowError(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-WINDOW-RESIZE",
+				return Result<void>::Failure(makeWindowError(EErrorCode::InvalidArgument, "ROX-PLATFORM-WINDOW-RESIZE",
 					"The requested window client extent is outside the supported bound.",
 					"Use nonzero dimensions no greater than 16,384 pixels."));
 			}
 
-			core::Result<WindowRecord*> resolved = resolveRecord(window);
+			Result<WindowRecord*> resolved = resolveRecord(window);
 
 			if (!resolved)
 			{
-				return core::Result<void>::Failure(resolved.GetError());
+				return Result<void>::Failure(resolved.GetError());
 			}
 
 			WindowRecord& record = *resolved.Value();
@@ -739,31 +741,31 @@ namespace rox::os
 			{
 				LOG_ERROR("Platform.Window", "Windows failed to resize an owned top-level window.");
 
-				return core::Result<void>::Failure(makeWindowError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-RESIZE",
+				return Result<void>::Failure(makeWindowError(EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-RESIZE",
 					"Windows failed to resize the owned top-level window.",
 					"Restore the window and retry a supported client extent."));
 			}
 
 			updateState(record);
 
-			return core::Result<void>::Success();
+			return Result<void>::Success();
 		}
 
-		[[nodiscard]] core::Result<void> SetPointerMode(const WindowId window, const EPointerMode mode)
+		[[nodiscard]] Result<void> SetPointerMode(const WindowId window, const EPointerMode mode)
 		{
 			assertOwnerThread();
-			core::Result<WindowRecord*> resolved = resolveRecord(window);
+			Result<WindowRecord*> resolved = resolveRecord(window);
 
 			if (!resolved)
 			{
-				return core::Result<void>::Failure(resolved.GetError());
+				return Result<void>::Failure(resolved.GetError());
 			}
 
 			WindowRecord& record = *resolved.Value();
 
 			if (mode == EPointerMode::Relative)
 			{
-				core::Result<void> admitted = admitRelativeClaim(record);
+				Result<void> admitted = admitRelativeClaim(record);
 
 				if (!admitted)
 				{
@@ -779,73 +781,73 @@ namespace rox::os
 
 			if (!isPointerClaimant(record.ID))
 			{
-				return core::Result<void>::Success();
+				return Result<void>::Success();
 			}
 
 			// Idempotence is stated over the arbiter record and never over the requested value, so
 			// this still reconciles a residue the window owns.
-			core::Result<void> reconciled = reconcilePointer(record);
+			Result<void> reconciled = reconcilePointer(record);
 			clearPointerRecordIfAbsent(record.ID);
 
 			return reconciled;
 		}
 
-		[[nodiscard]] core::Result<core::String> ReadClipboardText(const WindowId window, core::MemoryResource& memory, core::uint32 maximumBytes)
+		[[nodiscard]] Result<String> ReadClipboardText(const WindowId window, MemoryResource& memory, uint32 maximumBytes)
 		{
 			assertOwnerThread();
-			core::Result<WindowRecord*> resolved = resolveRecord(window);
+			Result<WindowRecord*> resolved = resolveRecord(window);
 
 			if (!resolved)
 			{
-				return core::Result<core::String>::Failure(resolved.GetError());
+				return Result<String>::Failure(resolved.GetError());
 			}
 
 			if (maximumBytes == 0 || maximumBytes > 1024 * 1024)
 			{
-				return core::Result<core::String>::Failure(core::EErrorCode::InvalidArgument, "platform.window.clipboard", "Clipboard reads are bounded to one MiB.");
+				return Result<String>::Failure(EErrorCode::InvalidArgument, "platform.window.clipboard", "Clipboard reads are bounded to one MiB.");
 			}
 
 			if (!OpenClipboard(resolved.Value()->NativeWindow))
 			{
-				return core::Result<core::String>::Failure(clipboardError("OpenClipboard", GetLastError()));
+				return Result<String>::Failure(clipboardError("OpenClipboard", GetLastError()));
 			}
 
-			core::ScopeExit close([]() noexcept
+			ScopeExit close([]() noexcept
 			{
 				CloseClipboard();
 			});
 
 			if (!IsClipboardFormatAvailable(CF_UNICODETEXT))
 			{
-				return core::Result<core::String>::Failure(core::EErrorCode::NotFound, "platform.window.clipboard", "Clipboard has no Unicode text.");
+				return Result<String>::Failure(EErrorCode::NotFound, "platform.window.clipboard", "Clipboard has no Unicode text.");
 			}
 
 			const HANDLE handle = GetClipboardData(CF_UNICODETEXT);
 
 			if (!handle)
 			{
-				return core::Result<core::String>::Failure(clipboardError("GetClipboardData", GetLastError()));
+				return Result<String>::Failure(clipboardError("GetClipboardData", GetLastError()));
 			}
 
 			const SIZE_T bytes = GlobalSize(handle);
 
 			if (bytes < sizeof(wchar_t))
 			{
-				return core::Result<core::String>::Failure(core::EErrorCode::InvalidArgument, "platform.window.clipboard", "Clipboard Unicode extent is invalid.");
+				return Result<String>::Failure(EErrorCode::InvalidArgument, "platform.window.clipboard", "Clipboard Unicode extent is invalid.");
 			}
 
 			const wchar_t* source = static_cast<const wchar_t*>(GlobalLock(handle));
 
 			if (!source)
 			{
-				return core::Result<core::String>::Failure(clipboardError("GlobalLock", GetLastError()));
+				return Result<String>::Failure(clipboardError("GlobalLock", GetLastError()));
 			}
 
-			core::ScopeExit unlock([&]() noexcept
+			ScopeExit unlock([&]() noexcept
 			{
 				GlobalUnlock(handle);
 			});
-			const core::uint64 bound = rox::core::Min<SIZE_T>(bytes / sizeof(wchar_t), static_cast<SIZE_T>(maximumBytes) + 1);
+			const uint64 bound = Min<SIZE_T>(bytes / sizeof(wchar_t), static_cast<SIZE_T>(maximumBytes) + 1);
 			SIZE_T count = 0;
 
 			while (count < bound && source[count] != 0)
@@ -855,82 +857,82 @@ namespace rox::os
 
 			if (count == bound)
 			{
-				return core::Result<core::String>::Failure(core::EErrorCode::InvalidArgument, "platform.window.clipboard", "Clipboard text exceeds its read bound or lacks a terminator.");
+				return Result<String>::Failure(EErrorCode::InvalidArgument, "platform.window.clipboard", "Clipboard text exceeds its read bound or lacks a terminator.");
 			}
 
-			core::String result(memory);
+			String result(memory);
 
 			if (count == 0)
 			{
-				return core::Result<core::String>::Success(rox::core::Move(result));
+				return Result<String>::Success(Move(result));
 			}
 
 			const int required = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, source, static_cast<int>(count), nullptr, 0, nullptr, nullptr);
 
 			if (required <= 0)
 			{
-				return core::Result<core::String>::Failure(clipboardError("Clipboard UTF-16 conversion", GetLastError()));
+				return Result<String>::Failure(clipboardError("Clipboard UTF-16 conversion", GetLastError()));
 			}
 
-			if (static_cast<core::uint32>(required) > maximumBytes)
+			if (static_cast<uint32>(required) > maximumBytes)
 			{
-				return core::Result<core::String>::Failure(core::EErrorCode::InvalidArgument, "platform.window.clipboard", "Clipboard text exceeds its UTF-8 byte bound.");
+				return Result<String>::Failure(EErrorCode::InvalidArgument, "platform.window.clipboard", "Clipboard text exceeds its UTF-8 byte bound.");
 			}
 
-			core::Array<char> encoded(memory);
+			Array<char> encoded(memory);
 
 			if (!encoded.ResizeUninitialized(required))
 			{
-				return core::Result<core::String>::Failure(core::EErrorCode::ExternalFailure, "platform.window.clipboard", "Clipboard text allocation failed.");
+				return Result<String>::Failure(EErrorCode::ExternalFailure, "platform.window.clipboard", "Clipboard text allocation failed.");
 			}
 
 			if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, source, static_cast<int>(count), encoded.Data(), required, nullptr, nullptr) != required)
 			{
-				return core::Result<core::String>::Failure(clipboardError("Clipboard UTF-16 conversion", GetLastError()));
+				return Result<String>::Failure(clipboardError("Clipboard UTF-16 conversion", GetLastError()));
 			}
 
 			if (!result.Assign({ encoded.Data(), encoded.Size() }))
 			{
-				return core::Result<core::String>::Failure(core::EErrorCode::ExternalFailure, "platform.window.clipboard", "Clipboard text copy failed.");
+				return Result<String>::Failure(EErrorCode::ExternalFailure, "platform.window.clipboard", "Clipboard text copy failed.");
 			}
 
-			return core::Result<core::String>::Success(rox::core::Move(result));
+			return Result<String>::Success(Move(result));
 		}
 
-		[[nodiscard]] core::Result<void> WriteClipboardText(const WindowId window, core::StringView text)
+		[[nodiscard]] Result<void> WriteClipboardText(const WindowId window, StringView text)
 		{
 			assertOwnerThread();
-			core::Result<WindowRecord*> resolved = resolveRecord(window);
+			Result<WindowRecord*> resolved = resolveRecord(window);
 
 			if (!resolved)
 			{
-				return core::Result<void>::Failure(resolved.GetError());
+				return Result<void>::Failure(resolved.GetError());
 			}
 
-			if (text.Size() > 1024 * 1024 || !core::IsValidUtf8(text) || text.Contains('\0'))
+			if (text.Size() > 1024 * 1024 || !IsValidUtf8(text) || text.Contains('\0'))
 			{
-				return core::Result<void>::Failure(core::EErrorCode::InvalidArgument, "platform.window.clipboard", "Clipboard writes require bounded UTF-8 without embedded nulls.");
+				return Result<void>::Failure(EErrorCode::InvalidArgument, "platform.window.clipboard", "Clipboard writes require bounded UTF-8 without embedded nulls.");
 			}
 
 			const int count = text.IsEmpty() ? 0 : MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text.Data(), static_cast<int>(text.Size()), nullptr, 0);
 
 			if (count <= 0 && !text.IsEmpty())
 			{
-				return core::Result<void>::Failure(clipboardError("Clipboard UTF-8 conversion", GetLastError()));
+				return Result<void>::Failure(clipboardError("Clipboard UTF-8 conversion", GetLastError()));
 			}
 
-			core::Result<WindowsClipboardMemory> allocation = WindowsClipboardMemory::Allocate(static_cast<core::uint32>((static_cast<SIZE_T>(count) + 1) * sizeof(wchar_t)));
+			Result<WindowsClipboardMemory> allocation = WindowsClipboardMemory::Allocate(static_cast<uint32>((static_cast<SIZE_T>(count) + 1) * sizeof(wchar_t)));
 
 			if (!allocation)
 			{
-				return core::Result<void>::Failure(allocation.GetError());
+				return Result<void>::Failure(allocation.GetError());
 			}
 
-			core::Result<void*> locked = allocation.Value().Lock();
+			Result<void*> locked = allocation.Value().Lock();
 
 			if (!locked)
 			{
-				return core::Result<void>::Failure(locked.GetError());
+				return Result<void>::Failure(locked.GetError());
 			}
 
 			wchar_t* destination = static_cast<wchar_t*>(locked.Value());
@@ -941,42 +943,42 @@ namespace rox::os
 
 			if (!bEncoded)
 			{
-				return core::Result<void>::Failure(clipboardError("Clipboard UTF-8 conversion", conversionError));
+				return Result<void>::Failure(clipboardError("Clipboard UTF-8 conversion", conversionError));
 			}
 
 			if (!OpenClipboard(resolved.Value()->NativeWindow))
 			{
-				return core::Result<void>::Failure(clipboardError("OpenClipboard", GetLastError()));
+				return Result<void>::Failure(clipboardError("OpenClipboard", GetLastError()));
 			}
 
-			core::ScopeExit close([]() noexcept
+			ScopeExit close([]() noexcept
 			{
 				CloseClipboard();
 			});
 
 			if (!EmptyClipboard())
 			{
-				return core::Result<void>::Failure(clipboardError("EmptyClipboard", GetLastError()));
+				return Result<void>::Failure(clipboardError("EmptyClipboard", GetLastError()));
 			}
 
 			if (!SetClipboardData(CF_UNICODETEXT, allocation.Value().Get()))
 			{
-				return core::Result<void>::Failure(clipboardError("SetClipboardData", GetLastError()));
+				return Result<void>::Failure(clipboardError("SetClipboardData", GetLastError()));
 			}
 
 			allocation.Value().ReleaseToWindows();
 
-			return core::Result<void>::Success();
+			return Result<void>::Success();
 		}
 
-		core::Result<void> SetAccessibilitySnapshot(WindowId window, const AccessibilitySnapshot& snapshot)
+		Result<void> SetAccessibilitySnapshot(WindowId window, const AccessibilitySnapshot& snapshot)
 		{
 			assertOwnerThread();
-			core::Result<WindowRecord*> resolved = resolveRecord(window);
+			Result<WindowRecord*> resolved = resolveRecord(window);
 
 			if (!resolved)
 			{
-				return core::Result<void>::Failure(resolved.GetError());
+				return Result<void>::Failure(resolved.GetError());
 			}
 
 			WindowRecord& record = *resolved.Value();
@@ -989,45 +991,45 @@ namespace rox::os
 					record.Accessibility.Reset();
 				}
 
-				return core::Result<void>::Success();
+				return Result<void>::Success();
 			}
 
 			if (!record.Accessibility)
 			{
-				core::Result<core::UniquePtr<WindowsAccessibility>> owner = WindowsAccessibility::Create(record.NativeWindow);
+				Result<UniquePtr<WindowsAccessibility>> owner = WindowsAccessibility::Create(record.NativeWindow);
 
 				if (!owner)
 				{
-					return core::Result<void>::Failure(owner.GetError());
+					return Result<void>::Failure(owner.GetError());
 				}
 
-				record.Accessibility = rox::core::Move(owner).TakeValue();
+				record.Accessibility = Move(owner).TakeValue();
 			}
 
 			return record.Accessibility->Publish(snapshot);
 		}
 
-		core::Result<AccessibilityRequest> PollAccessibilityAction(WindowId window)
+		Result<AccessibilityRequest> PollAccessibilityAction(WindowId window)
 		{
 			assertOwnerThread();
-			core::Result<WindowRecord*> resolved = resolveRecord(window);
+			Result<WindowRecord*> resolved = resolveRecord(window);
 
 			if (!resolved)
 			{
-				return core::Result<AccessibilityRequest>::Failure(resolved.GetError());
+				return Result<AccessibilityRequest>::Failure(resolved.GetError());
 			}
 
-			return core::Result<AccessibilityRequest>::Success(resolved.Value()->Accessibility ? resolved.Value()->Accessibility->Poll() : AccessibilityRequest{});
+			return Result<AccessibilityRequest>::Success(resolved.Value()->Accessibility ? resolved.Value()->Accessibility->Poll() : AccessibilityRequest{});
 		}
 
-		core::Result<void> PublishTextDocument(WindowId window, const WindowTextDocument& document)
+		Result<void> PublishTextDocument(WindowId window, const WindowTextDocument& document)
 		{
 			assertOwnerThread();
-			core::Result<WindowRecord*> resolved = resolveRecord(window);
+			Result<WindowRecord*> resolved = resolveRecord(window);
 
 			if (!resolved)
 			{
-				return core::Result<void>::Failure(resolved.GetError());
+				return Result<void>::Failure(resolved.GetError());
 			}
 
 			WindowRecord& record = *resolved.Value();
@@ -1040,12 +1042,12 @@ namespace rox::os
 					record.TextInput.Reset();
 				}
 
-				return core::Result<void>::Success();
+				return Result<void>::Success();
 			}
 
 			if (!record.TextInput)
 			{
-				core::InterfaceOwner<WindowsTextInput> owner = core::InterfaceOwner<WindowsTextInput>::Create(
+				InterfaceOwner<WindowsTextInput> owner = InterfaceOwner<WindowsTextInput>::Create(
 					m_Resource, m_Resource, record.NativeWindow, record.ID,
 					+[](void* context, const WindowEvent& event) noexcept
 					{
@@ -1064,41 +1066,41 @@ namespace rox::os
 
 				if (!owner)
 				{
-					return core::Result<void>::Failure(core::EErrorCode::ExternalFailure, "platform.window.tsf", "TSF owner allocation failed.");
+					return Result<void>::Failure(EErrorCode::ExternalFailure, "platform.window.tsf", "TSF owner allocation failed.");
 				}
 
-				core::Result<void> initialized = owner->Initialize();
+				Result<void> initialized = owner->Initialize();
 
 				if (!initialized)
 				{
 					return initialized;
 				}
 
-				record.TextInput = rox::core::Move(owner);
+				record.TextInput = Move(owner);
 			}
 
 			return record.TextInput->Publish(document);
 		}
 
-		[[nodiscard]] core::Result<void> SetTextInputState(const WindowId window, const WindowTextInputState& state)
+		[[nodiscard]] Result<void> SetTextInputState(const WindowId window, const WindowTextInputState& state)
 		{
 			assertOwnerThread();
-			core::Result<WindowRecord*> resolved = resolveRecord(window);
+			Result<WindowRecord*> resolved = resolveRecord(window);
 
 			if (!resolved)
 			{
-				return core::Result<void>::Failure(resolved.GetError());
+				return Result<void>::Failure(resolved.GetError());
 			}
 
 			WindowRecord& record = *resolved.Value();
 
 			if (state.bEnabled && (state.Session == 0 || state.CaretHeight <= 0 || state.CaretHeight > MAXIMUM_WINDOW_EXTENT_DIMENSION ||
-				state.CaretX < -static_cast<core::int32>(MAXIMUM_WINDOW_EXTENT_DIMENSION) ||
-				state.CaretX > static_cast<core::int32>(MAXIMUM_WINDOW_EXTENT_DIMENSION) ||
-				state.CaretY < -static_cast<core::int32>(MAXIMUM_WINDOW_EXTENT_DIMENSION) ||
-				state.CaretY > static_cast<core::int32>(MAXIMUM_WINDOW_EXTENT_DIMENSION)))
+				state.CaretX < -static_cast<int32>(MAXIMUM_WINDOW_EXTENT_DIMENSION) ||
+				state.CaretX > static_cast<int32>(MAXIMUM_WINDOW_EXTENT_DIMENSION) ||
+				state.CaretY < -static_cast<int32>(MAXIMUM_WINDOW_EXTENT_DIMENSION) ||
+				state.CaretY > static_cast<int32>(MAXIMUM_WINDOW_EXTENT_DIMENSION)))
 			{
-				return core::Result<void>::Failure(core::EErrorCode::InvalidArgument, "platform.window.text", "Native text input requires a session and bounded physical caret geometry.");
+				return Result<void>::Failure(EErrorCode::InvalidArgument, "platform.window.text", "Native text input requires a session and bounded physical caret geometry.");
 			}
 
 			if (record.TextInput)
@@ -1111,7 +1113,7 @@ namespace rox::os
 
 				if (!ImmAssociateContextEx(record.NativeWindow, nullptr, 0))
 				{
-					return core::Result<void>::Failure(core::EErrorCode::ExternalFailure, "platform.window.tsf", "Windows could not disable duplicate IMM32 routing.");
+					return Result<void>::Failure(EErrorCode::ExternalFailure, "platform.window.tsf", "Windows could not disable duplicate IMM32 routing.");
 				}
 
 				record.bManagedTextInput = true;
@@ -1123,7 +1125,7 @@ namespace rox::os
 
 			if (!record.bManagedTextInput && !state.bEnabled)
 			{
-				return core::Result<void>::Success();
+				return Result<void>::Success();
 			}
 
 			const bool bChange = !record.bManagedTextInput || record.bTextInputEnabled != state.bEnabled || record.TextSession != state.Session;
@@ -1145,7 +1147,7 @@ namespace rox::os
 			{
 				if (!ImmAssociateContextEx(record.NativeWindow, nullptr, state.bEnabled ? IACE_DEFAULT : 0))
 				{
-					return core::Result<void>::Failure(core::EErrorCode::ExternalFailure, "platform.window.text", "Windows could not associate the requested IMM32 context.");
+					return Result<void>::Failure(EErrorCode::ExternalFailure, "platform.window.text", "Windows could not associate the requested IMM32 context.");
 				}
 
 				record.bManagedTextInput = true;
@@ -1155,14 +1157,14 @@ namespace rox::os
 
 			if (!state.bEnabled)
 			{
-				return core::Result<void>::Success();
+				return Result<void>::Success();
 			}
 
 			const HIMC context = ImmGetContext(record.NativeWindow);
 
 			if (!context)
 			{
-				return core::Result<void>::Failure(core::EErrorCode::Unsupported, "platform.window.text", "No IMM32 text input context is available.");
+				return Result<void>::Failure(EErrorCode::Unsupported, "platform.window.text", "No IMM32 text input context is available.");
 			}
 
 			COMPOSITIONFORM composition{ CFS_POINT, {state.CaretX, state.CaretY + state.CaretHeight}, {} };
@@ -1175,46 +1177,46 @@ namespace rox::os
 
 			if (!bPositioned)
 			{
-				return core::Result<void>::Failure(core::EErrorCode::ExternalFailure, "platform.window.text", "Windows could not position the IMM32 composition/candidate windows.");
+				return Result<void>::Failure(EErrorCode::ExternalFailure, "platform.window.text", "Windows could not position the IMM32 composition/candidate windows.");
 			}
 
-			return core::Result<void>::Success();
+			return Result<void>::Success();
 		}
 
-		[[nodiscard]] core::Result<WindowState> GetWindowState(const WindowId window) const
+		[[nodiscard]] Result<WindowState> GetWindowState(const WindowId window) const
 		{
 			assertOwnerThread();
-			core::Result<const WindowRecord*> resolved = resolveRecord(window);
+			Result<const WindowRecord*> resolved = resolveRecord(window);
 
 			if (!resolved)
 			{
-				return core::Result<WindowState>::Failure(resolved.GetError());
+				return Result<WindowState>::Failure(resolved.GetError());
 			}
 
-			return core::Result<WindowState>::Success(resolved.Value()->StateSnapshot);
+			return Result<WindowState>::Success(resolved.Value()->StateSnapshot);
 		}
 
-		[[nodiscard]] core::Result<NativeWindowHandle> GetNativeHandle(const WindowId window) const
+		[[nodiscard]] Result<NativeWindowHandle> GetNativeHandle(const WindowId window) const
 		{
 			assertOwnerThread();
-			core::Result<const WindowRecord*> resolved = resolveRecord(window);
+			Result<const WindowRecord*> resolved = resolveRecord(window);
 
 			if (!resolved)
 			{
-				return core::Result<NativeWindowHandle>::Failure(resolved.GetError());
+				return Result<NativeWindowHandle>::Failure(resolved.GetError());
 			}
 
 			const WindowRecord& record = *resolved.Value();
 			ASSERT(record.NativeWindow != nullptr, "A live window record must retain a native handle for borrowing.");
 
-			return core::Result<NativeWindowHandle>::Success(NativeWindowHandle::FromWin32(reinterpret_cast<core::uintptr>(record.NativeWindow)));
+			return Result<NativeWindowHandle>::Success(NativeWindowHandle::FromWin32(reinterpret_cast<uintptr>(record.NativeWindow)));
 		}
 
 		[[nodiscard]] WindowEventBatch PollEvents()
 		{
 			assertOwnerThread();
 			m_PublishedEvents.Clear();
-			const bool bTextPublicationBoundary = rox::core::AnyOf(m_Records.begin(), m_Records.end(), [](const WindowRecord& record) { return static_cast<bool>(record.TextInput); });
+			const bool bTextPublicationBoundary = AnyOf(m_Records.begin(), m_Records.end(), [](const WindowRecord& record) { return static_cast<bool>(record.TextInput); });
 
 			// Grant deferred text locks only while the last consumer publication is
 			// current, before admitting a pointer/navigation message which can move it.
@@ -1272,7 +1274,7 @@ namespace rox::os
 				}
 			}
 
-			rox::core::Swap(m_PendingEvents, m_PublishedEvents);
+			Swap(m_PendingEvents, m_PublishedEvents);
 			const bool bOverflowed = m_bPendingOverflowed;
 			const bool bQuitRequested = m_bPendingQuitRequested;
 			m_bPendingOverflowed = false;
@@ -1285,9 +1287,9 @@ namespace rox::os
 	private:
 		// Check thread liveness before its cached ID: Windows may reuse IDs after termination.
 		// Reject invalid threads before ownership checks because they cannot legally acquire the arbiter.
-		[[nodiscard]] core::Result<void> admitRelativeClaim(const WindowRecord& record)
+		[[nodiscard]] Result<void> admitRelativeClaim(const WindowRecord& record)
 		{
-			rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+			LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 
 			if (s_PointerArbiter.ArbiterThread != nullptr)
 			{
@@ -1296,16 +1298,16 @@ namespace rox::os
 
 				if (waitResult == WAIT_OBJECT_0)
 				{
-					return core::Result<void>::Failure(
-						makeWindowError(core::EErrorCode::Unsupported, "ROX-PLATFORM-WINDOW-POINTER-THREAD-GONE",
+					return Result<void>::Failure(
+						makeWindowError(EErrorCode::Unsupported, "ROX-PLATFORM-WINDOW-POINTER-THREAD-GONE",
 							"The input thread that owned relative pointer mode has terminated.",
 							"Relative pointer mode is over for this process; start a new process to use it."));
 				}
 
 				if (GetCurrentThreadId() != s_PointerArbiter.ArbiterThreadId)
 				{
-					return core::Result<void>::Failure(
-						makeWindowError(core::EErrorCode::Unsupported, "ROX-PLATFORM-WINDOW-POINTER-THREAD",
+					return Result<void>::Failure(
+						makeWindowError(EErrorCode::Unsupported, "ROX-PLATFORM-WINDOW-POINTER-THREAD",
 							"Relative pointer mode is pinned to another input thread of this process.",
 							"Request relative pointer mode from the thread that first entered it."));
 				}
@@ -1316,8 +1318,8 @@ namespace rox::os
 
 			if (bHeldByAnotherClaimant || bHeldByAnotherSystem)
 			{
-				return core::Result<void>::Failure(
-					makeWindowError(core::EErrorCode::Conflict, "ROX-PLATFORM-WINDOW-POINTER-OWNER",
+				return Result<void>::Failure(
+					makeWindowError(EErrorCode::Conflict, "ROX-PLATFORM-WINDOW-POINTER-OWNER",
 						"Another window or window system holds the relative pointer arbiter.",
 						"Free or destroy the holding window, or wait for its window system to shut down."));
 			}
@@ -1336,10 +1338,10 @@ namespace rox::os
 					payload.Message = EPointerMessage::ArbiterHandleUnavailable;
 					payload.Operation = EPointerOperation::DuplicateHandle;
 					payload.Direction = EPointerDirection::TowardApplied;
-					payload.NativeError = static_cast<core::uint32>(GetLastError());
+					payload.NativeError = static_cast<uint32>(GetLastError());
 					payload.bHasNativeError = true;
 
-					return reportPointerFailureLocked(payload, record.ID, core::EErrorCode::ExternalFailure,
+					return reportPointerFailureLocked(payload, record.ID, EErrorCode::ExternalFailure,
 						"ROX-PLATFORM-WINDOW-POINTER-ARBITER",
 						"Request relative pointer mode again; nothing was pinned and nothing was applied.");
 				}
@@ -1361,21 +1363,21 @@ namespace rox::os
 			s_PointerArbiter.Claimant = record.ID;
 			s_PointerArbiter.Owner = this;
 
-			return core::Result<void>::Success();
+			return Result<void>::Success();
 		}
 
 		// The one reconciliation algorithm. Every trigger performs it; no trigger performs a special
 		// enter, a special leave, or a rollback.
-		[[nodiscard]] core::Result<void> reconcilePointer(WindowRecord& record)
+		[[nodiscard]] Result<void> reconcilePointer(WindowRecord& record)
 		{
 			ASSERT(!record.bSuppressPointerReconcile, "Pointer reconciliation must not run while a native call of this window suppresses it.");
 			assertArbiterThread();
 			const bool bDesiredApplied = record.StateSnapshot.PointerMode == EPointerMode::Relative && record.StateSnapshot.bFocused && !record.StateSnapshot.bMinimized;
 			const bool bWasActive = record.StateSnapshot.bPointerRelativeActive;
-			core::Result<void> outcome = bDesiredApplied ? reconcileTowardApplied(record) : reconcileTowardAbsent(record.ID);
+			Result<void> outcome = bDesiredApplied ? reconcileTowardApplied(record) : reconcileTowardAbsent(record.ID);
 			record.StateSnapshot.bPointerRelativeActive = isPointerRelativeActive(record.ID);
 			{
-				rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+				LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 				assertPointerRecordConsistentLocked();
 			}
 
@@ -1397,11 +1399,11 @@ namespace rox::os
 		// Toward applied the order is registration, confinement, cursor. That keeps raw reports
 		// discarded until every entry effect has succeeded. The sequence stops at the first failing
 		// effect, the record keeps exactly what succeeded, and nothing already applied is undone.
-		[[nodiscard]] core::Result<void> reconcileTowardApplied(WindowRecord& record)
+		[[nodiscard]] Result<void> reconcileTowardApplied(WindowRecord& record)
 		{
 			WindowId registeredTarget;
 			{
-				rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+				LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 				registeredTarget = s_PointerArbiter.RegisteredTarget;
 			}
 
@@ -1419,20 +1421,20 @@ namespace rox::os
 					payload.Message = EPointerMessage::RawInputRegistrationRefused;
 					payload.Operation = EPointerOperation::RegisterRawInputDevices;
 					payload.Direction = EPointerDirection::TowardApplied;
-					payload.NativeError = static_cast<core::uint32>(GetLastError());
+					payload.NativeError = static_cast<uint32>(GetLastError());
 					payload.bHasNativeError = true;
 
-					return reportPointerFailure(payload, record.ID, core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-RAW-INPUT", "Request relative pointer mode again on the arbiter thread.");
+					return reportPointerFailure(payload, record.ID, EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-RAW-INPUT", "Request relative pointer mode again on the arbiter thread.");
 				}
 
-				rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+				LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 				s_PointerArbiter.RegisteredTarget = record.ID;
 				ASSERT(s_PointerArbiter.RegisteredTarget == record.ID, "The arbiter must record the raw-input target the last call actually applied.");
 			}
 
 			EConfinement confinement = EConfinement::Absent;
 			{
-				rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+				LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 				confinement = s_PointerArbiter.Confinement;
 			}
 
@@ -1446,25 +1448,25 @@ namespace rox::os
 					payload.Message = EPointerMessage::ConfinementChangeRefused;
 					payload.Operation = EPointerOperation::ClipCursor;
 					payload.Direction = EPointerDirection::TowardApplied;
-					payload.NativeError = static_cast<core::uint32>(GetLastError());
+					payload.NativeError = static_cast<uint32>(GetLastError());
 					payload.bHasNativeError = true;
 					payload.AppliedRect = clipRect;
 					payload.bHasAppliedRect = true;
 
-					return reportPointerFailure(payload, record.ID, core::EErrorCode::ExternalFailure,
+					return reportPointerFailure(payload, record.ID, EErrorCode::ExternalFailure,
 						"ROX-PLATFORM-WINDOW-POINTER-CONFINE",
 						"Request relative pointer mode again once the desktop admits a cursor clip.");
 				}
 
-				rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+				LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 				s_PointerArbiter.Confinement = EConfinement::Current;
 				s_PointerArbiter.AppliedClipRect = clipRect;
 				ASSERT(s_PointerArbiter.Confinement == EConfinement::Current, "The arbiter must record the confinement the last call actually applied.");
 			}
 
-			core::uint32 cursorHideCalls = 0;
+			uint32 cursorHideCalls = 0;
 			{
-				rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+				LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 				cursorHideCalls = s_PointerArbiter.CursorHideCalls;
 			}
 
@@ -1484,25 +1486,25 @@ namespace rox::os
 					payload.LoopDisplayCount = loop.DisplayCount;
 					payload.bHasLoopResult = true;
 
-					return reportPointerFailure(payload, record.ID, core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-POINTER-CURSOR", "Lower the cursor display count of this input queue and request the mode again.");
+					return reportPointerFailure(payload, record.ID, EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-POINTER-CURSOR", "Lower the cursor display count of this input queue and request the mode again.");
 				}
 
-				rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+				LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 				s_PointerArbiter.CursorHideCalls = loop.CallsMade;
 				ASSERT(s_PointerArbiter.CursorHideCalls > 0, "A hidden cursor must record the hide contribution this packet owes.");
 			}
 
-			return core::Result<void>::Success();
+			return Result<void>::Success();
 		}
 
 		// Toward absent the order is the reverse, which makes the derived active answer false the
 		// moment a leave begins. It needs no window record: RIDEV_REMOVE takes a null target and the
 		// clip release names no window, which is what lets the owning shutdown route run it.
-		[[nodiscard]] core::Result<void> reconcileTowardAbsent(const WindowId window)
+		[[nodiscard]] Result<void> reconcileTowardAbsent(const WindowId window)
 		{
-			core::uint32 cursorHideCalls = 0;
+			uint32 cursorHideCalls = 0;
 			{
-				rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+				LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 				cursorHideCalls = s_PointerArbiter.CursorHideCalls;
 			}
 
@@ -1510,19 +1512,19 @@ namespace rox::os
 			{
 				// No thread test, because one input queue owes the whole debt, and no failure
 				// channel, because ShowCursor(TRUE) has none.
-				for (core::uint32 call = 0; call < cursorHideCalls; ++call)
+				for (uint32 call = 0; call < cursorHideCalls; ++call)
 				{
 					(void)ShowCursor(TRUE);
 				}
 
-				rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+				LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 				s_PointerArbiter.CursorHideCalls = 0;
 			}
 
 			EConfinement confinement = EConfinement::Absent;
 			RECT appliedRect = {};
 			{
-				rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+				LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 				confinement = s_PointerArbiter.Confinement;
 				appliedRect = s_PointerArbiter.AppliedClipRect;
 				ASSERT(confinement == EConfinement::Absent || s_PointerArbiter.Claimant == window || s_PointerArbiter.Owner == this, "A confinement release requires the arbiter to name this window or this system.");
@@ -1530,7 +1532,7 @@ namespace rox::os
 
 			if (confinement != EConfinement::Absent)
 			{
-				core::Result<void> released = releaseConfinement(window, appliedRect);
+				Result<void> released = releaseConfinement(window, appliedRect);
 
 				if (!released)
 				{
@@ -1540,7 +1542,7 @@ namespace rox::os
 
 			WindowId registeredTarget;
 			{
-				rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+				LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 				registeredTarget = s_PointerArbiter.RegisteredTarget;
 			}
 
@@ -1559,23 +1561,23 @@ namespace rox::os
 					payload.Message = EPointerMessage::RawInputRegistrationRefused;
 					payload.Operation = EPointerOperation::RegisterRawInputDevices;
 					payload.Direction = EPointerDirection::TowardAbsent;
-					payload.NativeError = static_cast<core::uint32>(GetLastError());
+					payload.NativeError = static_cast<uint32>(GetLastError());
 					payload.bHasNativeError = true;
 
-					return reportPointerFailure(payload, window, core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-RAW-INPUT", "Free the pointer mode of the claiming window again on the arbiter thread.");
+					return reportPointerFailure(payload, window, EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-RAW-INPUT", "Free the pointer mode of the claiming window again on the arbiter thread.");
 				}
 
-				rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+				LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 				s_PointerArbiter.RegisteredTarget = {};
 				ASSERT(!s_PointerArbiter.RegisteredTarget.IsValid(),
 					"The arbiter must record the raw-input removal the last call actually applied.");
 			}
 
-			return core::Result<void>::Success();
+			return Result<void>::Success();
 		}
 
 		// Clipping has no native owner query. On query failure, attempt release to avoid trapping the cursor.
-		[[nodiscard]] core::Result<void> releaseConfinement(const WindowId window, const RECT& appliedRect)
+		[[nodiscard]] Result<void> releaseConfinement(const WindowId window, const RECT& appliedRect)
 		{
 			RECT currentRect = {};
 
@@ -1589,21 +1591,21 @@ namespace rox::os
 						payload.Message = EPointerMessage::ConfinementChangeRefused;
 						payload.Operation = EPointerOperation::ClipCursor;
 						payload.Direction = EPointerDirection::TowardAbsent;
-						payload.NativeError = static_cast<core::uint32>(GetLastError());
+						payload.NativeError = static_cast<uint32>(GetLastError());
 						payload.bHasNativeError = true;
 						payload.AppliedRect = appliedRect;
 						payload.bHasAppliedRect = true;
 						payload.CurrentRect = currentRect;
 						payload.bHasCurrentRect = true;
 
-						return reportPointerFailure(payload, window, core::EErrorCode::ExternalFailure,
+						return reportPointerFailure(payload, window, EErrorCode::ExternalFailure,
 							"ROX-PLATFORM-WINDOW-POINTER-CONFINE",
 							"Free the pointer mode of the claiming window again on the arbiter thread.");
 					}
 
 					recordConfinementAbsent();
 
-					return core::Result<void>::Success();
+					return Result<void>::Success();
 				}
 
 				// The rectangle we applied is demonstrably not current, so there is nothing of ours
@@ -1619,10 +1621,10 @@ namespace rox::os
 				payload.bHasCurrentRect = true;
 				reportPointerWarning(payload, window);
 
-				return core::Result<void>::Success();
+				return Result<void>::Success();
 			}
 
-			const core::uint32 queryError = static_cast<core::uint32>(GetLastError());
+			const uint32 queryError = static_cast<uint32>(GetLastError());
 
 			if (ClipCursor(nullptr) != FALSE)
 			{
@@ -1637,7 +1639,7 @@ namespace rox::os
 				payload.bHasAppliedRect = true;
 				reportPointerWarning(payload, window);
 
-				return core::Result<void>::Success();
+				return Result<void>::Success();
 			}
 
 			// The release error wins the primary slot, because it is the one that left native state
@@ -1646,19 +1648,19 @@ namespace rox::os
 			payload.Message = EPointerMessage::ConfinementChangeRefused;
 			payload.Operation = EPointerOperation::ClipCursor;
 			payload.Direction = EPointerDirection::TowardAbsent;
-			payload.NativeError = static_cast<core::uint32>(GetLastError());
+			payload.NativeError = static_cast<uint32>(GetLastError());
 			payload.bHasNativeError = true;
 			payload.ContextOperation = EPointerOperation::GetClipCursor;
 			payload.ContextNativeError = queryError;
 			payload.AppliedRect = appliedRect;
 			payload.bHasAppliedRect = true;
 
-			return reportPointerFailure(payload, window, core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-POINTER-CONFINE", "Free the pointer mode of the claiming window again on the arbiter thread.");
+			return reportPointerFailure(payload, window, EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-POINTER-CONFINE", "Free the pointer mode of the claiming window again on the arbiter thread.");
 		}
 
 		void recordConfinementAbsent() noexcept
 		{
-			rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+			LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 			s_PointerArbiter.Confinement = EConfinement::Absent;
 		}
 
@@ -1679,14 +1681,14 @@ namespace rox::os
 
 		[[nodiscard]] static bool isPointerClaimant(const WindowId window) noexcept
 		{
-			rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+			LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 
 			return s_PointerArbiter.Claimant == window;
 		}
 
 		[[nodiscard]] static bool isPointerRelativeActive(const WindowId window) noexcept
 		{
-			rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+			LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 
 			return s_PointerArbiter.Claimant == window && s_PointerArbiter.RegisteredTarget == window && s_PointerArbiter.Confinement == EConfinement::Current && s_PointerArbiter.CursorHideCalls > 0;
 		}
@@ -1695,7 +1697,7 @@ namespace rox::os
 		// non-claimant window never marks anything.
 		[[nodiscard]] static bool markPointerConfinementStale(const WindowId window) noexcept
 		{
-			rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+			LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 
 			if (s_PointerArbiter.Claimant != window || s_PointerArbiter.Confinement != EConfinement::Current)
 			{
@@ -1709,7 +1711,7 @@ namespace rox::os
 
 		void clearPointerRecordIfAbsent(const WindowId window) noexcept
 		{
-			rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+			LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 
 			if (s_PointerArbiter.Claimant == window && isPointerRecordEmptyLocked())
 			{
@@ -1725,7 +1727,7 @@ namespace rox::os
 		// with no live object able to reconcile it.
 		void releasePointerClaimToSystem(const WindowId window) noexcept
 		{
-			rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+			LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 
 			if (s_PointerArbiter.Claimant == window)
 			{
@@ -1752,9 +1754,9 @@ namespace rox::os
 		void assertArbiterThread() const noexcept
 		{
 			HANDLE arbiterThread = nullptr;
-			core::uint32 arbiterThreadId = 0;
+			uint32 arbiterThreadId = 0;
 			{
-				rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+				LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 				arbiterThread = s_PointerArbiter.ArbiterThread;
 				arbiterThreadId = s_PointerArbiter.ArbiterThreadId;
 			}
@@ -1765,7 +1767,7 @@ namespace rox::os
 			ASSERT(waitResult == WAIT_TIMEOUT, "The pinned arbiter thread must still be running inside its own reconcile.");
 		}
 
-		[[nodiscard]] rox::core::usize fillAndEncodePointerPayloadLocked(PointerDiagnosticPayload& payload, const WindowId window, char(&buffer)[POINTER_MESSAGE_BUFFER_BYTES]) const noexcept
+		[[nodiscard]] usize fillAndEncodePointerPayloadLocked(PointerDiagnosticPayload& payload, const WindowId window, char(&buffer)[POINTER_MESSAGE_BUFFER_BYTES]) const noexcept
 		{
 			payload.Window = window;
 			payload.Claimant = s_PointerArbiter.Claimant;
@@ -1777,36 +1779,36 @@ namespace rox::os
 			return encodePointerMessage(payload, buffer);
 		}
 
-		[[nodiscard]] rox::core::usize fillAndEncodePointerPayload(PointerDiagnosticPayload& payload, const WindowId window, char(&buffer)[POINTER_MESSAGE_BUFFER_BYTES]) const noexcept
+		[[nodiscard]] usize fillAndEncodePointerPayload(PointerDiagnosticPayload& payload, const WindowId window, char(&buffer)[POINTER_MESSAGE_BUFFER_BYTES]) const noexcept
 		{
-			rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+			LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 
 			return fillAndEncodePointerPayloadLocked(payload, window, buffer);
 		}
 
-		[[nodiscard]] core::Result<void> reportPointerFailure(PointerDiagnosticPayload& payload, const WindowId window, const core::EErrorCode code, const core::StringView diagnosticID, const core::StringView recoveryHint) const
+		[[nodiscard]] Result<void> reportPointerFailure(PointerDiagnosticPayload& payload, const WindowId window, const EErrorCode code, const StringView diagnosticID, const StringView recoveryHint) const
 		{
 			char buffer[POINTER_MESSAGE_BUFFER_BYTES] = {};
-			const rox::core::usize length = fillAndEncodePointerPayload(payload, window, buffer);
-			LOG_ERROR("Platform.Window", rox::core::StringView(buffer, length));
+			const usize length = fillAndEncodePointerPayload(payload, window, buffer);
+			LOG_ERROR("Platform.Window", StringView(buffer, length));
 
-			return core::Result<void>::Failure(makeWindowError(code, diagnosticID, core::StringView(buffer, length), recoveryHint));
+			return Result<void>::Failure(makeWindowError(code, diagnosticID, StringView(buffer, length), recoveryHint));
 		}
 
-		[[nodiscard]] core::Result<void> reportPointerFailureLocked(PointerDiagnosticPayload& payload, const WindowId window, const core::EErrorCode code, const core::StringView diagnosticID, const core::StringView recoveryHint) const
+		[[nodiscard]] Result<void> reportPointerFailureLocked(PointerDiagnosticPayload& payload, const WindowId window, const EErrorCode code, const StringView diagnosticID, const StringView recoveryHint) const
 		{
 			char buffer[POINTER_MESSAGE_BUFFER_BYTES] = {};
-			const rox::core::usize length = fillAndEncodePointerPayloadLocked(payload, window, buffer);
-			LOG_ERROR("Platform.Window", rox::core::StringView(buffer, length));
+			const usize length = fillAndEncodePointerPayloadLocked(payload, window, buffer);
+			LOG_ERROR("Platform.Window", StringView(buffer, length));
 
-			return core::Result<void>::Failure(makeWindowError(code, diagnosticID, core::StringView(buffer, length), recoveryHint));
+			return Result<void>::Failure(makeWindowError(code, diagnosticID, StringView(buffer, length), recoveryHint));
 		}
 
 		void reportPointerWarning(PointerDiagnosticPayload& payload, const WindowId window) const noexcept
 		{
 			char buffer[POINTER_MESSAGE_BUFFER_BYTES] = {};
-			const rox::core::usize length = fillAndEncodePointerPayload(payload, window, buffer);
-			LOG_WARNING("Platform.Window", rox::core::StringView(buffer, length));
+			const usize length = fillAndEncodePointerPayload(payload, window, buffer);
+			LOG_WARNING("Platform.Window", StringView(buffer, length));
 		}
 
 		void logPointerTransition(const WindowId window, const bool bEntered) const noexcept
@@ -1815,15 +1817,15 @@ namespace rox::os
 			payload.Message = bEntered ? EPointerMessage::NativeEnter : EPointerMessage::NativeLeave;
 			payload.Direction = bEntered ? EPointerDirection::TowardApplied : EPointerDirection::TowardAbsent;
 			char buffer[POINTER_MESSAGE_BUFFER_BYTES] = {};
-			const rox::core::usize length = fillAndEncodePointerPayload(payload, window, buffer);
-			LOG_DEBUG("Platform.Window", rox::core::StringView(buffer, length));
+			const usize length = fillAndEncodePointerPayload(payload, window, buffer);
+			LOG_DEBUG("Platform.Window", StringView(buffer, length));
 		}
 
 		// A message trigger has no Result channel. Every stopping state is already one Error record
 		// on Platform.Window, and the state audit names the trigger that converges each of them.
 		void reconcilePointerFromMessage(WindowRecord& record) noexcept
 		{
-			core::Result<void> reconciled = reconcilePointer(record);
+			Result<void> reconciled = reconcilePointer(record);
 			(void)reconciled;
 		}
 
@@ -1870,7 +1872,7 @@ namespace rox::os
 				{
 					const bool bPressed = message == WM_KEYDOWN || message == WM_SYSKEYDOWN;
 					const bool bRepeated = bPressed && (data & 0x40000000) != 0;
-					const core::uint32 keyIndex = static_cast<core::uint32>(key);
+					const uint32 keyIndex = static_cast<uint32>(key);
 					ASSERT(keyIndex < PHYSICAL_KEY_STATE_COUNT, "A mapped physical key must fit the tracked key-state table.");
 					record.Keys[keyIndex] = bPressed;
 					WindowEvent event;
@@ -1982,7 +1984,7 @@ namespace rox::os
 
 				return DefWindowProcW(record.NativeWindow, message, word, data);
 			case WM_CHAR:
-				handleUtf16CodeUnit(record, static_cast<core::uint32>(word));
+				handleUtf16CodeUnit(record, static_cast<uint32>(word));
 
 				return 0;
 
@@ -2041,8 +2043,8 @@ namespace rox::os
 					event.PointerWheel.bHasPosition = true;
 				}
 
-				const core::float32 delta =
-					static_cast<core::float32>(GET_WHEEL_DELTA_WPARAM(word)) / static_cast<core::float32>(WHEEL_DELTA);
+				const float32 delta =
+					static_cast<float32>(GET_WHEEL_DELTA_WPARAM(word)) / static_cast<float32>(WHEEL_DELTA);
 
 				if (message == WM_MOUSEWHEEL)
 				{
@@ -2251,7 +2253,7 @@ namespace rox::os
 			}
 		}
 
-		void handleUtf16CodeUnit(WindowRecord& record, const core::uint32 codeUnit) noexcept
+		void handleUtf16CodeUnit(WindowRecord& record, const uint32 codeUnit) noexcept
 		{
 			ASSERT(codeUnit <= 0xFFFF, "WM_CHAR must provide one UTF-16 code unit.");
 
@@ -2291,7 +2293,7 @@ namespace rox::os
 			}
 		}
 
-		void appendTextEvent(WindowRecord& record, const core::uint32 codePoint) noexcept
+		void appendTextEvent(WindowRecord& record, const uint32 codePoint) noexcept
 		{
 			ASSERT(codePoint <= UNICODE_SCALAR_LAST && !isHighSurrogate(codePoint) && !isLowSurrogate(codePoint),
 				"A text-input event requires a Unicode scalar value.");
@@ -2362,10 +2364,10 @@ namespace rox::os
 
 		void handlePointerMove(WindowRecord& record, const LPARAM data) noexcept
 		{
-			const core::int32 x = GET_X_LPARAM(data);
-			const core::int32 y = GET_Y_LPARAM(data);
-			const core::int32 deltaX = record.bHasPointerPosition ? x - record.LastPointerX : 0;
-			const core::int32 deltaY = record.bHasPointerPosition ? y - record.LastPointerY : 0;
+			const int32 x = GET_X_LPARAM(data);
+			const int32 y = GET_Y_LPARAM(data);
+			const int32 deltaX = record.bHasPointerPosition ? x - record.LastPointerX : 0;
+			const int32 deltaY = record.bHasPointerPosition ? y - record.LastPointerY : 0;
 			record.LastPointerX = x;
 			record.LastPointerY = y;
 			record.bHasPointerPosition = true;
@@ -2393,16 +2395,16 @@ namespace rox::os
 			}
 
 			const RAWMOUSE& mouse = rawInput.data.mouse;
-			core::int32 deltaX = 0;
-			core::int32 deltaY = 0;
+			int32 deltaX = 0;
+			int32 deltaY = 0;
 			EPointerRelativeSource source = EPointerRelativeSource::DeviceCounts;
 
 			if ((mouse.usFlags & MOUSE_MOVE_ABSOLUTE) != 0)
 			{
 				source = EPointerRelativeSource::NormalizedCoordinates;
 				const bool bVirtualDesktop = (mouse.usFlags & MOUSE_VIRTUAL_DESKTOP) != 0;
-				const core::int32 x = static_cast<core::int32>(mouse.lLastX);
-				const core::int32 y = static_cast<core::int32>(mouse.lLastY);
+				const int32 x = static_cast<int32>(mouse.lLastX);
+				const int32 y = static_cast<int32>(mouse.lLastY);
 				// A difference across two devices or two coordinate spaces is not a motion, so such
 				// a report replaces the state and emits nothing.
 				const bool bContinuesOneDevice = record.bHasAbsoluteSample && record.LastAbsoluteDevice == rawInput.header.hDevice &&
@@ -2422,8 +2424,8 @@ namespace rox::os
 			}
 			else
 			{
-				deltaX = static_cast<core::int32>(mouse.lLastX);
-				deltaY = static_cast<core::int32>(mouse.lLastY);
+				deltaX = static_cast<int32>(mouse.lLastX);
+				deltaY = static_cast<int32>(mouse.lLastY);
 			}
 
 			if (deltaX == 0 && deltaY == 0)
@@ -2459,7 +2461,7 @@ namespace rox::os
 		{
 			if (bReleaseKeys)
 			{
-				for (core::uint32 keyIndex = 0; keyIndex < PHYSICAL_KEY_STATE_COUNT; ++keyIndex)
+				for (uint32 keyIndex = 0; keyIndex < PHYSICAL_KEY_STATE_COUNT; ++keyIndex)
 				{
 					if (!record.Keys[keyIndex])
 					{
@@ -2475,7 +2477,7 @@ namespace rox::os
 				}
 			}
 
-			for (core::uint32 buttonIndex = 0; buttonIndex < POINTER_BUTTON_STATE_COUNT; ++buttonIndex)
+			for (uint32 buttonIndex = 0; buttonIndex < POINTER_BUTTON_STATE_COUNT; ++buttonIndex)
 			{
 				if (!record.PointerButtons[buttonIndex])
 				{
@@ -2504,12 +2506,12 @@ namespace rox::os
 			return false;
 		}
 
-		core::Error clipboardError(const char* operation, DWORD code) const noexcept
+		Error clipboardError(const char* operation, DWORD code) const noexcept
 		{
 			char buffer[192]{};
-			const int size = rox::core::FormatText(buffer, sizeof(buffer), "%s failed (Win32 error %lu).", operation, static_cast<unsigned long>(code));
+			const int size = FormatText(buffer, sizeof(buffer), "%s failed (Win32 error %lu).", operation, static_cast<unsigned long>(code));
 
-			return core::MakeError(code == ERROR_ACCESS_DENIED ? core::EErrorCode::Conflict : core::EErrorCode::ExternalFailure, "platform.window.clipboard", { buffer, static_cast<rox::core::usize>(rox::core::Max(0, size)) });
+			return MakeError(code == ERROR_ACCESS_DENIED ? EErrorCode::Conflict : EErrorCode::ExternalFailure, "platform.window.clipboard", { buffer, static_cast<usize>(Max(0, size)) });
 		}
 
 		void compositionEvent(const WindowRecord& record, EWindowEventKind kind) noexcept
@@ -2565,7 +2567,7 @@ namespace rox::os
 			}
 
 			LONG cursor = query == GCS_RESULTSTR ? units : ImmGetCompositionStringW(context, GCS_CURSORPOS, nullptr, 0);
-			cursor = rox::core::Max<LONG>(0, rox::core::Min<LONG>(cursor, units));
+			cursor = Max<LONG>(0, Min<LONG>(cursor, units));
 
 			if (cursor > 0 && cursor < units && isHighSurrogate(utf16[cursor - 1]) && isLowSurrogate(utf16[cursor]))
 			{
@@ -2601,12 +2603,12 @@ namespace rox::os
 			ASSERT(bAdded, "A preallocated Windows event buffer must append within its configured bound.");
 		}
 
-		[[nodiscard]] core::Result<void> validateDesc(const WindowDesc& desc) const
+		[[nodiscard]] Result<void> validateDesc(const WindowDesc& desc) const
 		{
 			if (desc.Title.IsEmpty() || desc.Title.Size() > MAXIMUM_WINDOW_TITLE_UTF8_BYTE_COUNT || !isValidExtent(desc.ClientExtent))
 			{
-				return core::Result<void>::Failure(
-					makeWindowError(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-WINDOW-DESC",
+				return Result<void>::Failure(
+					makeWindowError(EErrorCode::InvalidArgument, "ROX-PLATFORM-WINDOW-DESC",
 						"The window descriptor has an empty or oversized title or invalid client extent.",
 						"Use a non-empty bounded UTF-8 title and dimensions from one through 16,384."));
 			}
@@ -2615,20 +2617,20 @@ namespace rox::os
 			{
 				if (character == '\0')
 				{
-					return core::Result<void>::Failure(makeWindowError(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-WINDOW-DESC",
+					return Result<void>::Failure(makeWindowError(EErrorCode::InvalidArgument, "ROX-PLATFORM-WINDOW-DESC",
 						"The window title contains an embedded null character.",
 						"Remove embedded null characters from the UTF-8 title."));
 				}
 			}
 
-			if (!core::IsValidUtf8(desc.Title))
+			if (!IsValidUtf8(desc.Title))
 			{
-				return core::Result<void>::Failure(makeWindowError(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-WINDOW-DESC",
+				return Result<void>::Failure(makeWindowError(EErrorCode::InvalidArgument, "ROX-PLATFORM-WINDOW-DESC",
 					"The window title is not well-formed UTF-8.",
 					"Encode the title as valid UTF-8 before creating the window."));
 			}
 
-			return core::Result<void>::Success();
+			return Result<void>::Success();
 		}
 
 		[[nodiscard]] static bool isValidExtent(const WindowExtent extent) noexcept
@@ -2638,7 +2640,7 @@ namespace rox::os
 
 		[[nodiscard]] WindowRecord* reserveRecord() noexcept
 		{
-			for (core::uint32 slotIndex = 0; slotIndex < m_Records.Size(); ++slotIndex)
+			for (uint32 slotIndex = 0; slotIndex < m_Records.Size(); ++slotIndex)
 			{
 				WindowRecord& record = m_Records[slotIndex];
 
@@ -2692,7 +2694,7 @@ namespace rox::os
 
 		void advanceGeneration(WindowRecord& record) noexcept
 		{
-			if (record.Generation == rox::core::NumericLimits<core::uint32>::max())
+			if (record.Generation == NumericLimits<uint32>::max())
 			{
 				record.bGenerationExhausted = true;
 
@@ -2703,7 +2705,7 @@ namespace rox::os
 			ASSERT(record.Generation != 0, "A window slot generation must remain nonzero.");
 		}
 
-		[[nodiscard]] core::Result<WindowRecord*> resolveRecord(const WindowId window)
+		[[nodiscard]] Result<WindowRecord*> resolveRecord(const WindowId window)
 		{
 			ASSERT(window.IsValid() && window.Owner == m_Owner && window.Slot < m_Records.Size(), "Window access requires a valid handle owned by this window system.");
 
@@ -2711,16 +2713,16 @@ namespace rox::os
 
 			if (!record.bAlive || record.Generation != window.Generation)
 			{
-				return core::Result<WindowRecord*>::Failure(makeWindowError(core::EErrorCode::NotFound, "ROX-PLATFORM-WINDOW-NOT-FOUND",
+				return Result<WindowRecord*>::Failure(makeWindowError(EErrorCode::NotFound, "ROX-PLATFORM-WINDOW-NOT-FOUND",
 					"The window ID no longer identifies a live window.",
 					"Create a new window and use its current generation."));
 			}
 
 			ASSERT(record.bReserved && record.Owner == this && record.NativeWindow != nullptr, "A live window slot must retain its stable owner and native handle.");
-			return core::Result<WindowRecord*>::Success(&record);
+			return Result<WindowRecord*>::Success(&record);
 		}
 
-		[[nodiscard]] core::Result<const WindowRecord*> resolveRecord(const WindowId window) const
+		[[nodiscard]] Result<const WindowRecord*> resolveRecord(const WindowId window) const
 		{
 			ASSERT(window.IsValid() && window.Owner == m_Owner && window.Slot < m_Records.Size(), "Window access requires a valid handle owned by this window system.");
 
@@ -2728,13 +2730,13 @@ namespace rox::os
 
 			if (!record.bAlive || record.Generation != window.Generation)
 			{
-				return core::Result<const WindowRecord*>::Failure(makeWindowError(
-					core::EErrorCode::NotFound, "ROX-PLATFORM-WINDOW-NOT-FOUND", "The window ID no longer identifies a live window.",
+				return Result<const WindowRecord*>::Failure(makeWindowError(
+					EErrorCode::NotFound, "ROX-PLATFORM-WINDOW-NOT-FOUND", "The window ID no longer identifies a live window.",
 					"Create a new window and use its current generation."));
 			}
 
 			ASSERT(record.bReserved && record.Owner == this && record.NativeWindow != nullptr, "A live window slot must retain its stable owner and native handle.");
-			return core::Result<const WindowRecord*>::Success(&record);
+			return Result<const WindowRecord*>::Success(&record);
 		}
 
 		void updateState(WindowRecord& record) const noexcept
@@ -2746,8 +2748,8 @@ namespace rox::os
 			record.StateSnapshot.bMinimized = IsIconic(record.NativeWindow) != FALSE;
 			record.StateSnapshot.ClientExtent = record.StateSnapshot.bMinimized
 				? WindowExtent{}
-				: WindowExtent{ static_cast<core::uint32>(clientRect.right - clientRect.left),
-							   static_cast<core::uint32>(clientRect.bottom - clientRect.top) };
+				: WindowExtent{ static_cast<uint32>(clientRect.right - clientRect.left),
+							   static_cast<uint32>(clientRect.bottom - clientRect.top) };
 			const UINT dpi = GetDpiForWindow(record.NativeWindow);
 			record.StateSnapshot.DpiX = dpi == 0 ? USER_DEFAULT_SCREEN_DPI : dpi;
 			record.StateSnapshot.DpiY = record.StateSnapshot.DpiX;
@@ -2766,7 +2768,7 @@ namespace rox::os
 		{
 			WindowId claimant;
 			{
-				rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+				LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 
 				if (s_PointerArbiter.Owner != this)
 				{
@@ -2777,14 +2779,14 @@ namespace rox::os
 			}
 
 			assertArbiterThread();
-			core::Result<void> reconciled = reconcileTowardAbsent(claimant);
+			Result<void> reconciled = reconcileTowardAbsent(claimant);
 
 			if (!reconciled)
 			{
 				LOG_WARNING("Platform.Window", "The owning window system abandoned unreleased relative pointer state at shutdown.");
 			}
 
-			rox::core::LockGuard<rox::core::Mutex> guard(s_PointerArbiter.Mutex);
+			LockGuard<Mutex> guard(s_PointerArbiter.Mutex);
 			s_PointerArbiter.Claimant = {};
 			s_PointerArbiter.Owner = nullptr;
 			s_PointerArbiter.RegisteredTarget = {};
@@ -2818,14 +2820,14 @@ namespace rox::os
 		}
 
 	private:
-		core::MemoryResource& m_Resource;
+		MemoryResource& m_Resource;
 		WindowsWindowSystemOptions m_Options;
-		core::Array<WindowRecord> m_Records;
-		core::Array<WindowEvent> m_PendingEvents;
-		core::Array<WindowEvent> m_PublishedEvents;
-		core::uint64 m_Owner = 0;
-		core::uint32 m_OwnerThread = 0;
-		core::uint32 m_LiveWindowCount = 0;
+		Array<WindowRecord> m_Records;
+		Array<WindowEvent> m_PendingEvents;
+		Array<WindowEvent> m_PublishedEvents;
+		uint64 m_Owner = 0;
+		uint32 m_OwnerThread = 0;
+		uint32 m_LiveWindowCount = 0;
 		HINSTANCE m_Instance = nullptr;
 		ATOM m_Class = 0;
 		wchar_t m_ClassName[64] = {};
@@ -2841,32 +2843,32 @@ namespace rox::os
 	{
 		if (m_State != nullptr)
 		{
-			core::DestroyObject(*m_Resource, m_State);
+			DestroyObject(*m_Resource, m_State);
 			m_State = nullptr;
 			m_Resource = nullptr;
 		}
 	}
 
-	core::Result<void> WindowsWindowSystem::TryCreate(core::MemoryResource& resource, const WindowsWindowSystemOptions options,
+	Result<void> WindowsWindowSystem::TryCreate(MemoryResource& resource, const WindowsWindowSystemOptions options,
 		WindowsWindowSystem* const outSystem)
 	{
 		ASSERT(outSystem != nullptr, "Windows window-system creation requires an output object.");
 		ASSERT(!outSystem->IsValid(), "Windows window-system creation requires an empty output object.");
-		ASSERT(resource.GetThreadSafety() == core::EMemoryResourceThreadSafety::ThreadSafe, "Windows window systems require a thread-safe memory resource.");
+		ASSERT(resource.GetThreadSafety() == EMemoryResourceThreadSafety::ThreadSafe, "Windows window systems require a thread-safe memory resource.");
 
 		if (options.MaximumWindows == 0 || options.MaximumWindows > MAXIMUM_WINDOW_COUNT || options.MaximumEventsPerPoll == 0 || options.MaximumEventsPerPoll > MAXIMUM_WINDOW_EVENT_COUNT)
 		{
-			return core::Result<void>::Failure(makeWindowError(core::EErrorCode::InvalidArgument, "ROX-PLATFORM-WINDOW-OPTIONS",
+			return Result<void>::Failure(makeWindowError(EErrorCode::InvalidArgument, "ROX-PLATFORM-WINDOW-OPTIONS",
 				"The Windows window-system capacities are outside their supported bounds.",
 				"Select one through sixty-four windows and one through 65,536 events."));
 		}
 
-		State* const state = core::CreateObject<State>(resource, resource, options);
+		State* const state = CreateObject<State>(resource, resource, options);
 
 		if (state == nullptr)
 		{
-			return core::Result<void>::Failure(makeWindowError(
-				core::EErrorCode::ExternalFailure,
+			return Result<void>::Failure(makeWindowError(
+				EErrorCode::ExternalFailure,
 				"ROX-PLATFORM-WINDOW-ALLOCATION",
 				"Memory allocation for the Windows window system failed.",
 				"Release bounded service memory and retry creation."));
@@ -2876,16 +2878,16 @@ namespace rox::os
 
 		if (initializeResult != EWindowInitializeResult::Success)
 		{
-			core::DestroyObject(resource, state);
+			DestroyObject(resource, state);
 
 			if (initializeResult == EWindowInitializeResult::AllocationFailed)
 			{
-				return core::Result<void>::Failure(makeWindowError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-ALLOCATION",
+				return Result<void>::Failure(makeWindowError(EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-ALLOCATION",
 					"Memory allocation for Windows window records or event buffers failed.",
 					"Release bounded service memory and retry creation."));
 			}
 
-			return core::Result<void>::Failure(makeWindowError(core::EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-CLASS",
+			return Result<void>::Failure(makeWindowError(EErrorCode::ExternalFailure, "ROX-PLATFORM-WINDOW-CLASS",
 				"Windows window-system storage or class registration failed.",
 				"Release bounded memory, verify desktop availability, and retry creation."));
 		}
@@ -2895,10 +2897,10 @@ namespace rox::os
 		outSystem->assertInvariant();
 		LOG_INFO("Platform.Window", "The Windows window system started.");
 
-		return core::Result<void>::Success();
+		return Result<void>::Success();
 	}
 
-	core::Result<WindowId> WindowsWindowSystem::CreateWindow(const WindowDesc& desc)
+	Result<WindowId> WindowsWindowSystem::CreateWindow(const WindowDesc& desc)
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Window creation requires a valid Windows window system.");
@@ -2906,7 +2908,7 @@ namespace rox::os
 		return m_State->CreateWindow(desc);
 	}
 
-	core::Result<void> WindowsWindowSystem::DestroyWindow(const WindowId window)
+	Result<void> WindowsWindowSystem::DestroyWindow(const WindowId window)
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Window destruction requires a valid Windows window system.");
@@ -2914,7 +2916,7 @@ namespace rox::os
 		return m_State->DestroyWindow(window);
 	}
 
-	core::Result<void> WindowsWindowSystem::SetWindowVisibility(const WindowId window, const bool bVisible)
+	Result<void> WindowsWindowSystem::SetWindowVisibility(const WindowId window, const bool bVisible)
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Window visibility requires a valid Windows window system.");
@@ -2922,7 +2924,7 @@ namespace rox::os
 		return m_State->SetWindowVisibility(window, bVisible);
 	}
 
-	core::Result<void> WindowsWindowSystem::ResizeWindow(const WindowId window, const WindowExtent clientExtent)
+	Result<void> WindowsWindowSystem::ResizeWindow(const WindowId window, const WindowExtent clientExtent)
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Window resize requires a valid Windows window system.");
@@ -2930,7 +2932,7 @@ namespace rox::os
 		return m_State->ResizeWindow(window, clientExtent);
 	}
 
-	core::Result<core::String> WindowsWindowSystem::ReadClipboardText(const WindowId window, core::MemoryResource& memory, core::uint32 maximumBytes)
+	Result<String> WindowsWindowSystem::ReadClipboardText(const WindowId window, MemoryResource& memory, uint32 maximumBytes)
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Clipboard reads require a valid Windows window system.");
@@ -2938,7 +2940,7 @@ namespace rox::os
 		return m_State->ReadClipboardText(window, memory, maximumBytes);
 	}
 
-	core::Result<void> WindowsWindowSystem::WriteClipboardText(const WindowId window, core::StringView text)
+	Result<void> WindowsWindowSystem::WriteClipboardText(const WindowId window, StringView text)
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Clipboard writes require a valid Windows window system.");
@@ -2946,7 +2948,7 @@ namespace rox::os
 		return m_State->WriteClipboardText(window, text);
 	}
 
-	core::Result<void> WindowsWindowSystem::SetTextInputState(const WindowId window, const WindowTextInputState& state)
+	Result<void> WindowsWindowSystem::SetTextInputState(const WindowId window, const WindowTextInputState& state)
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Native text input requires a valid Windows window system.");
@@ -2954,7 +2956,7 @@ namespace rox::os
 		return m_State->SetTextInputState(window, state);
 	}
 
-	core::Result<void> WindowsWindowSystem::PublishTextDocument(WindowId window, const WindowTextDocument& document)
+	Result<void> WindowsWindowSystem::PublishTextDocument(WindowId window, const WindowTextDocument& document)
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Text publication requires a valid Windows window system.");
@@ -2962,7 +2964,7 @@ namespace rox::os
 		return m_State->PublishTextDocument(window, document);
 	}
 
-	core::Result<void> WindowsWindowSystem::SetPointerMode(const WindowId window, const EPointerMode mode)
+	Result<void> WindowsWindowSystem::SetPointerMode(const WindowId window, const EPointerMode mode)
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Pointer-mode selection requires a valid Windows window system.");
@@ -2970,7 +2972,7 @@ namespace rox::os
 		return m_State->SetPointerMode(window, mode);
 	}
 
-	core::Result<WindowState> WindowsWindowSystem::GetWindowState(const WindowId window) const
+	Result<WindowState> WindowsWindowSystem::GetWindowState(const WindowId window) const
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Window-state access requires a valid Windows window system.");
@@ -2978,7 +2980,7 @@ namespace rox::os
 		return m_State->GetWindowState(window);
 	}
 
-	core::Result<NativeWindowHandle> WindowsWindowSystem::GetNativeHandle(const WindowId window) const
+	Result<NativeWindowHandle> WindowsWindowSystem::GetNativeHandle(const WindowId window) const
 	{
 		assertInvariant();
 		ASSERT(m_State != nullptr, "Native-window borrowing requires a valid Windows window system.");
@@ -3009,7 +3011,7 @@ namespace rox::os
 
 namespace rox::os
 {
-	core::Result<void> WindowsWindowSystem::SetAccessibilitySnapshot(WindowId window, const AccessibilitySnapshot& snapshot)
+	Result<void> WindowsWindowSystem::SetAccessibilitySnapshot(WindowId window, const AccessibilitySnapshot& snapshot)
 	{
 		assertInvariant();
 		ASSERT(m_State, "Accessibility requires a valid window system.");
@@ -3017,7 +3019,7 @@ namespace rox::os
 		return m_State->SetAccessibilitySnapshot(window, snapshot);
 	}
 
-	core::Result<AccessibilityRequest> WindowsWindowSystem::PollAccessibilityAction(WindowId window)
+	Result<AccessibilityRequest> WindowsWindowSystem::PollAccessibilityAction(WindowId window)
 	{
 		assertInvariant();
 		ASSERT(m_State, "Accessibility requires a valid window system.");

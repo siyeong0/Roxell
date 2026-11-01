@@ -11,34 +11,36 @@
 
 namespace rox::os
 {
+	using namespace core;
+
 	AccessibilityRequest::AccessibilityRequest() noexcept = default;
 	AccessibilityRequest::~AccessibilityRequest() = default;
 	AccessibilityRequest::AccessibilityRequest(const AccessibilityRequest&) noexcept = default;
 	AccessibilityRequest& AccessibilityRequest::operator=(const AccessibilityRequest&) noexcept = default;
 	AccessibilityRequest::AccessibilityRequest(AccessibilityRequest&&) noexcept = default;
 	AccessibilityRequest& AccessibilityRequest::operator=(AccessibilityRequest&&) noexcept = default;
-	core::Result<AccessibilitySnapshot> AccessibilitySnapshot::Create(core::uint64 publication, core::Array<AccessibilityNode>&& nodes)
+	Result<AccessibilitySnapshot> AccessibilitySnapshot::Create(uint64 publication, Array<AccessibilityNode>&& nodes)
 	{
-		using R = core::Result<AccessibilitySnapshot>;
-		core::uint64 bytes = 0;
+		using R = Result<AccessibilitySnapshot>;
+		uint64 bytes = 0;
 		struct IndexedId
 		{
 			AccessibilityId Id;
-			rox::core::usize Index;
+			usize Index;
 		};
 
-		core::Array<IndexedId> identities(core::SystemMemoryResource::Get());
+		Array<IndexedId> identities(SystemMemoryResource::Get());
 
 		if (!publication || nodes.Size() > 65536)
 		{
-			return R::Failure(core::EErrorCode::InvalidArgument, "Platform.Accessibility", "Invalid accessibility publication or node count.");
+			return R::Failure(EErrorCode::InvalidArgument, "Platform.Accessibility", "Invalid accessibility publication or node count.");
 		}
 
 		if (!identities.Reserve(nodes.Size()))
 		{
-			return R::Failure(core::EErrorCode::ExternalFailure, "Platform.Accessibility", "Accessibility index allocation failed.");
+			return R::Failure(EErrorCode::ExternalFailure, "Platform.Accessibility", "Accessibility index allocation failed.");
 		}
-		for (rox::core::usize index = 0; index < nodes.Size(); ++index)
+		for (usize index = 0; index < nodes.Size(); ++index)
 		{
 			const AccessibilityNode& node = nodes[index];
 			identities.AddRequired({ node.Id, index });
@@ -46,20 +48,20 @@ namespace rox::os
 
 			if (!node.Id.IsValid() ||
 			static_cast<unsigned>(node.Role) > static_cast<unsigned>(EAccessibilityRole::TreeItem) ||
-				!core::IsValidUtf8(node.Name.View()) ||
-				!core::IsValidUtf8(node.Value.View()) ||
+				!IsValidUtf8(node.Name.View()) ||
+				!IsValidUtf8(node.Value.View()) ||
 				bytes > 8 * 1024 * 1024 ||
-				!rox::core::IsFinite(node.Bounds.X) ||
-				!rox::core::IsFinite(node.Bounds.Y) ||
-				!rox::core::IsFinite(node.Bounds.Width) ||
-				!rox::core::IsFinite(node.Bounds.Height) ||
+				!IsFinite(node.Bounds.X) ||
+				!IsFinite(node.Bounds.Y) ||
+				!IsFinite(node.Bounds.Width) ||
+				!IsFinite(node.Bounds.Height) ||
 				node.Bounds.Width < 0 || node.Bounds.Height < 0 ||
-				rox::core::Abs(node.Bounds.X) > 1e9 ||
-				rox::core::Abs(node.Bounds.Y) > 1e9 ||
+				Abs(node.Bounds.X) > 1e9 ||
+				Abs(node.Bounds.Y) > 1e9 ||
 				node.Bounds.Width > 1e9 ||
 				node.Bounds.Height > 1e9 ||
-				!rox::core::IsFinite(node.VerticalScrollPercent) ||
-				!rox::core::IsFinite(node.VerticalViewSize) ||
+				!IsFinite(node.VerticalScrollPercent) ||
+				!IsFinite(node.VerticalViewSize) ||
 				node.VerticalScrollPercent < 0 ||
 				node.VerticalScrollPercent > 100 ||
 				node.VerticalViewSize < 0 ||
@@ -71,40 +73,40 @@ namespace rox::os
 				(node.SelectionEnd < node.Value.Size() && (static_cast<unsigned char>(node.Value[node.SelectionEnd]) & 0xc0) == 0x80) ||
 				(node.bPassword && (!node.Value.IsEmpty() || node.Geometry || node.SelectionStart || node.SelectionEnd)))
 			{
-				return R::Failure(core::EErrorCode::InvalidArgument, "Platform.Accessibility", "Invalid, over-budget or password-bearing accessibility node.");
+				return R::Failure(EErrorCode::InvalidArgument, "Platform.Accessibility", "Invalid, over-budget or password-bearing accessibility node.");
 			}
 		}
 
 		const auto key = [](AccessibilityId id) noexcept
 		{
-			return rox::core::Tuple{ id.Owner, id.Slot, id.Generation, id.Item };
+			return Tuple{ id.Owner, id.Slot, id.Generation, id.Item };
 		};
-		rox::core::Sort(identities.begin(), identities.end(), [&](const IndexedId& first, const IndexedId& second) noexcept
+		Sort(identities.begin(), identities.end(), [&](const IndexedId& first, const IndexedId& second) noexcept
 		{
 			return key(first.Id) < key(second.Id);
 		});
-		core::uint32 roots = 0;
+		uint32 roots = 0;
 
-		for (rox::core::usize index = 0; index < identities.Size(); ++index)
+		for (usize index = 0; index < identities.Size(); ++index)
 		{
 			const IndexedId& item = identities[index];
 			const AccessibilityId parent = nodes[item.Index].Parent;
 
 			if (index && identities[index - 1].Id == item.Id)
 			{
-				return R::Failure(core::EErrorCode::InvalidArgument, "Platform.Accessibility", "Duplicate accessibility identity.");
+				return R::Failure(EErrorCode::InvalidArgument, "Platform.Accessibility", "Duplicate accessibility identity.");
 			}
 
 			if (!parent.IsValid())
 			{
 				if (parent != AccessibilityId{} || ++roots > 1)
 				{
-					return R::Failure(core::EErrorCode::InvalidArgument, "Platform.Accessibility", "Accessibility tree requires one valid root.");
+					return R::Failure(EErrorCode::InvalidArgument, "Platform.Accessibility", "Accessibility tree requires one valid root.");
 				}
 				continue;
 			}
 
-			const IndexedId* const found = rox::core::LowerBound(identities.begin(), identities.end(), parent,
+			const IndexedId* const found = LowerBound(identities.begin(), identities.end(), parent,
 				[&](const IndexedId& candidate, AccessibilityId value) noexcept
 				{
 					return key(candidate.Id) < key(value);
@@ -112,19 +114,19 @@ namespace rox::os
 
 			if (found == identities.end() || found->Id != parent || found->Index >= item.Index)
 			{
-				return R::Failure(core::EErrorCode::InvalidArgument, "Platform.Accessibility", "Accessibility parents must precede children without cycles.");
+				return R::Failure(EErrorCode::InvalidArgument, "Platform.Accessibility", "Accessibility parents must precede children without cycles.");
 			}
 		}
 
 		AccessibilitySnapshot result;
 
-		if (!core::SharedPtr<AccessibilityData>::CreateInto(core::SystemMemoryResource::Get(), &result.m_Data, rox::core::Move(nodes)))
+		if (!SharedPtr<AccessibilityData>::CreateInto(SystemMemoryResource::Get(), &result.m_Data, Move(nodes)))
 		{
-			return R::Failure(core::EErrorCode::ExternalFailure, "Platform.Accessibility", "Accessibility publication allocation failed.");
+			return R::Failure(EErrorCode::ExternalFailure, "Platform.Accessibility", "Accessibility publication allocation failed.");
 		}
 		result.m_Data->Publication = publication;
 
-		return R::Success(rox::core::Move(result));
+		return R::Success(Move(result));
 	}
 
 	const AccessibilityNode* AccessibilitySnapshot::Find(AccessibilityId id) const noexcept
@@ -154,16 +156,16 @@ namespace rox::os
 			return false;
 		}
 
-		rox::core::LockGuard lock(m_State->Mutex);
+		LockGuard lock(m_State->Mutex);
 
 		if (m_State->bComplete || m_State->bStarted)
 		{
 			return false;
 		}
 
-		if (rox::core::MonotonicClock::now() >= m_State->Deadline)
+		if (MonotonicClock::now() >= m_State->Deadline)
 		{
-			m_State->Error = core::EErrorCode::Timeout;
+			m_State->Error = EErrorCode::Timeout;
 			m_State->bComplete = true;
 			m_State->Changed.notify_all();
 
@@ -174,18 +176,18 @@ namespace rox::os
 		return true;
 	}
 
-	void AccessibilityRequest::Complete(core::EErrorCode error) noexcept
+	void AccessibilityRequest::Complete(EErrorCode error) noexcept
 	{
 		if (!m_State)
 		{
 			return;
 		}
 
-		rox::core::LockGuard lock(m_State->Mutex);
+		LockGuard lock(m_State->Mutex);
 
 		if (!m_State->bComplete)
 		{
-			if (error == core::EErrorCode::None && m_State->bStarted && m_State->OnSuccess)
+			if (error == EErrorCode::None && m_State->bStarted && m_State->OnSuccess)
 			{
 				m_State->OnSuccess(m_State->SuccessContext);
 			}
