@@ -18,7 +18,7 @@ namespace rox::math
 		{
 			const T value = a * b;
 			Add(value);
-			Add(rox::core::Fma(a, b, -value));
+			Add(core::Fma(a, b, -value));
 		}
 
 		void Add(T value) noexcept
@@ -56,12 +56,12 @@ namespace rox::math
 		const T radiusSquared = static_cast<T>(sphere.Radius) * sphere.Radius;
 		const T approximate = radiusSquared * directionSquared - offset.Cross(direction).LengthSquared();
 		const detail::GeometryVector<T> magnitude{
-		    rox::core::Abs(static_cast<T>(ray.Origin.X)) + rox::core::Abs(static_cast<T>(sphere.Center.X)),
-		    rox::core::Abs(static_cast<T>(ray.Origin.Y)) + rox::core::Abs(static_cast<T>(sphere.Center.Y)),
-		    rox::core::Abs(static_cast<T>(ray.Origin.Z)) + rox::core::Abs(static_cast<T>(sphere.Center.Z))};
-		const T errorBound = 128 * rox::core::NumericLimits<T>::epsilon() * (radiusSquared + magnitude.LengthSquared()) * directionSquared;
+		    core::Abs(static_cast<T>(ray.Origin.X)) + core::Abs(static_cast<T>(sphere.Center.X)),
+		    core::Abs(static_cast<T>(ray.Origin.Y)) + core::Abs(static_cast<T>(sphere.Center.Y)),
+		    core::Abs(static_cast<T>(ray.Origin.Z)) + core::Abs(static_cast<T>(sphere.Center.Z))};
+		const T errorBound = 128 * core::NumericLimits<T>::epsilon() * (radiusSquared + magnitude.LengthSquared()) * directionSquared;
 
-		if (rox::core::Abs(approximate) > errorBound)
+		if (core::Abs(approximate) > errorBound)
 		{
 			return approximate;
 		}
@@ -74,7 +74,7 @@ namespace rox::math
 		for (uint32 axis = 0; axis < 3; ++axis)
 		{
 			const T product = sphere.Radius * directions[axis];
-			const T terms[]{product, rox::core::Fma(sphere.Radius, directions[axis], -product)};
+			const T terms[]{product, core::Fma(sphere.Radius, directions[axis], -product)};
 			for (T left : terms)
 			{
 				for (T right : terms)
@@ -97,7 +97,7 @@ namespace rox::math
 				{
 					const T squaredTerm = cross.Values[left] * cross.Values[right];
 					discriminant.Add(-squaredTerm);
-					discriminant.Add(-rox::core::Fma(cross.Values[left], cross.Values[right], -squaredTerm));
+					discriminant.Add(-core::Fma(cross.Values[left], cross.Values[right], -squaredTerm));
 				}
 			}
 		}
@@ -108,7 +108,7 @@ namespace rox::math
 	template <MathScalar T>
 	static bool geometryPlaneValid(const Plane<T>& plane) noexcept
 	{
-		return plane.Normal.IsFinite() && rox::core::IsFinite(plane.Distance) && (plane.Normal.X != 0 || plane.Normal.Y != 0 || plane.Normal.Z != 0);
+		return plane.Normal.IsFinite() && core::IsFinite(plane.Distance) && (plane.Normal.X != 0 || plane.Normal.Y != 0 || plane.Normal.Z != 0);
 	}
 
 	template <MathScalar T>
@@ -138,7 +138,7 @@ namespace rox::math
 		ASSERT(outParameter != nullptr, "Intersect requires a valid output pointer.");
 		ASSERT(ray.IsValid(), "Ray must have finite origin and a finite nonzero direction.");
 		ASSERT(plane.Normal.X != 0 || plane.Normal.Y != 0 || plane.Normal.Z != 0, "Geometry plane must have finite coefficients and a nonzero normal.");
-		ASSERT(rox::core::IsFinite(maxParameter) && maxParameter >= 0, "Ray query limit must be finite and non-negative.");
+		ASSERT(core::IsFinite(maxParameter) && maxParameter >= 0, "Ray query limit must be finite and non-negative.");
 
 		detail::GeometryVector<T> normal(plane.Normal);
 		T denominator = normal.Dot(detail::GeometryVector<T>(ray.Direction));
@@ -173,9 +173,9 @@ namespace rox::math
 	{
 		ASSERT(point.IsFinite(), "Geometry point must be finite.");
 		ASSERT(box.IsValid(), "Geometry box must be valid.");
-		return {rox::core::ClampValue(point.X, box.Min.X, box.Max.X),
-		        rox::core::ClampValue(point.Y, box.Min.Y, box.Max.Y),
-		        rox::core::ClampValue(point.Z, box.Min.Z, box.Max.Z)};
+		return {core::ClampValue(point.X, box.Min.X, box.Max.X),
+		        core::ClampValue(point.Y, box.Min.Y, box.Max.Y),
+		        core::ClampValue(point.Z, box.Min.Z, box.Max.Z)};
 	}
 
 	template <MathScalar T>
@@ -184,7 +184,7 @@ namespace rox::math
 		ASSERT(outInterval != nullptr, "Intersect requires a valid output pointer.");
 		ASSERT(ray.IsValid(), "Ray must have finite origin and a finite nonzero direction.");
 		ASSERT(box.IsValid(), "Geometry box must be valid.");
-		ASSERT(rox::core::IsFinite(maxParameter) && maxParameter >= 0, "Ray query limit must be finite and non-negative.");
+		ASSERT(core::IsFinite(maxParameter) && maxParameter >= 0, "Ray query limit must be finite and non-negative.");
 
 		const T origins[]{ray.Origin.X, ray.Origin.Y, ray.Origin.Z};
 		const T directions[]{ray.Direction.X, ray.Direction.Y, ray.Direction.Z};
@@ -207,8 +207,8 @@ namespace rox::math
 
 			const T first = (lower[axis] - origins[axis]) / directions[axis];
 			const T second = (upper[axis] - origins[axis]) / directions[axis];
-			enter = rox::core::Max(enter, rox::core::Min(first, second));
-			exit = rox::core::Min(exit, rox::core::Max(first, second));
+			enter = core::Max(enter, core::Min(first, second));
+			exit = core::Min(exit, core::Max(first, second));
 
 			if (enter > exit)
 			{
@@ -227,7 +227,7 @@ namespace rox::math
 		ASSERT(sphere.IsValid(), "Geometry sphere must be valid.");
 		const detail::GeometryVector<T> center(sphere.Center), query(point);
 		const detail::GeometryVector<T> offset = query - center;
-		const T distance = rox::core::Hypot(offset.X, offset.Y, offset.Z);
+		const T distance = core::Hypot(offset.X, offset.Y, offset.Z);
 
 		if (distance <= sphere.Radius)
 		{
@@ -249,12 +249,12 @@ namespace rox::math
 		ASSERT(outParameter != nullptr, "Intersect requires a valid output pointer.");
 		ASSERT(ray.IsValid(), "Ray must have finite origin and a finite nonzero direction.");
 		ASSERT(triangle.IsValid(), "Triangle vertices must be finite.");
-		ASSERT(rox::core::IsFinite(maxParameter) && maxParameter >= 0, "Ray query limit must be finite and non-negative.");
+		ASSERT(core::IsFinite(maxParameter) && maxParameter >= 0, "Ray query limit must be finite and non-negative.");
 
 		const detail::GeometryVector<T> rawAb = detail::GeometryVector<T>(triangle.B) - detail::GeometryVector<T>(triangle.A);
 		const detail::GeometryVector<T> rawAc = detail::GeometryVector<T>(triangle.C) - detail::GeometryVector<T>(triangle.A);
-		const T scale = rox::core::Max({rawAb.MaxAbs(), rawAc.MaxAbs(), detail::GeometryVector<T>(ray.Direction).MaxAbs()});
-		if (scale == T(0) || !rox::core::IsFinite(scale))
+		const T scale = core::Max({rawAb.MaxAbs(), rawAc.MaxAbs(), detail::GeometryVector<T>(ray.Direction).MaxAbs()});
+		if (scale == T(0) || !core::IsFinite(scale))
 		{
 			return false;
 		}
@@ -303,7 +303,7 @@ namespace rox::math
 		ASSERT(outInterval != nullptr, "Intersect requires a valid output pointer.");
 		ASSERT(ray.IsValid(), "Ray must have finite origin and a finite nonzero direction.");
 		ASSERT(sphere.IsValid(), "Geometry sphere must be valid.");
-		ASSERT(rox::core::IsFinite(maxParameter) && maxParameter >= 0, "Ray query limit must be finite and non-negative.");
+		ASSERT(core::IsFinite(maxParameter) && maxParameter >= 0, "Ray query limit must be finite and non-negative.");
 		const T magnitude = core::Max({detail::GeometryVector<T>(ray.Origin).MaxAbs(),
 		                               detail::GeometryVector<T>(ray.Direction).MaxAbs(),
 		                               detail::GeometryVector<T>(sphere.Center).MaxAbs(), sphere.Radius});
@@ -331,14 +331,14 @@ namespace rox::math
 		}
 
 		const T center = -offset.Dot(direction) / directionSquared;
-		const T halfWidth = rox::core::Sqrt(discriminant) / directionSquared;
-		const T stableRoot = center + rox::core::CopySign(halfWidth, center);
-		const T length = rox::core::Hypot(offset.X, offset.Y, offset.Z);
+		const T halfWidth = core::Sqrt(discriminant) / directionSquared;
+		const T stableRoot = center + core::CopySign(halfWidth, center);
+		const T length = core::Hypot(offset.X, offset.Y, offset.Z);
 		const T otherRoot = discriminant == T(0) ? center
 		                    : stableRoot == 0    ? 0
 		                                      : ((length - radius) * (length + radius) / directionSquared) / stableRoot;
-		const T enter = rox::core::Max(T(0.0), rox::core::Min(stableRoot, otherRoot));
-		const T exit = rox::core::Min(static_cast<T>(maxParameter), rox::core::Max(stableRoot, otherRoot));
+		const T enter = core::Max(T(0.0), core::Min(stableRoot, otherRoot));
+		const T exit = core::Min(static_cast<T>(maxParameter), core::Max(stableRoot, otherRoot));
 
 		if (enter > exit)
 		{

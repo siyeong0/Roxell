@@ -20,7 +20,7 @@ namespace rox::core
 	class JobExecutionScope final
 	{
 	public:
-		JobExecutionScope(LinearMemoryResource& scratch, rox::core::usize workerIndex,
+		JobExecutionScope(LinearMemoryResource& scratch, usize workerIndex,
 		                  const CancellationToken& cancellation = {},
 		                  EJobExecutionContext executionContext = EJobExecutionContext::AnyThread) noexcept;
 		~JobExecutionScope() noexcept;

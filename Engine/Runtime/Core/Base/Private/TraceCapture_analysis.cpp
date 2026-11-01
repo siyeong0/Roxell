@@ -12,8 +12,8 @@ namespace rox::core
 	{
 		struct ScopeIndex final
 		{
-			rox::core::uint64 Id = 0;
-			rox::core::usize Row = 0;
+			uint64 Id = 0;
+			usize Row = 0;
 		};
 
 		Array<ScopeIndex> indices(output.GetResource());
@@ -24,7 +24,7 @@ namespace rox::core
 			return false;
 		}
 
-		for (rox::core::usize i = 0; i < snapshot.Events.Size(); ++i)
+		for (usize i = 0; i < snapshot.Events.Size(); ++i)
 		{
 			const auto& event = snapshot.Events[i];
 
@@ -35,7 +35,7 @@ namespace rox::core
 
 			if (event.ScopeId == 0 || event.ThreadId == 0 || event.ParentScopeId >= event.ScopeId ||
 			    event.CaptureId == 0 || event.CaptureId != snapshot.CaptureId ||
-			    event.DurationNanoseconds > rox::core::NumericLimits<rox::core::uint64>::max() - event.TimestampNanoseconds)
+			    event.DurationNanoseconds > NumericLimits<uint64>::max() - event.TimestampNanoseconds)
 			{
 				return false;
 			}
@@ -46,10 +46,10 @@ namespace rox::core
 
 		if (!indices.IsEmpty())
 		{
-			rox::core::Sort(indices.begin(), indices.end(), [](const ScopeIndex& left, const ScopeIndex& right) { return left.Id < right.Id; });
+			core::Sort(indices.begin(), indices.end(), [](const ScopeIndex& left, const ScopeIndex& right) { return left.Id < right.Id; });
 		}
 
-		for (rox::core::usize i = 1; i < indices.Size(); ++i)
+		for (usize i = 1; i < indices.Size(); ++i)
 		{
 			if (indices[i - 1].Id == indices[i].Id)
 			{
@@ -57,13 +57,13 @@ namespace rox::core
 			}
 		}
 
-		Array<rox::core::uint64> childEnds(output.GetResource());
+		Array<uint64> childEnds(output.GetResource());
 		if (!childEnds.Reserve(candidate.Size()))
 		{
 			return false;
 		}
 
-		for (rox::core::usize i = 0; i < candidate.Size(); ++i)
+		for (usize i = 0; i < candidate.Size(); ++i)
 		{
 			childEnds.AddRequired(0);
 		}
@@ -78,8 +78,8 @@ namespace rox::core
 				continue;
 			}
 
-			const auto found = rox::core::LowerBound(indices.begin(), indices.end(), event.ParentScopeId,
-			    [](const ScopeIndex& entry, rox::core::uint64 id) { return entry.Id < id; });
+			const auto found = core::LowerBound(indices.begin(), indices.end(), event.ParentScopeId,
+			    [](const ScopeIndex& entry, uint64 id) { return entry.Id < id; });
 			if (found == indices.end() || found->Id != event.ParentScopeId)
 			{
 				row.bIncomplete = true;
@@ -103,7 +103,7 @@ namespace rox::core
 
 			childEnds[found->Row] = event.TimestampNanoseconds + event.DurationNanoseconds;
 
-			if (parentRow.Depth == rox::core::NumericLimits<rox::core::uint32>::max())
+			if (parentRow.Depth == NumericLimits<uint32>::max())
 			{
 				return false;
 			}
@@ -113,7 +113,7 @@ namespace rox::core
 			parentRow.ExclusiveNanoseconds -= event.DurationNanoseconds;
 		}
 
-		output = rox::core::Move(candidate);
+		output = core::Move(candidate);
 		return true;
 	}
 }

@@ -13,7 +13,7 @@ namespace rox::math
 	namespace
 	{
 		template <MathScalar T>
-		using TrsRow = rox::core::StaticArray<T, 3>;
+		using TrsRow = core::StaticArray<T, 3>;
 
 		template <MathScalar T>
 		T rowDot(const TrsRow<T>& a, const TrsRow<T>& b) noexcept
@@ -30,7 +30,7 @@ namespace rox::math
 		template <MathScalar T>
 		TrsRow<T> unitRow(const TrsRow<T>& row) noexcept
 		{
-			const T length = rox::core::Hypot(row[0], row[1], row[2]);
+			const T length = core::Hypot(row[0], row[1], row[2]);
 			return {row[0] / length, row[1] / length, row[2] / length};
 		}
 
@@ -56,7 +56,7 @@ namespace rox::math
 			for (uint32 column = 0; column < 3; ++column)
 			{
 				const T value = static_cast<T>(scales[row]) * rotation[row][column];
-				ASSERT(rox::core::IsFinite(value), "Affine transform result must be representable in the finite scalar range.");
+				ASSERT(core::IsFinite(value), "Affine transform result must be representable in the finite scalar range.");
 				linear[row][column] = static_cast<T>(value);
 			}
 		}
@@ -117,9 +117,9 @@ namespace rox::math
 		for (uint32 row = 0; row < 3; ++row)
 		{
 			rows[row] = {matrix[row][0], matrix[row][1], matrix[row][2]};
-			lengths[row] = rox::core::Hypot(rows[row][0], rows[row][1], rows[row][2]);
+			lengths[row] = core::Hypot(rows[row][0], rows[row][1], rows[row][2]);
 
-			if (lengths[row] > rox::core::NumericLimits<T>::max())
+			if (lengths[row] > core::NumericLimits<T>::max())
 			{
 				return false;
 			}
@@ -138,7 +138,7 @@ namespace rox::math
 			for (uint32 other = row + 1; other < 3; ++other)
 			{
 				if (lengths[row] != T(0.0) && lengths[other] != T(0.0) &&
-				    rox::core::Abs(rowDot<T>(rows[row], rows[other])) > T(1e-5))
+				    core::Abs(rowDot<T>(rows[row], rows[other])) > T(1e-5))
 				{
 					return false;
 				}
@@ -189,7 +189,7 @@ namespace rox::math
 
 			for (uint32 index = 1; index < 3; ++index)
 			{
-				if (rox::core::Abs(rows[row][index]) < rox::core::Abs(rows[row][axis]))
+				if (core::Abs(rows[row][index]) < core::Abs(rows[row][axis]))
 				{
 					axis = index;
 				}
@@ -226,14 +226,14 @@ namespace rox::math
 			{
 				const T value = static_cast<T>(scales[row]) * rotation[row][column];
 
-				if (!rox::core::IsFinite(value))
+				if (!core::IsFinite(value))
 				{
 					return false;
 				}
 
-				const T error = rox::core::Abs(static_cast<T>(static_cast<T>(value)) - matrix[row][column]);
+				const T error = core::Abs(static_cast<T>(static_cast<T>(value)) - matrix[row][column]);
 
-				if (error > T(2e-5) * lengths[row] + T(2.0) * rox::core::NumericLimits<T>::denorm_min())
+				if (error > T(2e-5) * lengths[row] + T(2.0) * core::NumericLimits<T>::denorm_min())
 				{
 					return false;
 				}

@@ -54,13 +54,13 @@ namespace rox::core
 		}
 
 		detail::ECancellationDispatchPhase expected = detail::ECancellationDispatchPhase::Open;
-		const bool bDispatchClaimed = state->DispatchPhase.compare_exchange_strong(expected, detail::ECancellationDispatchPhase::Dispatching, rox::core::MemoryOrderAcqRel, rox::core::MemoryOrderAcquire);
+		const bool bDispatchClaimed = state->DispatchPhase.compare_exchange_strong(expected, detail::ECancellationDispatchPhase::Dispatching, core::MemoryOrderAcqRel, core::MemoryOrderAcquire);
 
 		if (!bDispatchClaimed)
 		{
 			if (expected == detail::ECancellationDispatchPhase::Dispatching && !detail::IsDispatchingOnCurrentThread())
 			{
-				state->DispatchPhase.wait(detail::ECancellationDispatchPhase::Dispatching, rox::core::MemoryOrderAcquire);
+				state->DispatchPhase.wait(detail::ECancellationDispatchPhase::Dispatching, core::MemoryOrderAcquire);
 			}
 
 			return;
@@ -72,7 +72,7 @@ namespace rox::core
 			CancellationCallback callback = nullptr;
 			void* context = nullptr;
 			{
-				rox::core::LockGuard lock(state->Mutex);
+				core::LockGuard lock(state->Mutex);
 				node = state->RegistrationHead;
 
 				if (node == nullptr)
@@ -81,18 +81,18 @@ namespace rox::core
 				}
 
 				node->Unlink(*state);
-				node->Phase.store(detail::ECancellationNodePhase::Invoking, rox::core::MemoryOrderRelease);
+				node->Phase.store(detail::ECancellationNodePhase::Invoking, core::MemoryOrderRelease);
 				callback = node->Callback;
 				context = node->Context;
 			}
 
 			detail::InvokeCallback(node->Owner, callback, context);
-			node->Phase.store(detail::ECancellationNodePhase::Completed, rox::core::MemoryOrderRelease);
-			state->RegistrationChangeSequence.fetch_add(1, rox::core::MemoryOrderRelease);
+			node->Phase.store(detail::ECancellationNodePhase::Completed, core::MemoryOrderRelease);
+			state->RegistrationChangeSequence.fetch_add(1, core::MemoryOrderRelease);
 			state->RegistrationChangeSequence.notify_all();
 		}
 
-		state->DispatchPhase.store(detail::ECancellationDispatchPhase::Complete, rox::core::MemoryOrderRelease);
+		state->DispatchPhase.store(detail::ECancellationDispatchPhase::Complete, core::MemoryOrderRelease);
 		state->DispatchPhase.notify_all();
 	}
 

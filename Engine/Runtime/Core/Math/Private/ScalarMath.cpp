@@ -14,7 +14,7 @@ namespace rox::math
 	T Clamp(T value, T minimum, T maximum) noexcept
 	{
 		ASSERT(minimum <= maximum, "Clamp requires an ordered interval.");
-		return rox::core::ClampValue(value, minimum, maximum);
+		return core::ClampValue(value, minimum, maximum);
 	}
 
 	template <MathScalar T>
@@ -26,7 +26,7 @@ namespace rox::math
 	template <MathScalar T>
 	T Lerp(T from, T to, T alpha) noexcept
 	{
-		return rox::core::LerpValue(from, to, alpha);
+		return core::LerpValue(from, to, alpha);
 	}
 
 	template <MathScalar T>
@@ -48,41 +48,41 @@ namespace rox::math
 	T Remap(T value, T inputMinimum, T inputMaximum, T outputMinimum, T outputMaximum) noexcept
 	{
 		const T alpha = InverseLerp(inputMinimum, inputMaximum, value);
-		return rox::core::LerpValue(outputMinimum, outputMaximum, alpha);
+		return core::LerpValue(outputMinimum, outputMaximum, alpha);
 	}
 
 	template <MathScalar T>
 	bool NearlyEqual(T left, T right, T absoluteTolerance, T relativeTolerance) noexcept
 	{
-		ASSERT(rox::core::IsFinite(absoluteTolerance) && absoluteTolerance >= T(0.0) && rox::core::IsFinite(relativeTolerance) && relativeTolerance >= T(0.0), "Comparison tolerances must be finite and nonnegative.");
+		ASSERT(core::IsFinite(absoluteTolerance) && absoluteTolerance >= T(0.0) && core::IsFinite(relativeTolerance) && relativeTolerance >= T(0.0), "Comparison tolerances must be finite and nonnegative.");
 
 		if (left == right)
 		{
 			return true;
 		}
 
-		if (!rox::core::IsFinite(left) || !rox::core::IsFinite(right))
+		if (!core::IsFinite(left) || !core::IsFinite(right))
 		{
 			return false;
 		}
 
-		const T difference = rox::core::Abs(static_cast<T>(left) - right);
+		const T difference = core::Abs(static_cast<T>(left) - right);
 		return difference <= absoluteTolerance ||
-		       difference <= relativeTolerance * rox::core::Max(rox::core::Abs(static_cast<T>(left)),
-		                                                        rox::core::Abs(static_cast<T>(right)));
+		       difference <= relativeTolerance * core::Max(core::Abs(static_cast<T>(left)),
+		                                                        core::Abs(static_cast<T>(right)));
 	}
 
 	template <MathScalar T>
 	bool IsNearlyZero(T value, T tolerance) noexcept
 	{
-		ASSERT(rox::core::IsFinite(tolerance) && tolerance >= T(0.0), "Zero comparison tolerance must be finite and nonnegative.");
-		return rox::core::Abs(value) <= tolerance;
+		ASSERT(core::IsFinite(tolerance) && tolerance >= T(0.0), "Zero comparison tolerance must be finite and nonnegative.");
+		return core::Abs(value) <= tolerance;
 	}
 
 	template <MathScalar T>
 	T Wrap(T value, T minimum, T maximum) noexcept
 	{
-		ASSERT(rox::core::IsFinite(value) && rox::core::IsFinite(minimum) && rox::core::IsFinite(maximum) && minimum < maximum, "Wrapping requires finite input and an increasing interval.");
+		ASSERT(core::IsFinite(value) && core::IsFinite(minimum) && core::IsFinite(maximum) && minimum < maximum, "Wrapping requires finite input and an increasing interval.");
 
 		if (value >= minimum && value < maximum)
 		{
@@ -90,7 +90,7 @@ namespace rox::math
 		}
 
 		const T width = static_cast<T>(maximum) - minimum;
-		T offset = rox::core::Fmod(static_cast<T>(value) - minimum, width);
+		T offset = core::Fmod(static_cast<T>(value) - minimum, width);
 
 		if (offset < T(0.0))
 		{
@@ -111,9 +111,9 @@ namespace rox::math
 	template <MathScalar T>
 	T PingPong(T value, T length) noexcept
 	{
-		ASSERT(rox::core::IsFinite(value) && rox::core::IsFinite(length) && length > T(0.0), "Ping-pong requires finite input and a positive finite length.");
+		ASSERT(core::IsFinite(value) && core::IsFinite(length) && length > T(0.0), "Ping-pong requires finite input and a positive finite length.");
 		const T period = T(2.0) * length;
-		const T phase = rox::core::Fmod(rox::core::Abs(static_cast<T>(value)), period);
+		const T phase = core::Fmod(core::Abs(static_cast<T>(value)), period);
 		return static_cast<T>(phase <= length ? phase : period - phase);
 	}
 
@@ -156,12 +156,12 @@ namespace rox::math
 	template <MathScalar T>
 	T MoveTowards(T current, T target, T maximumDelta) noexcept
 	{
-		ASSERT(rox::core::IsFinite(current) && rox::core::IsFinite(target), "Movement endpoints must be finite.");
-		ASSERT(rox::core::IsFinite(maximumDelta) && maximumDelta >= T(0.0), "Maximum movement must be finite and nonnegative.");
+		ASSERT(core::IsFinite(current) && core::IsFinite(target), "Movement endpoints must be finite.");
+		ASSERT(core::IsFinite(maximumDelta) && maximumDelta >= T(0.0), "Maximum movement must be finite and nonnegative.");
 		const T delta = static_cast<T>(target) - current;
-		return rox::core::Abs(delta) <= maximumDelta
+		return core::Abs(delta) <= maximumDelta
 		           ? target
-		           : static_cast<T>(current + rox::core::CopySign(static_cast<T>(maximumDelta), delta));
+		           : static_cast<T>(current + core::CopySign(static_cast<T>(maximumDelta), delta));
 	}
 
 	template <MathScalar T>
@@ -181,8 +181,8 @@ namespace rox::math
 	template <MathScalar T>
 	T Snap(T value, T step) noexcept
 	{
-		ASSERT(rox::core::IsFinite(step) && step > T(0.0), "Snap step must be positive and finite.");
-		return static_cast<T>(rox::core::Round(static_cast<T>(value) / step) * step);
+		ASSERT(core::IsFinite(step) && step > T(0.0), "Snap step must be positive and finite.");
+		return static_cast<T>(core::Round(static_cast<T>(value) / step) * step);
 	}
 
 	template float32 Clamp(float32 value, float32 minimum, float32 maximum) noexcept;

@@ -20,16 +20,16 @@ namespace rox::core
 			Marker& operator=(const Marker&) noexcept = default;
 
 		private:
-			Marker(const LinearMemoryResource* owner, rox::core::uint64 serial, rox::core::uint64 parentSerial, rox::core::usize cursor) noexcept;
+			Marker(const LinearMemoryResource* owner, uint64 serial, uint64 parentSerial, usize cursor) noexcept;
 
 		private:
 			const LinearMemoryResource* m_Owner;
-			rox::core::uint64 m_Serial;
-			rox::core::uint64 m_ParentSerial;
-			rox::core::usize m_Cursor;
+			uint64 m_Serial;
+			uint64 m_ParentSerial;
+			usize m_Cursor;
 		};
 
-		LinearMemoryResource(void* memory, rox::core::usize capacityByteCount);
+		LinearMemoryResource(void* memory, usize capacityByteCount);
 		~LinearMemoryResource() override;
 
 		[[nodiscard]] Marker Mark() noexcept;
@@ -39,11 +39,11 @@ namespace rox::core
 		// The owner proves no suballocation is live before resetting the entire borrowed range.
 		void Reset() noexcept;
 
-		rox::core::usize GetCapacityByteCount() const noexcept;
-		rox::core::usize GetUsedByteCount() const noexcept;
-		rox::core::usize GetPeakByteCount() const noexcept;
+		usize GetCapacityByteCount() const noexcept;
+		usize GetUsedByteCount() const noexcept;
+		usize GetPeakByteCount() const noexcept;
 
-		rox::core::DiagnosticText GetName() const noexcept override;
+		DiagnosticText GetName() const noexcept override;
 		EMemoryResourceThreadSafety GetThreadSafety() const noexcept override;
 
 	protected:
@@ -51,13 +51,13 @@ namespace rox::core
 		void deallocate(void* memory, MemoryAllocationRequest allocation) noexcept override;
 
 	private:
-		rox::core::Byte* m_Memory;
-		rox::core::usize m_CapacityByteCount;
+		Byte* m_Memory;
+		usize m_CapacityByteCount;
 
-		rox::core::usize m_UsedByteCount;
-		rox::core::usize m_PeakByteCount;
+		usize m_UsedByteCount;
+		usize m_PeakByteCount;
 
-		rox::core::uint64 m_LastMarkerSerial;
-		rox::core::uint64 m_CurrentMarkerSerial;
+		uint64 m_LastMarkerSerial;
+		uint64 m_CurrentMarkerSerial;
 	};
 } // namespace rox::core

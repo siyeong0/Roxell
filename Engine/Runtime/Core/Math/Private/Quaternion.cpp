@@ -17,11 +17,11 @@ namespace rox::math
 	namespace
 	{
 		template <MathScalar T>
-		using QuaternionVector = rox::core::StaticArray<T, 3>;
+		using QuaternionVector = core::StaticArray<T, 3>;
 		template <MathScalar T>
-		using QuaternionCoefficients = rox::core::StaticArray<T, 4>;
+		using QuaternionCoefficients = core::StaticArray<T, 4>;
 		template <MathScalar T>
-		using RotationMatrixRows = rox::core::StaticArray<QuaternionVector<T>, 3>;
+		using RotationMatrixRows = core::StaticArray<QuaternionVector<T>, 3>;
 
 		template <MathScalar T>
 		bool validDirection(const Vector3<T>& v) noexcept
@@ -38,7 +38,7 @@ namespace rox::math
 		template <MathScalar T>
 		T vectorLength(const QuaternionVector<T>& v) noexcept
 		{
-			return rox::core::Hypot(v[0], v[1], v[2]);
+			return core::Hypot(v[0], v[1], v[2]);
 		}
 
 		template <MathScalar T>
@@ -56,7 +56,7 @@ namespace rox::math
 		template <MathScalar T>
 		QuaternionVector<T> normalizeDirection(QuaternionVector<T> v) noexcept
 		{
-			const T scale = rox::core::Max({rox::core::Abs(v[0]), rox::core::Abs(v[1]), rox::core::Abs(v[2])});
+			const T scale = core::Max({core::Abs(v[0]), core::Abs(v[1]), core::Abs(v[2])});
 			for (T& lane : v)
 			{
 				lane /= scale;
@@ -75,13 +75,13 @@ namespace rox::math
 		template <MathScalar T>
 		QuaternionCoefficients<T> canonicalRotation(QuaternionCoefficients<T> q) noexcept
 		{
-			const T scale = rox::core::Max({rox::core::Abs(q[0]), rox::core::Abs(q[1]), rox::core::Abs(q[2]), rox::core::Abs(q[3])});
+			const T scale = core::Max({core::Abs(q[0]), core::Abs(q[1]), core::Abs(q[2]), core::Abs(q[3])});
 			for (T& lane : q)
 			{
 				lane /= scale;
 			}
 
-			const T length = rox::core::Hypot(rox::core::Hypot(q[0], q[1]), rox::core::Hypot(q[2], q[3]));
+			const T length = core::Hypot(core::Hypot(q[0], q[1]), core::Hypot(q[2], q[3]));
 
 			for (T& lane : q)
 			{
@@ -92,7 +92,7 @@ namespace rox::math
 
 			if (q[3] == T(0.0))
 			{
-				for (rox::core::usize index = 0; index < 3; ++index)
+				for (core::usize index = 0; index < 3; ++index)
 				{
 					if (q[index] != T(0.0))
 					{
@@ -171,9 +171,9 @@ namespace rox::math
 		template <MathScalar T>
 		QuaternionVector<T> perpendicularDirection(const QuaternionVector<T>& v) noexcept
 		{
-			const T x = rox::core::Abs(v[0]);
-			const T y = rox::core::Abs(v[1]);
-			const T z = rox::core::Abs(v[2]);
+			const T x = core::Abs(v[0]);
+			const T y = core::Abs(v[1]);
+			const T z = core::Abs(v[2]);
 			QuaternionVector<T> cardinal{};
 			cardinal[x <= y && x <= z ? 0 : (y <= z ? 1 : 2)] = T(1.0);
 			return normalizeDirection<T>(cross<T>(v, cardinal));
@@ -183,14 +183,14 @@ namespace rox::math
 		QuaternionVector<T> rotationLog(QuaternionCoefficients<T> q) noexcept
 		{
 			q = canonicalRotation<T>(q);
-			const T sine = rox::core::Hypot(q[0], q[1], q[2]);
+			const T sine = core::Hypot(q[0], q[1], q[2]);
 
 			if (sine == T(0.0))
 			{
 				return {};
 			}
 
-			const T scale = T(2.0) * rox::core::Atan2(sine, q[3]) / sine;
+			const T scale = T(2.0) * core::Atan2(sine, q[3]) / sine;
 			return {q[0] * scale, q[1] * scale, q[2] * scale};
 		}
 
@@ -198,16 +198,16 @@ namespace rox::math
 		QuaternionCoefficients<T> rotationExp(const QuaternionVector<T>& v) noexcept
 		{
 			const T angle = vectorLength<T>(v);
-			ASSERT(rox::core::IsFinite(angle), "Rotation vector length must be representable in its scalar type.");
+			ASSERT(core::IsFinite(angle), "Rotation vector length must be representable in its scalar type.");
 
 			if (angle == T(0.0))
 			{
 				return {T(0.0), T(0.0), T(0.0), T(1.0)};
 			}
 
-			const T sine = rox::core::Sin(angle * T(0.5));
+			const T sine = core::Sin(angle * T(0.5));
 			return canonicalRotation<T>(
-			    {(v[0] / angle) * sine, (v[1] / angle) * sine, (v[2] / angle) * sine, rox::core::Cos(angle * T(0.5))});
+			    {(v[0] / angle) * sine, (v[1] / angle) * sine, (v[2] / angle) * sine, core::Cos(angle * T(0.5))});
 		}
 
 		template <MathScalar T>
@@ -236,31 +236,31 @@ namespace rox::math
 		{
 			const RotationMatrixRows<T> m = rotationMatrixRows<T>(matrix);
 
-			for (rox::core::usize row = 0; row < 3; ++row)
+			for (core::usize row = 0; row < 3; ++row)
 			{
 				for (T lane : m[row])
 				{
-					if (!rox::core::IsFinite(lane))
+					if (!core::IsFinite(lane))
 					{
 						return false;
 					}
 				}
 
-				if (rox::core::Abs(dot<T>(m[row], m[row]) - T(1.0)) > T(1.0e-4))
+				if (core::Abs(dot<T>(m[row], m[row]) - T(1.0)) > T(1.0e-4))
 				{
 					return false;
 				}
 
-				for (rox::core::usize other = row + 1; other < 3; ++other)
+				for (core::usize other = row + 1; other < 3; ++other)
 				{
-					if (rox::core::Abs(dot<T>(m[row], m[other])) > T(1.0e-4))
+					if (core::Abs(dot<T>(m[row], m[other])) > T(1.0e-4))
 					{
 						return false;
 					}
 				}
 			}
 
-			return rox::core::Abs(dot<T>(m[0], cross<T>(m[1], m[2])) - T(1.0)) <= T(3.0e-4);
+			return core::Abs(dot<T>(m[0], cross<T>(m[1], m[2])) - T(1.0)) <= T(3.0e-4);
 		}
 
 		template <MathScalar T>
@@ -270,14 +270,14 @@ namespace rox::math
 
 			if (trace > T(0.0))
 			{
-				const T s = T(2.0) * rox::core::Sqrt(trace + T(1.0));
+				const T s = T(2.0) * core::Sqrt(trace + T(1.0));
 				return canonicalRotation<T>({(m[1][2] - m[2][1]) / s, (m[2][0] - m[0][2]) / s, (m[0][1] - m[1][0]) / s, T(0.25) * s});
 			}
 
-			const rox::core::usize i = m[0][0] >= m[1][1] && m[0][0] >= m[2][2] ? 0 : (m[1][1] >= m[2][2] ? 1 : 2);
-			const rox::core::usize j = (i + 1) % 3;
-			const rox::core::usize k = (i + 2) % 3;
-			const T s = T(2.0) * rox::core::Sqrt(T(1.0) + m[i][i] - m[j][j] - m[k][k]);
+			const core::usize i = m[0][0] >= m[1][1] && m[0][0] >= m[2][2] ? 0 : (m[1][1] >= m[2][2] ? 1 : 2);
+			const core::usize j = (i + 1) % 3;
+			const core::usize k = (i + 2) % 3;
+			const T s = T(2.0) * core::Sqrt(T(1.0) + m[i][i] - m[j][j] - m[k][k]);
 			QuaternionCoefficients<T> q{};
 			q[i] = T(0.25) * s;
 			q[j] = (m[i][j] + m[j][i]) / s;
@@ -309,9 +309,9 @@ namespace rox::math
 		}
 
 		// Use the small complementary angle near a half-turn to retain its real component.
-		const T halfAngle = T(0.5) * rox::core::Atan2(sine, rox::core::Abs(cosine));
-		const T halfSine = cosine < T(0) ? rox::core::Cos(halfAngle) : rox::core::Sin(halfAngle);
-		const T halfCosine = cosine < T(0) ? rox::core::Sin(halfAngle) : rox::core::Cos(halfAngle);
+		const T halfAngle = T(0.5) * core::Atan2(sine, core::Abs(cosine));
+		const T halfSine = cosine < T(0) ? core::Cos(halfAngle) : core::Sin(halfAngle);
+		const T halfCosine = cosine < T(0) ? core::Sin(halfAngle) : core::Cos(halfAngle);
 		return makeRotation<T>({axis[0] / sine * halfSine, axis[1] / sine * halfSine, axis[2] / sine * halfSine, halfCosine});
 	}
 
@@ -346,7 +346,7 @@ namespace rox::math
 	Quaternion<T> Quaternion<T>::RotateTowards(const Quaternion<T>& from, const Quaternion<T>& to, T maxRadiansDelta) noexcept
 	{
 		ASSERT(validRotation<T>(from) && validRotation<T>(to), "Quaternion rotation inputs must be finite and nonzero.");
-		ASSERT(rox::core::IsFinite(maxRadiansDelta) && maxRadiansDelta >= T(0.0), "Quaternion angular step must be finite and non-negative.");
+		ASSERT(core::IsFinite(maxRadiansDelta) && maxRadiansDelta >= T(0.0), "Quaternion angular step must be finite and non-negative.");
 		const QuaternionCoefficients<T> a{from.X, from.Y, from.Z, from.W};
 		const QuaternionCoefficients<T> b{to.X, to.Y, to.Z, to.W};
 		if (maxRadiansDelta == T(0.0))
@@ -363,14 +363,14 @@ namespace rox::math
 	{
 		ASSERT(validRotation<T>(*this), "Quaternion rotation inputs must be finite and nonzero.");
 		const QuaternionCoefficients<T> q = normalizeRotation<T>(*this);
-		const T sine = rox::core::Hypot(q[0], q[1], q[2]);
+		const T sine = core::Hypot(q[0], q[1], q[2]);
 
 		if (sine == T(0.0))
 		{
 			return {};
 		}
 
-		return {{static_cast<T>(q[0] / sine), static_cast<T>(q[1] / sine), static_cast<T>(q[2] / sine)}, static_cast<T>(T(2.0) * rox::core::Atan2(sine, q[3]))};
+		return {{static_cast<T>(q[0] / sine), static_cast<T>(q[1] / sine), static_cast<T>(q[2] / sine)}, static_cast<T>(T(2.0) * core::Atan2(sine, q[3]))};
 	}
 
 	template <MathScalar T>
@@ -385,19 +385,19 @@ namespace rox::math
 		const T m00 = w * w + x * x - y * y - z * z;
 		const T m01 = T(2.0) * (x * y + z * w);
 		const T sy = T(2.0) * (y * w - x * z);
-		const T cy = rox::core::Hypot(m00, m01);
+		const T cy = core::Hypot(m00, m01);
 		const T m11 = w * w - x * x + y * y - z * z;
 		Vector3<T> result;
 
-		if (cy > rox::core::Max(T(1.0e-6), T(32) * rox::core::NumericLimits<T>::epsilon()))
+		if (cy > core::Max(T(1.0e-6), T(32) * core::NumericLimits<T>::epsilon()))
 		{
-			result = {static_cast<T>(rox::core::Atan2(T(2.0) * (y * z + x * w), w * w - x * x - y * y + z * z)),
-			          static_cast<T>(rox::core::Atan2(sy, cy)), static_cast<T>(rox::core::Atan2(m01, m00))};
+			result = {static_cast<T>(core::Atan2(T(2.0) * (y * z + x * w), w * w - x * x - y * y + z * z)),
+			          static_cast<T>(core::Atan2(sy, cy)), static_cast<T>(core::Atan2(m01, m00))};
 		}
 		else
 		{
-			result = {static_cast<T>(rox::core::Atan2(rox::core::CopySign(T(1.0), sy) * T(2.0) * (x * y - z * w), m11)),
-			          static_cast<T>(rox::core::CopySign(rox::core::PI<T> * T(0.5), sy)), T(0.0)};
+			result = {static_cast<T>(core::Atan2(core::CopySign(T(1.0), sy) * T(2.0) * (x * y - z * w), m11)),
+			          static_cast<T>(core::CopySign(core::PI<T> * T(0.5), sy)), T(0.0)};
 		}
 
 		if (result.X == T(0.0))
@@ -428,8 +428,8 @@ namespace rox::math
 		const QuaternionVector<T> axis = normalizeDirection<T>(rawAxis);
 		int qExponent = 0;
 		int axisExponent = 0;
-		std::frexp(rox::core::Max({rox::core::Abs(X), rox::core::Abs(Y), rox::core::Abs(Z), rox::core::Abs(W)}), &qExponent);
-		std::frexp(rox::core::Max({rox::core::Abs(rawAxis[0]), rox::core::Abs(rawAxis[1]), rox::core::Abs(rawAxis[2])}), &axisExponent);
+		std::frexp(core::Max({core::Abs(X), core::Abs(Y), core::Abs(Z), core::Abs(W)}), &qExponent);
+		std::frexp(core::Max({core::Abs(rawAxis[0]), core::Abs(rawAxis[1]), core::Abs(rawAxis[2])}), &axisExponent);
 		const QuaternionVector<T> scaledAxis{std::scalbn(rawAxis[0], -axisExponent),
 		                                     std::scalbn(rawAxis[1], -axisExponent),
 		                                     std::scalbn(rawAxis[2], -axisExponent)};
@@ -472,7 +472,7 @@ namespace rox::math
 		const QuaternionVector<T> before = rotationLog<T>(multiplyRotation<T>(conjugateRotation<T>(c), p));
 		const QuaternionVector<T> after = rotationLog<T>(multiplyRotation<T>(conjugateRotation<T>(c), n));
 		QuaternionVector<T> delta{};
-		for (rox::core::usize index = 0; index < 3; ++index)
+		for (core::usize index = 0; index < 3; ++index)
 		{
 			delta[index] = -T(0.25) * (before[index] + after[index]);
 		}
@@ -484,7 +484,7 @@ namespace rox::math
 	Quaternion<T> Quaternion<T>::Squad(const Quaternion<T>& from, const Quaternion<T>& to, const Quaternion<T>& fromTangent, const Quaternion<T>& toTangent, T alpha) noexcept
 	{
 		ASSERT(validRotation<T>(from) && validRotation<T>(to) && validRotation<T>(fromTangent) && validRotation<T>(toTangent), "Quaternion rotation inputs must be finite and nonzero.");
-		ASSERT(rox::core::IsFinite(alpha) && alpha >= T(0.0) && alpha <= T(1.0), "Quaternion interpolation alpha must be finite and within [0, 1].");
+		ASSERT(core::IsFinite(alpha) && alpha >= T(0.0) && alpha <= T(1.0), "Quaternion interpolation alpha must be finite and within [0, 1].");
 		const QuaternionCoefficients<T> a{from.X, from.Y, from.Z, from.W};
 		const QuaternionCoefficients<T> b{to.X, to.Y, to.Z, to.W};
 		const QuaternionCoefficients<T> c{fromTangent.X, fromTangent.Y, fromTangent.Z, fromTangent.W};
@@ -507,29 +507,29 @@ namespace rox::math
 	template <MathScalar T>
 	T Quaternion<T>::Length() const noexcept
 	{
-		const T xyLength = rox::core::Hypot(static_cast<T>(X), static_cast<T>(Y));
-		const T zwLength = rox::core::Hypot(static_cast<T>(Z), static_cast<T>(W));
-		return static_cast<T>(rox::core::Hypot(xyLength, zwLength));
+		const T xyLength = core::Hypot(static_cast<T>(X), static_cast<T>(Y));
+		const T zwLength = core::Hypot(static_cast<T>(Z), static_cast<T>(W));
+		return static_cast<T>(core::Hypot(xyLength, zwLength));
 	}
 
 	template <MathScalar T>
 	bool Quaternion<T>::TryNormalize(Quaternion<T>* outNormalized, T epsilon) const noexcept
 	{
 		ASSERT(outNormalized != nullptr, "Quaternion output must not be null.");
-		ASSERT(rox::core::IsFinite(epsilon) && epsilon >= T(0), "Quaternion epsilon must be finite and non-negative.");
+		ASSERT(core::IsFinite(epsilon) && epsilon >= T(0), "Quaternion epsilon must be finite and non-negative.");
 		if (!IsFinite())
 		{
 			return false;
 		}
 
-		const T scale = rox::core::Max({rox::core::Abs(X), rox::core::Abs(Y), rox::core::Abs(Z), rox::core::Abs(W)});
+		const T scale = core::Max({core::Abs(X), core::Abs(Y), core::Abs(Z), core::Abs(W)});
 		if (scale == T(0))
 		{
 			return false;
 		}
 
 		const Quaternion<T> q{X / scale, Y / scale, Z / scale, W / scale};
-		const T length = rox::core::Hypot(rox::core::Hypot(q.X, q.Y), rox::core::Hypot(q.Z, q.W));
+		const T length = core::Hypot(core::Hypot(q.X, q.Y), core::Hypot(q.Z, q.W));
 		if (scale <= epsilon / length)
 		{
 			return false;
@@ -558,20 +558,20 @@ namespace rox::math
 	bool Quaternion<T>::TryInverse(Quaternion<T>* outInverse, T epsilon) const noexcept
 	{
 		ASSERT(outInverse != nullptr, "Quaternion output must not be null.");
-		ASSERT(rox::core::IsFinite(epsilon) && epsilon >= T(0), "Quaternion epsilon must be finite and non-negative.");
+		ASSERT(core::IsFinite(epsilon) && epsilon >= T(0), "Quaternion epsilon must be finite and non-negative.");
 		if (!IsFinite())
 		{
 			return false;
 		}
 
-		const T scale = rox::core::Max({rox::core::Abs(X), rox::core::Abs(Y), rox::core::Abs(Z), rox::core::Abs(W)});
+		const T scale = core::Max({core::Abs(X), core::Abs(Y), core::Abs(Z), core::Abs(W)});
 		if (scale == T(0))
 		{
 			return false;
 		}
 
 		const Quaternion<T> q{X / scale, Y / scale, Z / scale, W / scale};
-		const T length = rox::core::Hypot(rox::core::Hypot(q.X, q.Y), rox::core::Hypot(q.Z, q.W));
+		const T length = core::Hypot(core::Hypot(q.X, q.Y), core::Hypot(q.Z, q.W));
 		if (scale <= epsilon / length)
 		{
 			return false;
@@ -603,8 +603,8 @@ namespace rox::math
 	{
 		const Vector3<T> normalizedAxis = axis.Normalized();
 		const T halfAngle = radians * T(0.5);
-		const T sine = rox::core::Sin(halfAngle);
-		return {normalizedAxis.X * sine, normalizedAxis.Y * sine, normalizedAxis.Z * sine, rox::core::Cos(halfAngle)};
+		const T sine = core::Sin(halfAngle);
+		return {normalizedAxis.X * sine, normalizedAxis.Y * sine, normalizedAxis.Z * sine, core::Cos(halfAngle)};
 	}
 
 	template <MathScalar T>
@@ -619,7 +619,7 @@ namespace rox::math
 	template <MathScalar T>
 	Quaternion<T> Quaternion<T>::Nlerp(const Quaternion<T>& from, const Quaternion<T>& to, T alpha) noexcept
 	{
-		ASSERT(rox::core::IsFinite(alpha), "Quaternion interpolation alpha must be finite.");
+		ASSERT(core::IsFinite(alpha), "Quaternion interpolation alpha must be finite.");
 		const Quaternion<T> normalizedFrom = from.Normalized();
 		Quaternion<T> normalizedTo = to.Normalized();
 
@@ -634,7 +634,7 @@ namespace rox::math
 	template <MathScalar T>
 	Quaternion<T> Quaternion<T>::Slerp(const Quaternion<T>& from, const Quaternion<T>& to, T alpha) noexcept
 	{
-		ASSERT(rox::core::IsFinite(alpha), "Quaternion interpolation alpha must be finite.");
+		ASSERT(core::IsFinite(alpha), "Quaternion interpolation alpha must be finite.");
 		const Quaternion<T> normalizedFrom = from.Normalized();
 		Quaternion<T> normalizedTo = to.Normalized();
 		T cosine = normalizedFrom.Dot(normalizedTo);
@@ -645,17 +645,17 @@ namespace rox::math
 			cosine = -cosine;
 		}
 
-		cosine = rox::core::ClampValue(cosine, -T(1.0), T(1.0));
+		cosine = core::ClampValue(cosine, -T(1.0), T(1.0));
 
 		if (cosine > T(0.9995))
 		{
 			return (normalizedFrom * (T(1) - alpha) + normalizedTo * alpha).Normalized();
 		}
 
-		const T angle = rox::core::Acos(cosine);
-		const T inverseSine = T(1.0) / rox::core::Sin(angle);
-		return (normalizedFrom * rox::core::Sin((T(1.0) - alpha) * angle) +
-		        normalizedTo * rox::core::Sin(alpha * angle)) *
+		const T angle = core::Acos(cosine);
+		const T inverseSine = T(1.0) / core::Sin(angle);
+		return (normalizedFrom * core::Sin((T(1.0) - alpha) * angle) +
+		        normalizedTo * core::Sin(alpha * angle)) *
 		       inverseSine;
 	}
 

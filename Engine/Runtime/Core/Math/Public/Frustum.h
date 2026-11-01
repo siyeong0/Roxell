@@ -54,6 +54,6 @@ namespace rox::math
 
 	static_assert(sizeof(Frustum<float32>) == sizeof(float32) * 24);
 	static_assert(sizeof(Frustum<float64>) == sizeof(float64) * 24);
-	static_assert(rox::core::IsStandardLayout<Frustum<float32>> && rox::core::IsTriviallyCopyable<Frustum<float32>>);
-	static_assert(rox::core::IsStandardLayout<Frustum<float64>> && rox::core::IsTriviallyCopyable<Frustum<float64>>);
+	static_assert(core::IsStandardLayout<Frustum<float32>> && core::IsTriviallyCopyable<Frustum<float32>>);
+	static_assert(core::IsStandardLayout<Frustum<float64>> && core::IsTriviallyCopyable<Frustum<float64>>);
 } // namespace rox::math

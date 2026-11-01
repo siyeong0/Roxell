@@ -58,8 +58,8 @@ namespace rox::core
 	class [[nodiscard]] Task
 	{
 	private:
-		static_assert(!rox::core::IsReference<TValue>);
-		static_assert(rox::core::IsNothrowMoveConstructible<Result<TValue>>, "Task results must be nothrow move constructible so completion and consumption remain terminal.");
+		static_assert(!IsReference<TValue>);
+		static_assert(IsNothrowMoveConstructible<Result<TValue>>, "Task results must be nothrow move constructible so completion and consumption remain terminal.");
 
 		friend class TaskSource<TValue>;
 		friend class JobScheduler;
@@ -96,7 +96,7 @@ namespace rox::core
 		explicit Task(SharedPtr<SharedState> state) noexcept;
 
 	private:
-		rox::core::Optional<Result<TValue>> m_InlineResult;
+		core::Optional<Result<TValue>> m_InlineResult;
 		SharedPtr<SharedState> m_State;
 		TaskHandle m_Job;
 		bool m_bInline = false;
@@ -141,15 +141,15 @@ namespace rox::core
 
 	template <typename TValue>
 	Task<TValue>::Task(Result<TValue> result) noexcept
-	    : m_InlineResult(rox::core::Move(result))
+	    : m_InlineResult(core::Move(result))
 	    , m_bInline(true)
 	{
 	}
 
 	template <typename TValue>
 	Task<TValue>::Task(Task&& other) noexcept
-	    : m_InlineResult(rox::core::Move(other.m_InlineResult))
-	    , m_State(rox::core::Move(other.m_State))
+	    : m_InlineResult(core::Move(other.m_InlineResult))
+	    , m_State(core::Move(other.m_State))
 	    , m_Job(Move(other.m_Job))
 	    , m_bInline(other.m_bInline)
 	{
@@ -169,10 +169,10 @@ namespace rox::core
 
 		if (other.m_InlineResult.has_value())
 		{
-			m_InlineResult.emplace(rox::core::Move(*other.m_InlineResult));
+			m_InlineResult.emplace(core::Move(*other.m_InlineResult));
 		}
 
-		m_State = rox::core::Move(other.m_State);
+		m_State = core::Move(other.m_State);
 		m_Job = Move(other.m_Job);
 		m_bInline = other.m_bInline;
 		other.m_InlineResult.reset();
@@ -239,7 +239,7 @@ namespace rox::core
 		{
 			ASSERT(m_InlineResult.has_value(), "Ready Task result may be consumed only once.");
 
-			Result<TValue> result(rox::core::Move(*m_InlineResult));
+			Result<TValue> result(core::Move(*m_InlineResult));
 			m_InlineResult.reset();
 
 			return result;
@@ -307,7 +307,7 @@ namespace rox::core
 
 	template <typename TValue>
 	Task<TValue>::Task(SharedPtr<SharedState> state) noexcept
-	    : m_State(rox::core::Move(state))
+	    : m_State(core::Move(state))
 	{
 	}
 

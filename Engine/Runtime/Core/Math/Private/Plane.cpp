@@ -17,14 +17,14 @@ namespace rox::math
 	bool Plane<T>::TryNormalize(Plane<T>* outNormalized, T epsilon) const noexcept
 	{
 		ASSERT(outNormalized != nullptr, "Normalized plane output must not be null.");
-		ASSERT(rox::core::IsFinite(epsilon) && epsilon >= T(0), "Plane normalization epsilon must be finite and non-negative.");
+		ASSERT(core::IsFinite(epsilon) && epsilon >= T(0), "Plane normalization epsilon must be finite and non-negative.");
 		
-		if (!Normal.IsFinite() || !rox::core::IsFinite(Distance))
+		if (!Normal.IsFinite() || !core::IsFinite(Distance))
 		{
 			return false;
 		}
 
-		const T scale = rox::core::Max({rox::core::Abs(Normal.X), rox::core::Abs(Normal.Y), rox::core::Abs(Normal.Z)});
+		const T scale = core::Max({core::Abs(Normal.X), core::Abs(Normal.Y), core::Abs(Normal.Z)});
 		if (scale == T(0))
 		{
 			return false;
@@ -38,7 +38,7 @@ namespace rox::math
 		}
 
 		const T distance = (Distance / scale) / length;
-		if (!rox::core::IsFinite(distance))
+		if (!core::IsFinite(distance))
 		{
 			return false;
 		}

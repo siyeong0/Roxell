@@ -12,17 +12,17 @@
 namespace rox::core
 {
 #if defined(__STDCPP_DEFAULT_NEW_ALIGNMENT__)
-	constexpr rox::core::usize DEFAULT_MEMORY_ALIGNMENT = __STDCPP_DEFAULT_NEW_ALIGNMENT__ > alignof(rox::core::MaxAlign)
+	constexpr usize DEFAULT_MEMORY_ALIGNMENT = __STDCPP_DEFAULT_NEW_ALIGNMENT__ > alignof(core::MaxAlign)
 	                                                     ? __STDCPP_DEFAULT_NEW_ALIGNMENT__
-	                                                     : alignof(rox::core::MaxAlign);
+	                                                     : alignof(core::MaxAlign);
 #else
-	constexpr rox::core::usize DEFAULT_MEMORY_ALIGNMENT = alignof(rox::core::MaxAlign);
+	constexpr usize DEFAULT_MEMORY_ALIGNMENT = alignof(core::MaxAlign);
 #endif
 
 	struct MemoryAllocationRequest
 	{
-		rox::core::usize ByteCount = 0;
-		rox::core::usize Alignment = DEFAULT_MEMORY_ALIGNMENT;
+		usize ByteCount = 0;
+		usize Alignment = DEFAULT_MEMORY_ALIGNMENT;
 	};
 
 	enum class EMemoryResourceThreadSafety
@@ -42,23 +42,23 @@ namespace rox::core
 	{
 		EMemoryFailureReason Reason;
 		const MemoryResource* Resource;
-		rox::core::DiagnosticText ResourceName;
+		DiagnosticText ResourceName;
 
 		MemoryAllocationRequest Allocation;
 	};
 
 	using MemoryFailureHandler = void (*)(const MemoryFailure& failure) noexcept;
 
-	constexpr bool IsValidMemoryAlignment(const rox::core::usize alignment) noexcept
+	constexpr bool IsValidMemoryAlignment(const usize alignment) noexcept
 	{
 		return alignment != 0 && (alignment & (alignment - 1)) == 0;
 	}
 
-	constexpr bool AddMemorySize(const rox::core::usize left, const rox::core::usize right, rox::core::usize* const outResult) noexcept
+	constexpr bool AddMemorySize(const usize left, const usize right, usize* const outResult) noexcept
 	{
 		ASSERT(outResult != nullptr, "AddMemorySize requires a valid output pointer.");
 
-		if (left > rox::core::NumericLimits<rox::core::usize>::max() - right)
+		if (left > NumericLimits<usize>::max() - right)
 		{
 			return false;
 		}
@@ -67,11 +67,11 @@ namespace rox::core
 		return true;
 	}
 
-	constexpr bool MultiplyMemorySize(const rox::core::usize left, const rox::core::usize right, rox::core::usize* const outResult) noexcept
+	constexpr bool MultiplyMemorySize(const usize left, const usize right, usize* const outResult) noexcept
 	{
 		ASSERT(outResult != nullptr, "MultiplyMemorySize requires a valid output pointer.");
 
-		if (left != 0 && right > rox::core::NumericLimits<rox::core::usize>::max() / left)
+		if (left != 0 && right > NumericLimits<usize>::max() / left)
 		{
 			return false;
 		}
@@ -106,7 +106,7 @@ namespace rox::core
 		void Deallocate(void* memory, MemoryAllocationRequest allocation) noexcept;
 
 		// The returned view must have static storage duration.
-		virtual rox::core::DiagnosticText GetName() const noexcept = 0;
+		virtual DiagnosticText GetName() const noexcept = 0;
 		virtual EMemoryResourceThreadSafety GetThreadSafety() const noexcept = 0;
 
 	protected:

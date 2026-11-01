@@ -13,7 +13,7 @@ namespace rox::core
 	public:
 		Sha256() noexcept;
 
-		void Update(rox::core::Span<const Byte> data) noexcept;
+		void Update(Span<const Byte> data) noexcept;
 
 		// Returns the digest of current input without consuming the state; further updates remain valid.
 		[[nodiscard]] Hash256 Finalize() const noexcept;
@@ -21,11 +21,11 @@ namespace rox::core
 		void Reset() noexcept;
 
 	private:
-		rox::core::StaticArray<uint32, 8> m_State = {};
+		StaticArray<uint32, 8> m_State = {};
 
-		rox::core::StaticArray<uint8, 64> m_Tail = {};
+		StaticArray<uint8, 64> m_Tail = {};
 
 		uint64 m_TotalBytes = 0;
-		rox::core::usize m_TailBytes = 0;
+		usize m_TailBytes = 0;
 	};
 }

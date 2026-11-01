@@ -8,7 +8,7 @@
 namespace rox::core
 {
 
-	TraceScope::TraceScope(rox::core::DiagnosticText category, rox::core::DiagnosticText name, ETraceChannel channel) noexcept
+	TraceScope::TraceScope(DiagnosticText category, DiagnosticText name, ETraceChannel channel) noexcept
 	    : m_Sink(activeSink())
 	{
 		if (m_Sink != nullptr)

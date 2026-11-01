@@ -14,7 +14,7 @@
 
 namespace rox::core
 {
-	Result<ValueFieldName> ValueFieldName::Copy(rox::core::StringView name, MemoryResource& resource) noexcept
+	Result<ValueFieldName> ValueFieldName::Copy(StringView name, MemoryResource& resource) noexcept
 	{
 		Result<Value> text = Value::CreateString(name, resource);
 
@@ -23,7 +23,7 @@ namespace rox::core
 			return Result<ValueFieldName>::Failure(text.GetError());
 		}
 
-		return Result<ValueFieldName>::Success(ValueFieldName(rox::core::Move(text).TakeValue()));
+		return Result<ValueFieldName>::Success(ValueFieldName(core::Move(text).TakeValue()));
 	}
 
 	bool ValueFieldNameLess::operator()(const ValueFieldName& left, const ValueFieldName& right) const noexcept
@@ -31,12 +31,12 @@ namespace rox::core
 		return left.View() < right.View();
 	}
 
-	bool ValueFieldNameLess::operator()(const ValueFieldName& left, rox::core::StringView right) const noexcept
+	bool ValueFieldNameLess::operator()(const ValueFieldName& left, StringView right) const noexcept
 	{
 		return left.View() < right;
 	}
 
-	bool ValueFieldNameLess::operator()(rox::core::StringView left, const ValueFieldName& right) const noexcept
+	bool ValueFieldNameLess::operator()(StringView left, const ValueFieldName& right) const noexcept
 	{
 		return left < right.View();
 	}
@@ -61,38 +61,38 @@ namespace rox::core
 	{
 	}
 
-	Value::Value(rox::core::StringView value) noexcept
+	Value::Value(StringView value) noexcept
 	    : Value(value, SystemMemoryResource::Get())
 	{
 	}
 
-	Value::Value(rox::core::StringView value, MemoryResource& resource) noexcept
+	Value::Value(StringView value, MemoryResource& resource) noexcept
 	{
 		Result<Value> copied = CreateString(value, resource);
 		ASSERT(copied, "Value string construction requires sufficient resource memory.");
-		*this = rox::core::Move(copied).TakeValue();
+		*this = core::Move(copied).TakeValue();
 	}
 
-	Result<Value> Value::CreateString(rox::core::StringView value, MemoryResource& resource) noexcept
+	Result<Value> Value::CreateString(StringView value, MemoryResource& resource) noexcept
 	{
 		Value result;
 		TextStorage text;
 
 		if (!value.empty())
 		{
-			rox::core::Array<char> bytes(resource);
+			core::Array<char> bytes(resource);
 
-			if (!bytes.Resize(value.size()) || !MakeSharedInto(resource, &text.Owner, rox::core::Move(bytes)))
+			if (!bytes.Resize(value.size()) || !MakeSharedInto(resource, &text.Owner, core::Move(bytes)))
 			{
 				return Result<Value>::Failure(EErrorCode::ExternalFailure, "ROX-CORE-VALUE-ALLOCATION", "The Value string could not allocate its resource-owned storage.", "Release memory or reduce input size.");
 			}
 
-			rox::core::CopyBytes(text.Owner->Bytes.Data(), value.data(), value.size());
+			core::CopyBytes(text.Owner->Bytes.Data(), value.data(), value.size());
 			text.View = {text.Owner->Bytes.Data(), value.size()};
 		}
 
-		result.m_Storage = rox::core::Move(text);
-		return Result<Value>::Success(rox::core::Move(result));
+		result.m_Storage = core::Move(text);
+		return Result<Value>::Success(core::Move(result));
 	}
 
 	Value::Value(StableValueId value) noexcept
@@ -102,19 +102,19 @@ namespace rox::core
 
 	Value::Value(Bytes value) noexcept
 	{
-		Result<Value> adopted = CreateBytes(rox::core::Move(value));
+		Result<Value> adopted = CreateBytes(core::Move(value));
 		ASSERT(adopted, "Value byte adoption requires sufficient resource memory.");
-		*this = rox::core::Move(adopted).TakeValue();
+		*this = core::Move(adopted).TakeValue();
 	}
 
 	Value::Value(Span<const Byte> bytes, MemoryResource& resource) noexcept
 	{
 		Result<Value> copied = CreateBytes(bytes, resource);
 		ASSERT(copied, "Value byte construction requires sufficient resource memory.");
-		*this = rox::core::Move(copied).TakeValue();
+		*this = core::Move(copied).TakeValue();
 	}
 
-	Value::Value(rox::core::InitializerList<Byte> bytes) noexcept
+	Value::Value(InitializerList<Byte> bytes) noexcept
 	    : Value(Span<const Byte>(bytes.begin(), bytes.size()), SystemMemoryResource::Get())
 	{
 	}
@@ -126,7 +126,7 @@ namespace rox::core
 
 		if (!bytes.IsEmpty())
 		{
-			if (!MakeSharedInto(bytes.GetResource(), &storage.Owner, rox::core::Move(bytes)))
+			if (!MakeSharedInto(bytes.GetResource(), &storage.Owner, core::Move(bytes)))
 			{
 				return Result<Value>::Failure(EErrorCode::ExternalFailure, "ROX-CORE-VALUE-ALLOCATION", "The Value bytes could not allocate shared ownership.", "Release memory or reduce input size.");
 			}
@@ -138,8 +138,8 @@ namespace rox::core
 			bytes.Reset();
 		}
 
-		result.m_Storage = rox::core::Move(storage);
-		return Result<Value>::Success(rox::core::Move(result));
+		result.m_Storage = core::Move(storage);
+		return Result<Value>::Success(core::Move(result));
 	}
 
 	Result<Value> Value::CreateBytes(Span<const Byte> bytes, MemoryResource& resource) noexcept
@@ -153,17 +153,17 @@ namespace rox::core
 
 		if (!bytes.IsEmpty())
 		{
-			rox::core::CopyBytes(copy.Data(), bytes.Data(), bytes.Size());
+			core::CopyBytes(copy.Data(), bytes.Data(), bytes.Size());
 		}
 
-		return CreateBytes(rox::core::Move(copy));
+		return CreateBytes(core::Move(copy));
 	}
 
 	Value::Value(Array value) noexcept
 	{
-		Result<Value> adopted = CreateArray(rox::core::Move(value));
+		Result<Value> adopted = CreateArray(core::Move(value));
 		ASSERT(adopted, "Value array adoption requires sufficient resource memory.");
-		*this = rox::core::Move(adopted).TakeValue();
+		*this = core::Move(adopted).TakeValue();
 	}
 
 	Result<Value> Value::CreateArray(Array&& values) noexcept
@@ -171,13 +171,13 @@ namespace rox::core
 		MemoryResource& resource = values.GetResource();
 		ArrayStorage owner;
 
-		if (!MakeSharedInto(resource, &owner, rox::core::Move(values)))
+		if (!MakeSharedInto(resource, &owner, core::Move(values)))
 		{
 			return Result<Value>::Failure(EErrorCode::ExternalFailure, "ROX-CORE-VALUE-ALLOCATION", "The Value array could not allocate shared ownership.", "Release memory or reduce input size.");
 		}
 		Value result;
-		result.m_Storage = rox::core::Move(owner);
-		return Result<Value>::Success(rox::core::Move(result));
+		result.m_Storage = core::Move(owner);
+		return Result<Value>::Success(core::Move(result));
 	}
 
 	Result<Value::Object> Value::Object::Copy(MemoryResource& resource) const noexcept
@@ -202,52 +202,52 @@ namespace rox::core
 			{
 				return Result<Object>::Failure(name.GetError());
 			}
-			copy.UnknownFields.InsertRequired(rox::core::Move(name).TakeValue(), entry.Value);
+			copy.UnknownFields.InsertRequired(core::Move(name).TakeValue(), entry.Value);
 		}
 
-		return Result<Object>::Success(rox::core::Move(copy));
+		return Result<Object>::Success(core::Move(copy));
 	}
 
 	Value::Value(Object value) noexcept
 	{
 		MemoryResource& resource = value.Fields.GetResource();
-		Result<Value> adopted = CreateObject(rox::core::Move(value), resource);
+		Result<Value> adopted = CreateObject(core::Move(value), resource);
 		ASSERT(adopted, "Value object adoption requires sufficient resource memory.");
-		*this = rox::core::Move(adopted).TakeValue();
+		*this = core::Move(adopted).TakeValue();
 	}
 
 	Value::Value(Object value, MemoryResource& resource) noexcept
 	{
-		Result<Value> adopted = CreateObject(rox::core::Move(value), resource);
+		Result<Value> adopted = CreateObject(core::Move(value), resource);
 		ASSERT(adopted, "Value object adoption requires sufficient resource memory.");
-		*this = rox::core::Move(adopted).TakeValue();
+		*this = core::Move(adopted).TakeValue();
 	}
 
 	Result<Value> Value::CreateObject(Object&& value, MemoryResource& resource) noexcept
 	{
 		ObjectStorage owner;
 
-		if (!MakeSharedInto(resource, &owner, rox::core::Move(value)))
+		if (!MakeSharedInto(resource, &owner, core::Move(value)))
 		{
 			return Result<Value>::Failure(EErrorCode::ExternalFailure, "ROX-CORE-VALUE-ALLOCATION", "The Value object could not allocate shared ownership.", "Release memory or reduce input size.");
 		}
 		Value result;
-		result.m_Storage = rox::core::Move(owner);
-		return Result<Value>::Success(rox::core::Move(result));
+		result.m_Storage = core::Move(owner);
+		return Result<Value>::Success(core::Move(result));
 	}
 
 	Value::Value(Value&& other) noexcept
-	    : m_Storage(rox::core::Move(other.m_Storage))
+	    : m_Storage(core::Move(other.m_Storage))
 	{
-		other.m_Storage = rox::core::EmptyValue{};
+		other.m_Storage = core::EmptyValue{};
 	}
 
 	Value& Value::operator=(Value&& other) noexcept
 	{
 		if (this != &other)
 		{
-			m_Storage = rox::core::Move(other.m_Storage);
-			other.m_Storage = rox::core::EmptyValue{};
+			m_Storage = core::Move(other.m_Storage);
+			other.m_Storage = core::EmptyValue{};
 		}
 
 		return *this;
@@ -284,51 +284,51 @@ namespace rox::core
 
 	const bool* Value::GetBoolean() const noexcept
 	{
-		return rox::core::GetIf<bool>(&m_Storage);
+		return core::GetIf<bool>(&m_Storage);
 	}
 
 	const int64* Value::GetSignedInteger() const noexcept
 	{
-		return rox::core::GetIf<int64>(&m_Storage);
+		return core::GetIf<int64>(&m_Storage);
 	}
 
 	const uint64* Value::GetUnsignedInteger() const noexcept
 	{
-		return rox::core::GetIf<uint64>(&m_Storage);
+		return core::GetIf<uint64>(&m_Storage);
 	}
 
 	const float64* Value::GetFloatingPoint() const noexcept
 	{
-		return rox::core::GetIf<float64>(&m_Storage);
+		return core::GetIf<float64>(&m_Storage);
 	}
 
-	const rox::core::StringView* Value::GetString() const noexcept
+	const StringView* Value::GetString() const noexcept
 	{
-		const TextStorage* text = rox::core::GetIf<TextStorage>(&m_Storage);
+		const TextStorage* text = core::GetIf<TextStorage>(&m_Storage);
 		return text != nullptr ? &text->View : nullptr;
 	}
 
 	const StableValueId* Value::GetStableId() const noexcept
 	{
-		return rox::core::GetIf<StableValueId>(&m_Storage);
+		return core::GetIf<StableValueId>(&m_Storage);
 	}
 
 	const Span<const Byte>* Value::GetBytes() const noexcept
 	{
-		const ByteStorage* bytes = rox::core::GetIf<ByteStorage>(&m_Storage);
+		const ByteStorage* bytes = core::GetIf<ByteStorage>(&m_Storage);
 		return bytes != nullptr ? &bytes->View : nullptr;
 	}
 
 	const Value::Array* Value::GetArray() const noexcept
 	{
-		const ArrayStorage* const storage = rox::core::GetIf<ArrayStorage>(&m_Storage);
+		const ArrayStorage* const storage = core::GetIf<ArrayStorage>(&m_Storage);
 		ASSERT(storage == nullptr || static_cast<bool>(*storage), "Array Value storage must own a valid array.");
 		return storage != nullptr ? &(*storage)->Data : nullptr;
 	}
 
 	const Value::Object* Value::GetObject() const noexcept
 	{
-		const ObjectStorage* const storage = rox::core::GetIf<ObjectStorage>(&m_Storage);
+		const ObjectStorage* const storage = core::GetIf<ObjectStorage>(&m_Storage);
 		ASSERT(storage == nullptr || static_cast<bool>(*storage), "Object Value storage must own a valid object.");
 		return storage != nullptr ? &(*storage)->Data : nullptr;
 	}
@@ -364,10 +364,10 @@ namespace rox::core
 			return *left.GetStableId() == *right.GetStableId();
 		case ESchemaValueKind::Bytes:
 			ASSERT(left.GetBytes() != nullptr && right.GetBytes() != nullptr, "Byte array Value kind must have byte array storage.");
-			return left.GetBytes()->Size() == right.GetBytes()->Size() && rox::core::Equal(left.GetBytes()->begin(), left.GetBytes()->end(), right.GetBytes()->begin());
+			return left.GetBytes()->Size() == right.GetBytes()->Size() && core::Equal(left.GetBytes()->begin(), left.GetBytes()->end(), right.GetBytes()->begin());
 		case ESchemaValueKind::Array:
 			ASSERT(left.GetArray() != nullptr && right.GetArray() != nullptr, "Array Value kind must have array storage.");
-			return left.GetArray()->Size() == right.GetArray()->Size() && rox::core::Equal(left.GetArray()->begin(), left.GetArray()->end(), right.GetArray()->begin());
+			return left.GetArray()->Size() == right.GetArray()->Size() && core::Equal(left.GetArray()->begin(), left.GetArray()->end(), right.GetArray()->begin());
 		case ESchemaValueKind::Object:
 			ASSERT(left.GetObject() != nullptr && right.GetObject() != nullptr, "Object Value kind must have object storage.");
 
@@ -376,7 +376,7 @@ namespace rox::core
 				return false;
 			}
 
-			for (rox::core::usize index = 0; index < left.GetObject()->Fields.Size(); ++index)
+			for (usize index = 0; index < left.GetObject()->Fields.Size(); ++index)
 			{
 				const Value::FieldMap::Entry& a = left.GetObject()->Fields.At(index);
 				const Value::FieldMap::Entry& b = right.GetObject()->Fields.At(index);
@@ -387,7 +387,7 @@ namespace rox::core
 				}
 			}
 
-			for (rox::core::usize index = 0; index < left.GetObject()->UnknownFields.Size(); ++index)
+			for (usize index = 0; index < left.GetObject()->UnknownFields.Size(); ++index)
 			{
 				const Value::UnknownFieldMap::Entry& a = left.GetObject()->UnknownFields.At(index);
 				const Value::UnknownFieldMap::Entry& b = right.GetObject()->UnknownFields.At(index);

@@ -66,17 +66,17 @@ namespace rox::core
 #else
 		__declspec(noinline)
 #endif
-		void compressHardware(const uint8* blocks, rox::core::usize count, rox::core::StaticArray<uint32, 8>& state) noexcept
+		void compressHardware(const uint8* blocks, usize count, StaticArray<uint32, 8>& state) noexcept
 		{
 			// SHA256RNDS2 carries A/B/E/F and C/D/G/H in descending lanes; each instruction advances two rounds.
 			// Instruction semantics: https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sha-extensions.html
-			__m128i abef = _mm_set_epi32(rox::core::BitCast<int>(state[0]), rox::core::BitCast<int>(state[1]),
-										 rox::core::BitCast<int>(state[4]), rox::core::BitCast<int>(state[5]));
-			__m128i cdgh = _mm_set_epi32(rox::core::BitCast<int>(state[2]), rox::core::BitCast<int>(state[3]),
-										 rox::core::BitCast<int>(state[6]), rox::core::BitCast<int>(state[7]));
+			__m128i abef = _mm_set_epi32(core::BitCast<int>(state[0]), core::BitCast<int>(state[1]),
+										 core::BitCast<int>(state[4]), core::BitCast<int>(state[5]));
+			__m128i cdgh = _mm_set_epi32(core::BitCast<int>(state[2]), core::BitCast<int>(state[3]),
+										 core::BitCast<int>(state[6]), core::BitCast<int>(state[7]));
 			const __m128i byteOrder = _mm_setr_epi8(3, 2, 1, 0, 7, 6, 5, 4, 11, 10, 9, 8, 15, 14, 13, 12);
 
-			for (rox::core::usize block = 0; block < count; ++block)
+			for (usize block = 0; block < count; ++block)
 			{
 				const __m128i savedAbef = abef;
 				const __m128i savedCdgh = cdgh;
@@ -125,7 +125,7 @@ namespace rox::core
 		return bSupported;
 	}
 
-	void ProcessHardwareBlocks(const uint8* blocks, rox::core::usize count, rox::core::StaticArray<uint32, 8>& state) noexcept
+	void ProcessHardwareBlocks(const uint8* blocks, usize count, StaticArray<uint32, 8>& state) noexcept
 	{
 		ASSERT(IsHardwareSupported(), "SHA-256 instructions require CPU feature admission.");
 		ASSERT(blocks != nullptr || count == 0, "Nonempty SHA-256 blocks require readable storage.");

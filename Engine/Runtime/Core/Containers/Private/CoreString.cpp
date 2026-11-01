@@ -38,25 +38,25 @@ namespace rox::core
 		AssignRequired(text);
 	}
 
-	String::String(const char* const text, const rox::core::usize byteSize) noexcept
+	String::String(const char* const text, const usize byteSize) noexcept
 	    : String(StringView(text, byteSize))
 	{
 	}
 
-	String::String(const char* const text, const rox::core::usize byteSize, MemoryResource& resource) noexcept
+	String::String(const char* const text, const usize byteSize, MemoryResource& resource) noexcept
 	    : String(StringView(text, byteSize), resource)
 	{
 	}
 
-	String::String(const rox::core::usize count, const char character) noexcept
+	String::String(const usize count, const char character) noexcept
 	    : String(count, character, SystemMemoryResource::Get())
 	{
 	}
 
-	String::String(const rox::core::usize count, const char character, MemoryResource& resource) noexcept
+	String::String(const usize count, const char character, MemoryResource& resource) noexcept
 	    : m_Storage(resource)
 	{
-		ASSERT(count < rox::core::NumericLimits<rox::core::usize>::max(), "String fill must leave space for a null terminator.");
+		ASSERT(count < NumericLimits<usize>::max(), "String fill must leave space for a null terminator.");
 		ASSERT(static_cast<unsigned char>(character) < 0x80, "String fill construction requires an ASCII character to stay well-formed UTF-8.");
 
 		if (count == 0)
@@ -68,7 +68,7 @@ namespace rox::core
 		const bool bResized = m_Storage.ResizeUninitialized(count + 1);
 		ASSERT(bResized, "String storage resize must succeed after mandatory String storage reservation.");
 
-		rox::core::SetBytes(m_Storage.Data(), static_cast<unsigned char>(character), count);
+		core::SetBytes(m_Storage.Data(), static_cast<unsigned char>(character), count);
 		m_Storage[count] = '\0';
 	}
 
@@ -94,7 +94,7 @@ namespace rox::core
 
 	bool String::Assign(const StringView text) noexcept
 	{
-		if (text.Size() == rox::core::NumericLimits<rox::core::usize>::max() || !IsValidUtf8(text))
+		if (text.Size() == NumericLimits<usize>::max() || !IsValidUtf8(text))
 		{
 			return false;
 		}
@@ -118,7 +118,7 @@ namespace rox::core
 				ASSERT(resized, "Reserved string assignment must not allocate.");
 			}
 
-			rox::core::MoveBytes(m_Storage.Data(), text.Data(), text.Size());
+			core::MoveBytes(m_Storage.Data(), text.Data(), text.Size());
 			const bool resized = m_Storage.ResizeUninitialized(text.Size() + 1);
 			ASSERT(resized, "Reserved string assignment must not allocate.");
 			m_Storage[text.Size()] = '\0';
@@ -134,17 +134,17 @@ namespace rox::core
 
 		if (!text.IsEmpty())
 		{
-			rox::core::CopyBytes(replacement.Data(), text.Data(), text.Size());
+			core::CopyBytes(replacement.Data(), text.Data(), text.Size());
 		}
 		replacement[text.Size()] = '\0';
 
-		m_Storage = rox::core::Move(replacement);
+		m_Storage = core::Move(replacement);
 		return true;
 	}
 
 	void String::AssignRequired(const StringView text) noexcept
 	{
-		ASSERT(text.Size() != rox::core::NumericLimits<rox::core::usize>::max(), "String assignment must leave space for a null terminator.");
+		ASSERT(text.Size() != NumericLimits<usize>::max(), "String assignment must leave space for a null terminator.");
 		ASSERT(IsValidUtf8(text), "String assignment requires well-formed UTF-8.");
 
 		assignValidated(text);
@@ -166,7 +166,7 @@ namespace rox::core
 				ASSERT(resized, "Reserved string assignment must not allocate.");
 			}
 
-			rox::core::MoveBytes(m_Storage.Data(), text.Data(), text.Size());
+			core::MoveBytes(m_Storage.Data(), text.Data(), text.Size());
 			const bool resized = m_Storage.ResizeUninitialized(text.Size() + 1);
 			ASSERT(resized, "Reserved string assignment must not allocate.");
 			m_Storage[text.Size()] = '\0';
@@ -181,11 +181,11 @@ namespace rox::core
 
 		if (!text.IsEmpty())
 		{
-			rox::core::CopyBytes(replacement.Data(), text.Data(), text.Size());
+			core::CopyBytes(replacement.Data(), text.Data(), text.Size());
 		}
 		replacement[text.Size()] = '\0';
 
-		m_Storage = rox::core::Move(replacement);
+		m_Storage = core::Move(replacement);
 	}
 
 	bool String::tryAppendView(const StringView text) noexcept
@@ -201,7 +201,7 @@ namespace rox::core
 		appendValidated(text);
 	}
 
-	void String::Truncate(const rox::core::usize byteSize) noexcept
+	void String::Truncate(const usize byteSize) noexcept
 	{
 		ASSERT(byteSize <= Size(), "String truncation must not grow the string.");
 
@@ -223,9 +223,9 @@ namespace rox::core
 		m_Storage[byteSize] = char{};
 	}
 
-	bool String::Reserve(const rox::core::usize byteCapacity) noexcept
+	bool String::Reserve(const usize byteCapacity) noexcept
 	{
-		if (byteCapacity == rox::core::NumericLimits<rox::core::usize>::max())
+		if (byteCapacity == NumericLimits<usize>::max())
 		{
 			return false;
 		}
@@ -233,9 +233,9 @@ namespace rox::core
 		return m_Storage.Reserve(byteCapacity + 1);
 	}
 
-	void String::ReserveRequired(const rox::core::usize byteCapacity) noexcept
+	void String::ReserveRequired(const usize byteCapacity) noexcept
 	{
-		ASSERT(byteCapacity != rox::core::NumericLimits<rox::core::usize>::max(), "String reservation must leave space for a null terminator.");
+		ASSERT(byteCapacity != NumericLimits<usize>::max(), "String reservation must leave space for a null terminator.");
 
 		m_Storage.ReserveRequired(byteCapacity + 1);
 	}
@@ -257,15 +257,15 @@ namespace rox::core
 			return true;
 		}
 
-		const rox::core::usize oldSize = Size();
-		const rox::core::usize newStorageSize = oldSize + text.Size() + 1;
+		const usize oldSize = Size();
+		const usize newStorageSize = oldSize + text.Size() + 1;
 
 		if (newStorageSize <= m_Storage.Capacity())
 		{
 			const bool bResized = m_Storage.ResizeUninitialized(newStorageSize);
 			ASSERT(bResized, "String storage resize must succeed within existing String storage capacity.");
 
-			rox::core::MoveBytes(m_Storage.Data() + oldSize, text.Data(), text.Size());
+			core::MoveBytes(m_Storage.Data() + oldSize, text.Data(), text.Size());
 			m_Storage[newStorageSize - 1] = '\0';
 
 			return true;
@@ -282,12 +282,12 @@ namespace rox::core
 
 		if (oldSize != 0)
 		{
-			rox::core::CopyBytes(replacement.Data(), m_Storage.Data(), oldSize);
+			core::CopyBytes(replacement.Data(), m_Storage.Data(), oldSize);
 		}
-		rox::core::CopyBytes(replacement.Data() + oldSize, text.Data(), text.Size());
+		core::CopyBytes(replacement.Data() + oldSize, text.Data(), text.Size());
 		replacement[newStorageSize - 1] = '\0';
 
-		m_Storage = rox::core::Move(replacement);
+		m_Storage = core::Move(replacement);
 		return true;
 	}
 
@@ -298,15 +298,15 @@ namespace rox::core
 			return;
 		}
 
-		const rox::core::usize oldSize = Size();
-		const rox::core::usize newStorageSize = oldSize + text.Size() + 1;
+		const usize oldSize = Size();
+		const usize newStorageSize = oldSize + text.Size() + 1;
 
 		if (newStorageSize <= m_Storage.Capacity())
 		{
 			const bool bResized = m_Storage.ResizeUninitialized(newStorageSize);
 			ASSERT(bResized, "String storage resize must succeed within existing String storage capacity.");
 
-			rox::core::MoveBytes(m_Storage.Data() + oldSize, text.Data(), text.Size());
+			core::MoveBytes(m_Storage.Data() + oldSize, text.Data(), text.Size());
 			m_Storage[newStorageSize - 1] = '\0';
 
 			return;
@@ -319,20 +319,20 @@ namespace rox::core
 
 		if (oldSize != 0)
 		{
-			rox::core::CopyBytes(replacement.Data(), m_Storage.Data(), oldSize);
+			core::CopyBytes(replacement.Data(), m_Storage.Data(), oldSize);
 		}
-		rox::core::CopyBytes(replacement.Data() + oldSize, text.Data(), text.Size());
+		core::CopyBytes(replacement.Data() + oldSize, text.Data(), text.Size());
 		replacement[newStorageSize - 1] = '\0';
 
-		m_Storage = rox::core::Move(replacement);
+		m_Storage = core::Move(replacement);
 	}
 
-	bool String::canAppend(const rox::core::usize byteCount) const noexcept
+	bool String::canAppend(const usize byteCount) const noexcept
 	{
-		return byteCount <= rox::core::NumericLimits<rox::core::usize>::max() - Size() - 1;
+		return byteCount <= NumericLimits<usize>::max() - Size() - 1;
 	}
 
-	rox::core::usize String::growthStorageCapacity(const rox::core::usize requiredStorageSize) const noexcept
+	usize String::growthStorageCapacity(const usize requiredStorageSize) const noexcept
 	{
 		ASSERT(requiredStorageSize != 0, "String growth requires storage for a null terminator.");
 
@@ -341,7 +341,7 @@ namespace rox::core
 			return m_Storage.Capacity();
 		}
 
-		rox::core::usize capacity = m_Storage.Capacity() == 0 ? 4 : m_Storage.Capacity() + (m_Storage.Capacity() / 2) + 1;
+		usize capacity = m_Storage.Capacity() == 0 ? 4 : m_Storage.Capacity() + (m_Storage.Capacity() / 2) + 1;
 		if (capacity < m_Storage.Capacity() || capacity < requiredStorageSize)
 		{
 			capacity = requiredStorageSize;
@@ -355,7 +355,7 @@ namespace rox::core
 		return left.View() == right.View();
 	}
 
-	rox::core::StrongOrdering operator<=>(const String& left, const String& right) noexcept
+	core::StrongOrdering operator<=>(const String& left, const String& right) noexcept
 	{
 		return left.View() <=> right.View();
 	}
@@ -368,7 +368,7 @@ namespace rox::core
 
 	String operator+(const String& left, const String& right) noexcept
 	{
-		ASSERT(right.Size() < rox::core::NumericLimits<rox::core::usize>::max() - left.Size(), "String concatenation must leave space for a null terminator.");
+		ASSERT(right.Size() < NumericLimits<usize>::max() - left.Size(), "String concatenation must leave space for a null terminator.");
 
 		String result(left.GetResource());
 		result.ReserveRequired(left.Size() + right.Size());
@@ -378,17 +378,17 @@ namespace rox::core
 		return result;
 	}
 
-	String Concat(const rox::core::InitializerList<StringView> parts) noexcept
+	String Concat(const InitializerList<StringView> parts) noexcept
 	{
 		return Concat(parts, SystemMemoryResource::Get());
 	}
 
-	String Concat(const rox::core::InitializerList<StringView> parts, MemoryResource& resource) noexcept
+	String Concat(const InitializerList<StringView> parts, MemoryResource& resource) noexcept
 	{
-		rox::core::usize totalSize = 0;
+		usize totalSize = 0;
 		for (const StringView part : parts)
 		{
-			ASSERT(part.Size() < rox::core::NumericLimits<rox::core::usize>::max() - totalSize, "String concatenation must leave space for a null terminator.");
+			ASSERT(part.Size() < NumericLimits<usize>::max() - totalSize, "String concatenation must leave space for a null terminator.");
 			totalSize += part.Size();
 		}
 
@@ -431,7 +431,7 @@ namespace rox::core
 	    : m_Storage(other.GetResource())
 	{
 		(void)other.CStr();
-		m_Storage = rox::core::Move(other.m_Storage);
+		m_Storage = core::Move(other.m_Storage);
 	}
 
 	StringBuilder& StringBuilder::operator=(const StringBuilder& other) noexcept
@@ -450,16 +450,16 @@ namespace rox::core
 		if (this != &other)
 		{
 			(void)other.CStr();
-			m_Storage = rox::core::Move(other.m_Storage);
+			m_Storage = core::Move(other.m_Storage);
 			m_Terminated = true;
 		}
 
 		return *this;
 	}
 
-	void StringBuilder::ReserveRequired(const rox::core::usize bytes) noexcept
+	void StringBuilder::ReserveRequired(const usize bytes) noexcept
 	{
-		ASSERT(bytes != rox::core::NumericLimits<rox::core::usize>::max(), "StringBuilder reservation must leave space for a null terminator.");
+		ASSERT(bytes != NumericLimits<usize>::max(), "StringBuilder reservation must leave space for a null terminator.");
 
 		if (bytes + 1 > m_Storage.Capacity())
 		{
@@ -468,9 +468,9 @@ namespace rox::core
 		m_Storage.ReserveRequired(bytes + 1);
 	}
 
-	bool StringBuilder::Reserve(const rox::core::usize bytes) noexcept
+	bool StringBuilder::Reserve(const usize bytes) noexcept
 	{
-		if (bytes == rox::core::NumericLimits<rox::core::usize>::max())
+		if (bytes == NumericLimits<usize>::max())
 		{
 			return false;
 		}
@@ -489,15 +489,15 @@ namespace rox::core
 			return true;
 		}
 
-		const rox::core::usize oldSize = Size();
-		const rox::core::usize required = oldSize + text.Size() + 1;
+		const usize oldSize = Size();
+		const usize required = oldSize + text.Size() + 1;
 
 		if (required <= m_Storage.Capacity())
 		{
 			const bool resized = m_Storage.ResizeUninitialized(required);
 			ASSERT(resized, "Reserved StringBuilder append must not allocate.");
 
-			rox::core::MoveBytes(m_Storage.Data() + oldSize, text.Data(), text.Size());
+			core::MoveBytes(m_Storage.Data() + oldSize, text.Data(), text.Size());
 		}
 		else
 		{
@@ -512,12 +512,12 @@ namespace rox::core
 
 			if (oldSize != 0)
 			{
-				rox::core::CopyBytes(replacement.Data(), m_Storage.Data(), oldSize);
+				core::CopyBytes(replacement.Data(), m_Storage.Data(), oldSize);
 			}
-			rox::core::CopyBytes(replacement.Data() + oldSize, text.Data(), text.Size());
+			core::CopyBytes(replacement.Data() + oldSize, text.Data(), text.Size());
 			replacement.Data()[required - 1] = '\0';
 
-			m_Storage = rox::core::Move(replacement);
+			m_Storage = core::Move(replacement);
 		}
 
 		m_Terminated = false;
@@ -531,8 +531,8 @@ namespace rox::core
 			return;
 		}
 
-		const rox::core::usize oldSize = Size();
-		const rox::core::usize required = oldSize + text.Size() + 1;
+		const usize oldSize = Size();
+		const usize required = oldSize + text.Size() + 1;
 
 		if (required > m_Storage.Capacity())
 		{
@@ -544,12 +544,12 @@ namespace rox::core
 
 			if (oldSize != 0)
 			{
-				rox::core::CopyBytes(replacement.Data(), m_Storage.Data(), oldSize);
+				core::CopyBytes(replacement.Data(), m_Storage.Data(), oldSize);
 			}
-			rox::core::CopyBytes(replacement.Data() + oldSize, text.Data(), text.Size());
+			core::CopyBytes(replacement.Data() + oldSize, text.Data(), text.Size());
 			replacement.Data()[required - 1] = '\0';
 
-			m_Storage = rox::core::Move(replacement);
+			m_Storage = core::Move(replacement);
 			m_Terminated = false;
 			return;
 		}
@@ -557,19 +557,19 @@ namespace rox::core
 		const bool resized = m_Storage.ResizeUninitialized(required);
 		ASSERT(resized, "Reserved StringBuilder append must not allocate.");
 
-		rox::core::MoveBytes(m_Storage.Data() + oldSize, text.Data(), text.Size());
+		core::MoveBytes(m_Storage.Data() + oldSize, text.Data(), text.Size());
 		m_Terminated = false;
 	}
 
-	bool StringBuilder::canAppend(const rox::core::usize size) const noexcept
+	bool StringBuilder::canAppend(const usize size) const noexcept
 	{
-		return size <= rox::core::NumericLimits<rox::core::usize>::max() - Size() - 1;
+		return size <= NumericLimits<usize>::max() - Size() - 1;
 	}
 
-	rox::core::usize StringBuilder::growthStorageCapacity(const rox::core::usize required) const noexcept
+	usize StringBuilder::growthStorageCapacity(const usize required) const noexcept
 	{
-		const rox::core::usize current = m_Storage.Capacity();
-		const rox::core::usize grown = current + current / 2 + 1;
+		const usize current = m_Storage.Capacity();
+		const usize grown = current + current / 2 + 1;
 		return grown < current || grown < required ? required : grown;
 	}
 
@@ -577,7 +577,7 @@ namespace rox::core
 	{
 		(void)CStr();
 		String result(GetResource());
-		result.m_Storage = rox::core::Move(m_Storage);
+		result.m_Storage = core::Move(m_Storage);
 		m_Terminated = true;
 
 		return result;

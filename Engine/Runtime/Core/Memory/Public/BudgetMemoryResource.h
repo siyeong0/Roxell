@@ -11,13 +11,13 @@ namespace rox::core
 {
 	struct MemoryBudgetStatistics
 	{
-		rox::core::usize ByteLimit = 0;
+		usize ByteLimit = 0;
 
 		// Used bytes are successful live requests; reserved bytes are in-flight upstream requests.
-		rox::core::usize UsedByteCount = 0;
-		rox::core::usize ReservedByteCount = 0;
-		rox::core::usize PeakByteCount = 0;
-		rox::core::usize RejectedAllocationCount = 0;
+		usize UsedByteCount = 0;
+		usize ReservedByteCount = 0;
+		usize PeakByteCount = 0;
+		usize RejectedAllocationCount = 0;
 	};
 
 #if defined(_MSC_VER)
@@ -28,12 +28,12 @@ namespace rox::core
 	class BudgetMemoryResource final : public MemoryResource
 	{
 	public:
-		BudgetMemoryResource(MemoryResource& upstream, rox::core::usize byteLimit) noexcept;
+		BudgetMemoryResource(MemoryResource& upstream, usize byteLimit) noexcept;
 		~BudgetMemoryResource() noexcept override;
 
 		MemoryBudgetStatistics GetStatistics() const noexcept;
 
-		rox::core::DiagnosticText GetName() const noexcept override;
+		DiagnosticText GetName() const noexcept override;
 		EMemoryResourceThreadSafety GetThreadSafety() const noexcept override;
 
 	protected:
@@ -46,14 +46,14 @@ namespace rox::core
 
 	private:
 		MemoryResource& m_Upstream;
-		rox::core::usize m_ByteLimit;
+		usize m_ByteLimit;
 
 		// Keep mutable accounting off the upstream-reference cache line on common 64-byte-line CPUs.
 		alignas(64) mutable Atomic<uint32> m_StateLock{0};
-		rox::core::usize m_UsedByteCount;
-		rox::core::usize m_ReservedByteCount;
-		rox::core::usize m_PeakByteCount;
-		rox::core::usize m_RejectedAllocationCount;
+		usize m_UsedByteCount;
+		usize m_ReservedByteCount;
+		usize m_PeakByteCount;
+		usize m_RejectedAllocationCount;
 	};
 #if defined(_MSC_VER)
 #pragma warning(pop)

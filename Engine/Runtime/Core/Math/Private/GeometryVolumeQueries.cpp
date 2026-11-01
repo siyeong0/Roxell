@@ -26,8 +26,8 @@ namespace rox::math
 			return first;
 		}
 
-		return {{rox::core::Min(first.Min.X, second.Min.X),  rox::core::Min(first.Min.Y, second.Min.Y), rox::core::Min(first.Min.Z, second.Min.Z)},
-		        {rox::core::Max(first.Max.X, second.Max.X),  rox::core::Max(first.Max.Y, second.Max.Y), rox::core::Max(first.Max.Z, second.Max.Z)}};
+		return {{core::Min(first.Min.X, second.Min.X),  core::Min(first.Min.Y, second.Min.Y), core::Min(first.Min.Z, second.Min.Z)},
+		        {core::Max(first.Max.X, second.Max.X),  core::Max(first.Max.Y, second.Max.Y), core::Max(first.Max.Z, second.Max.Z)}};
 	}
 
 	template <MathScalar T>
@@ -41,8 +41,8 @@ namespace rox::math
 			return false;
 		}
 
-		const Box<T> result{{rox::core::Max(first.Min.X, second.Min.X), rox::core::Max(first.Min.Y, second.Min.Y), rox::core::Max(first.Min.Z, second.Min.Z)},
-		                    {rox::core::Min(first.Max.X, second.Max.X), rox::core::Min(first.Max.Y, second.Max.Y), rox::core::Min(first.Max.Z, second.Max.Z)}};
+		const Box<T> result{{core::Max(first.Min.X, second.Min.X), core::Max(first.Min.Y, second.Min.Y), core::Max(first.Min.Z, second.Min.Z)},
+		                    {core::Min(first.Max.X, second.Max.X), core::Min(first.Max.Y, second.Max.Y), core::Min(first.Max.Z, second.Max.Z)}};
 		if (!result.IsValid())
 		{
 			return false;
@@ -92,9 +92,9 @@ namespace rox::math
 	{
 		ASSERT(sphere.Center.IsFinite() && core::IsFinite(sphere.Radius) && sphere.Radius >= T(0), "Geometry sphere must be valid.");
 		ASSERT(box.IsValid(), "Geometry box must be valid.");
-		const detail::GeometryVector<T> nearest{rox::core::ClampValue(sphere.Center.X, box.Min.X, box.Max.X), 
-											    rox::core::ClampValue(sphere.Center.Y, box.Min.Y, box.Max.Y), 
-											    rox::core::ClampValue(sphere.Center.Z, box.Min.Z, box.Max.Z)};
+		const detail::GeometryVector<T> nearest{core::ClampValue(sphere.Center.X, box.Min.X, box.Max.X),
+											    core::ClampValue(sphere.Center.Y, box.Min.Y, box.Max.Y),
+											    core::ClampValue(sphere.Center.Z, box.Min.Z, box.Max.Z)};
 		return detail::GeometryWithinRadii(detail::GeometryVector<T>(sphere.Center), nearest, sphere.Radius);
 	}
 
@@ -104,9 +104,9 @@ namespace rox::math
 		ASSERT(box.IsValid(), "Oriented box must be valid.");
 		ASSERT(sphere.Center.IsFinite() && core::IsFinite(sphere.Radius) && sphere.Radius >= T(0), "Geometry sphere must be valid.");
 		const detail::GeometryVector<T> local = detail::VolumeLocal<T>(detail::VolumeRotation<T>(box.Rotation), detail::GeometryVector<T>(sphere.Center) - detail::GeometryVector<T>(box.Center));
-		const detail::GeometryVector<T> gap{rox::core::Max(T(0.0), rox::core::Abs(local.X) - box.HalfExtents.X), 
-											rox::core::Max(T(0.0), rox::core::Abs(local.Y) - box.HalfExtents.Y), 
-											rox::core::Max(T(0.0), rox::core::Abs(local.Z) - box.HalfExtents.Z)};
+		const detail::GeometryVector<T> gap{core::Max(T(0.0), core::Abs(local.X) - box.HalfExtents.X),
+											core::Max(T(0.0), core::Abs(local.Y) - box.HalfExtents.Y),
+											core::Max(T(0.0), core::Abs(local.Z) - box.HalfExtents.Z)};
 		return detail::GeometryWithinRadii(gap, detail::GeometryVector<T>{0, 0, 0}, sphere.Radius);
 	}
 
@@ -127,13 +127,13 @@ namespace rox::math
 		const detail::GeometryVector<T> offset = detail::GeometryVector<T>(second.Center) - detail::GeometryVector<T>(first.Center);
 		const auto separated = [&](const detail::GeometryVector<T>& axis)
 		{
-			const T firstRadius = rox::core::Abs(firstFrame.Axes[0].Dot(axis)) * first.HalfExtents.X +
-			                      rox::core::Abs(firstFrame.Axes[1].Dot(axis)) * first.HalfExtents.Y +
-			                      rox::core::Abs(firstFrame.Axes[2].Dot(axis)) * first.HalfExtents.Z;
-			const T secondRadius = rox::core::Abs(secondFrame.Axes[0].Dot(axis)) * second.HalfExtents.X +
-			                       rox::core::Abs(secondFrame.Axes[1].Dot(axis)) * second.HalfExtents.Y +
-			                       rox::core::Abs(secondFrame.Axes[2].Dot(axis)) * second.HalfExtents.Z;
-			return rox::core::Abs(offset.Dot(axis)) > firstRadius + secondRadius;
+			const T firstRadius = core::Abs(firstFrame.Axes[0].Dot(axis)) * first.HalfExtents.X +
+			                      core::Abs(firstFrame.Axes[1].Dot(axis)) * first.HalfExtents.Y +
+			                      core::Abs(firstFrame.Axes[2].Dot(axis)) * first.HalfExtents.Z;
+			const T secondRadius = core::Abs(secondFrame.Axes[0].Dot(axis)) * second.HalfExtents.X +
+			                       core::Abs(secondFrame.Axes[1].Dot(axis)) * second.HalfExtents.Y +
+			                       core::Abs(secondFrame.Axes[2].Dot(axis)) * second.HalfExtents.Z;
+			return core::Abs(offset.Dot(axis)) > firstRadius + secondRadius;
 		};
 		for (uint32 axis = 0; axis < 3; ++axis)
 		{
@@ -171,7 +171,7 @@ namespace rox::math
 		const detail::VolumeSegmentPairResult<T> pair = detail::VolumeSegmentPair<T>(first.Axis, second.Axis);
 		const detail::GeometryVector<T> offset = pair.First - pair.Second;
 		const T radius = static_cast<T>(first.Radius) + second.Radius;
-		const T gap = rox::core::Max(T(0.0), rox::core::Hypot(offset.X, offset.Y, offset.Z) - radius);
+		const T gap = core::Max(T(0.0), core::Hypot(offset.X, offset.Y, offset.Z) - radius);
 		return detail::GeometryMagnitude<T>(gap * gap);
 	}
 

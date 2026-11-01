@@ -11,7 +11,7 @@ namespace rox::core
 	template <typename T>
 	class InterfaceOwner final
 	{
-		static_assert(rox::core::IsObject<T> && !rox::core::IsArray<T>, "InterfaceOwner requires one object type.");
+		static_assert(IsObject<T> && !IsArray<T>, "InterfaceOwner requires one object type.");
 		template <typename> friend class InterfaceOwner;
 
 	private:
@@ -30,7 +30,7 @@ namespace rox::core
 		{
 			if (this != &other)
 			{
-				InterfaceOwner previous(rox::core::Move(*this));
+				InterfaceOwner previous(core::Move(*this));
 				moveFrom(other);
 			}
 
@@ -38,26 +38,26 @@ namespace rox::core
 		}
 
 		template <typename U>
-		    requires rox::core::IsConvertible<U*, T*>
+		    requires IsConvertible<U*, T*>
 		InterfaceOwner(InterfaceOwner<U>&& other) noexcept
 		{
 			moveFrom(other);
 		}
 
 		template <typename U>
-		    requires rox::core::IsConvertible<U*, T*>
+		    requires IsConvertible<U*, T*>
 		InterfaceOwner& operator=(InterfaceOwner<U>&& other) noexcept
 		{
-			InterfaceOwner previous(rox::core::Move(*this));
+			InterfaceOwner previous(core::Move(*this));
 			moveFrom(other);
 			return *this;
 		}
 
 		template <typename U = T, typename... TArguments>
-		    requires(rox::core::IsConvertible<U*, T*> && !rox::core::IsConst<U>)
+		    requires(IsConvertible<U*, T*> && !IsConst<U>)
 		[[nodiscard]] static InterfaceOwner Create(MemoryResource& resource, TArguments&&... arguments) noexcept
 		{
-			U* const object = CreateObject<U>(resource, rox::core::Forward<TArguments>(arguments)...);
+			U* const object = CreateObject<U>(resource, core::Forward<TArguments>(arguments)...);
 			InterfaceOwner owner;
 
 			if (object != nullptr)
@@ -75,26 +75,26 @@ namespace rox::core
 		}
 
 		template <typename U = T, typename... TArguments>
-		    requires(rox::core::IsConvertible<U*, T*> && !rox::core::IsConst<U>)
+		    requires(IsConvertible<U*, T*> && !IsConst<U>)
 		[[nodiscard]] static bool CreateInto(MemoryResource& resource, InterfaceOwner* outOwner,
 		                                     TArguments&&... arguments) noexcept
 		{
 			ASSERT(outOwner != nullptr, "InterfaceOwner::CreateInto requires a valid output pointer.");
-			InterfaceOwner<T> replacement = Create<U>(resource, rox::core::Forward<TArguments>(arguments)...);
+			InterfaceOwner<T> replacement = Create<U>(resource, core::Forward<TArguments>(arguments)...);
 			if (!replacement)
 			{
 				return false;
 			}
 
-			*outOwner = rox::core::Move(replacement);
+			*outOwner = core::Move(replacement);
 			return true;
 		}
 
 		template <typename U = T, typename... TArguments>
-		    requires(rox::core::IsConvertible<U*, T*> && !rox::core::IsConst<U>)
+		    requires(IsConvertible<U*, T*> && !IsConst<U>)
 		[[nodiscard]] static InterfaceOwner CreateRequired(MemoryResource& resource, TArguments&&... arguments) noexcept
 		{
-			InterfaceOwner<T> owner = Create<U>(resource, rox::core::Forward<TArguments>(arguments)...);
+			InterfaceOwner<T> owner = Create<U>(resource, core::Forward<TArguments>(arguments)...);
 			if (!owner)
 			{
 				ReportMemoryFailure(

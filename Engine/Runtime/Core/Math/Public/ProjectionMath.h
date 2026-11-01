@@ -26,8 +26,8 @@ namespace rox::math
 
 	static_assert(sizeof(ProjectionViewport<float32>) == 6 * sizeof(float32));
 	static_assert(sizeof(ProjectionViewport<float64>) == 6 * sizeof(float64));
-	static_assert(rox::core::IsStandardLayout<ProjectionViewport<float32>> && rox::core::IsTriviallyCopyable<ProjectionViewport<float32>>);
-	static_assert(rox::core::IsStandardLayout<ProjectionViewport<float64>> && rox::core::IsTriviallyCopyable<ProjectionViewport<float64>>);
+	static_assert(core::IsStandardLayout<ProjectionViewport<float32>> && core::IsTriviallyCopyable<ProjectionViewport<float32>>);
+	static_assert(core::IsStandardLayout<ProjectionViewport<float64>> && core::IsTriviallyCopyable<ProjectionViewport<float64>>);
 	enum class EProjectionDepth : uint8
 	{
 		Forward,

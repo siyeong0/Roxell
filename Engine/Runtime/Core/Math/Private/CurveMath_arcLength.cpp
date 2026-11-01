@@ -18,11 +18,11 @@ namespace rox::math
 			const T y = current.Components[1] - previous.Components[1];
 			const T z = current.Components[2] - previous.Components[2];
 			const T w = current.Components[3] - previous.Components[3];
-			length += rox::core::Hypot(rox::core::Hypot(x, y), rox::core::Hypot(z, w));
+			length += core::Hypot(core::Hypot(x, y), core::Hypot(z, w));
 			previous = current;
 		}
 
-		return length > rox::core::NumericLimits<T>::max() ? rox::core::NumericLimits<T>::infinity() : static_cast<T>(length);
+		return length > core::NumericLimits<T>::max() ? core::NumericLimits<T>::infinity() : static_cast<T>(length);
 	}
 
 	template <MathScalar T, typename TValue>

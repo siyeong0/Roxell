@@ -45,10 +45,10 @@ namespace rox::core
 		JobState(const JobState&) = delete;
 		JobState& operator=(const JobState&) = delete;
 
-		rox::core::StringView GetName() const noexcept { return m_Name.View(); }
+		StringView GetName() const noexcept { return m_Name.View(); }
 		MemoryResource& GetResource() const noexcept { return *m_Resource; }
 
-		bool IsComplete() const noexcept { return m_bComplete.load(rox::core::MemoryOrderAcquire); }
+		bool IsComplete() const noexcept { return m_bComplete.load(core::MemoryOrderAcquire); }
 		bool IsOwnedBy(const JobSchedulerIdentity& identity) const noexcept { return m_Identity.Get() == &identity; }
 		bool IsReady() const noexcept;
 
@@ -57,17 +57,17 @@ namespace rox::core
 		EJobExecutionContext GetExecutionContext() const noexcept { return m_ExecutionContext; }
 
 		bool WasSkipped() const noexcept;
-		void Execute(LinearMemoryResource& scratch, rox::core::usize workerIndex) noexcept;
+		void Execute(LinearMemoryResource& scratch, usize workerIndex) noexcept;
 
 		void Retain() noexcept;
 		void Release() noexcept;
 
 		// Preparation is caller-confined; dependency linking and retirement require the owning queue's mutex.
-		void PrepareQueueAdmission(rox::core::usize sequence) noexcept;
+		void PrepareQueueAdmission(usize sequence) noexcept;
 		[[nodiscard]] bool RegisterQueueDependencies() noexcept;
 		[[nodiscard]] TaskHandle TakeQueueHandle() noexcept;
 		[[nodiscard]] JobState* RetireReadyDependent() noexcept;
-		[[nodiscard]] rox::core::usize GetSequence() const noexcept { return m_Sequence; }
+		[[nodiscard]] usize GetSequence() const noexcept { return m_Sequence; }
 
 	public:
 		detail::TaskCompletion m_Completion;
@@ -102,12 +102,12 @@ namespace rox::core
 		SmallVector<TaskHandle, 4> m_Prerequisites;
 		SmallVector<DependencyLink, 4> m_DependencyLinks;
 		DependencyLink* m_Dependents = nullptr;
-		rox::core::usize m_RemainingPrerequisites = 0;
-		rox::core::usize m_Sequence = 0;
+		usize m_RemainingPrerequisites = 0;
+		usize m_Sequence = 0;
 		EQueueState m_QueueState = EQueueState::Unregistered;
 
 		UniqueFunction<void(JobContext&) noexcept> m_Target;
-		rox::core::Atomic<bool> m_bComplete = false;
-		rox::core::Atomic<rox::core::usize> m_ReferenceCount = 1;
+		Atomic<bool> m_bComplete = false;
+		Atomic<usize> m_ReferenceCount = 1;
 	};
 }

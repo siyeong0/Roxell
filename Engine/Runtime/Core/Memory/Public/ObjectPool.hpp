@@ -17,8 +17,8 @@ namespace rox::core
 	template <typename T>
 	class ObjectPool final
 	{
-		static_assert(rox::core::IsObject<T> && !rox::core::IsArray<T> && rox::core::IsSame<T, rox::core::RemoveCv<T>>, "ObjectPool requires an unqualified non-array object type.");
-		static_assert(rox::core::IsNothrowDestructible<T>, "Pooled objects must have nothrow destruction.");
+		static_assert(IsObject<T> && !IsArray<T> && IsSame<T, RemoveCv<T>>, "ObjectPool requires an unqualified non-array object type.");
+		static_assert(IsNothrowDestructible<T>, "Pooled objects must have nothrow destruction.");
 
 	public:
 		explicit ObjectPool(MemoryResource& upstream) noexcept : m_Storage(upstream) {}
@@ -36,20 +36,20 @@ namespace rox::core
 		template <typename... TArguments>
 		T& EmplaceRequired(TArguments&&... arguments) noexcept
 		{
-			return *CreateObjectRequired<T>(m_Storage, rox::core::Forward<TArguments>(arguments)...);
+			return *CreateObjectRequired<T>(m_Storage, core::Forward<TArguments>(arguments)...);
 		}
 
 		template <typename... TArguments>
 		[[nodiscard]] T* Emplace(TArguments&&... arguments) noexcept
 		{
-			return CreateObject<T>(m_Storage, rox::core::Forward<TArguments>(arguments)...);
+			return CreateObject<T>(m_Storage, core::Forward<TArguments>(arguments)...);
 		}
 
 		void Destroy(T& object) noexcept
 		{
-			T* const storage = rox::core::AddressOf(object);
+			T* const storage = core::AddressOf(object);
 			const usize index = m_Storage.liveSlotIndex(storage);
-			rox::core::DestroyAt(storage);
+			core::DestroyAt(storage);
 			m_Storage.releaseObjectSlot(index);
 		}
 
@@ -59,14 +59,14 @@ namespace rox::core
 			while (!IsEmpty())
 			{
 				T* const storage = static_cast<T*>(m_Storage.nextLiveSlotStorage(&index));
-				rox::core::DestroyAt(storage);
+				core::DestroyAt(storage);
 				m_Storage.releaseObjectSlot(index);
 				++index;
 			}
 		}
 
-		[[nodiscard]] rox::core::usize Size() const noexcept { return m_Storage.GetLiveBlockCount(); }
-		[[nodiscard]] rox::core::usize Capacity() const noexcept { return m_Storage.GetBlockCapacity(); }
+		[[nodiscard]] usize Size() const noexcept { return m_Storage.GetLiveBlockCount(); }
+		[[nodiscard]] usize Capacity() const noexcept { return m_Storage.GetBlockCapacity(); }
 
 		[[nodiscard]] bool IsEmpty() const noexcept { return Size() == 0; }
 

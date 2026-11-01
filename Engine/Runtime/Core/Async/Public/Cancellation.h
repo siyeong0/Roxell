@@ -115,7 +115,7 @@ namespace rox::core
 		SharedPtr<detail::CancellationState> m_State;
 		detail::CancellationNode m_Node{this};
 
-		rox::core::Atomic<bool> m_bOperationActive = false;
+		Atomic<bool> m_bOperationActive = false;
 	};
 }
 

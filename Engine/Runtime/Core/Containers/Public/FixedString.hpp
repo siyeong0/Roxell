@@ -14,9 +14,9 @@
 namespace rox::core
 {
 	// Capacity counts UTF-8 payload bytes. Mutation requires exclusive access to the inline storage.
-	template <rox::core::usize N> class FixedString final
+	template <usize N> class FixedString final
 	{
-		static_assert(N < rox::core::NumericLimits<rox::core::usize>::max());
+		static_assert(N < NumericLimits<usize>::max());
 
 	public:
 		FixedString() noexcept = default;
@@ -29,8 +29,8 @@ namespace rox::core
 		FixedString& operator=(const FixedString& other) noexcept;
 		FixedString& operator=(FixedString&& other) noexcept;
 
-		[[nodiscard]] rox::core::usize Size() const noexcept;
-		[[nodiscard]] rox::core::usize Capacity() const noexcept;
+		[[nodiscard]] usize Size() const noexcept;
+		[[nodiscard]] usize Capacity() const noexcept;
 
 		[[nodiscard]] bool IsEmpty() const noexcept;
 		[[nodiscard]] bool IsFull() const noexcept;
@@ -44,7 +44,7 @@ namespace rox::core
 		[[nodiscard]] const char* begin() const noexcept;
 		[[nodiscard]] const char* end() const noexcept;
 
-		[[nodiscard]] char operator[](rox::core::usize index) const noexcept;
+		[[nodiscard]] char operator[](usize index) const noexcept;
 
 		void AssignRequired(StringView text) noexcept;
 		void AppendRequired(StringView text) noexcept;
@@ -57,7 +57,7 @@ namespace rox::core
 
 		void AppendRequired(char ascii) noexcept;
 
-		void Truncate(rox::core::usize bytes) noexcept;
+		void Truncate(usize bytes) noexcept;
 
 	private:
 		void assignValidated(StringView text) noexcept;
@@ -65,32 +65,32 @@ namespace rox::core
 
 	private:
 		char m_Data[N + 1]{};
-		rox::core::usize m_Size = 0;
+		usize m_Size = 0;
 	};
 }
 
 namespace rox::core
 {
-	template <rox::core::usize N>
+	template <usize N>
 	FixedString<N>::FixedString(StringView text) noexcept
 	{
 		AssignRequired(text);
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	FixedString<N>::FixedString(const FixedString& other) noexcept
 	{
 		assignValidated(other.View());
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	FixedString<N>::FixedString(FixedString&& other) noexcept
 	{
 		assignValidated(other.View());
 		other.Clear();
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	FixedString<N>& FixedString<N>::operator=(const FixedString& other) noexcept
 	{
 		if (this != &other)
@@ -101,7 +101,7 @@ namespace rox::core
 		return *this;
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	FixedString<N>& FixedString<N>::operator=(FixedString&& other) noexcept
 	{
 		if (this != &other)
@@ -113,74 +113,74 @@ namespace rox::core
 		return *this;
 	}
 
-	template <rox::core::usize N>
-	rox::core::usize FixedString<N>::Size() const noexcept
+	template <usize N>
+	usize FixedString<N>::Size() const noexcept
 	{
 		return m_Size;
 	}
 
-	template <rox::core::usize N>
-	rox::core::usize FixedString<N>::Capacity() const noexcept
+	template <usize N>
+	usize FixedString<N>::Capacity() const noexcept
 	{
 		return N;
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	bool FixedString<N>::IsEmpty() const noexcept
 	{
 		return m_Size == 0;
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	bool FixedString<N>::IsFull() const noexcept
 	{
 		return m_Size == N;
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	const char* FixedString<N>::Data() const noexcept
 	{
 		return m_Data;
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	const char* FixedString<N>::CStr() const noexcept
 	{
 		return m_Data;
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	StringView FixedString<N>::View() const noexcept
 	{
 		return {m_Data, m_Size};
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	FixedString<N>::operator StringView() const noexcept
 	{
 		return View();
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	const char* FixedString<N>::begin() const noexcept
 	{
 		return m_Data;
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	const char* FixedString<N>::end() const noexcept
 	{
 		return m_Data + m_Size;
 	}
 
-	template <rox::core::usize N>
-	char FixedString<N>::operator[](rox::core::usize index) const noexcept
+	template <usize N>
+	char FixedString<N>::operator[](usize index) const noexcept
 	{
 		ASSERT(index < m_Size, "FixedString index must address a payload byte.");
 		return m_Data[index];
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	void FixedString<N>::AssignRequired(StringView text) noexcept
 	{
 		ASSERT(IsValidUtf8(text), "FixedString assignment requires well-formed UTF-8.");
@@ -188,7 +188,7 @@ namespace rox::core
 		assignValidated(text);
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	void FixedString<N>::AppendRequired(StringView text) noexcept
 	{
 		ASSERT(IsValidUtf8(text), "FixedString append requires well-formed UTF-8.");
@@ -196,14 +196,14 @@ namespace rox::core
 		appendValidated(text);
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	void FixedString<N>::Clear() noexcept
 	{
 		m_Size = 0;
 		m_Data[0] = '\0';
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	bool FixedString<N>::Assign(StringView text) noexcept
 	{
 		if (text.Size() > N || !IsValidUtf8(text))
@@ -214,7 +214,7 @@ namespace rox::core
 		return true;
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	bool FixedString<N>::Append(StringView text) noexcept
 	{
 		if (text.Size() > N - m_Size || !IsValidUtf8(text))
@@ -225,7 +225,7 @@ namespace rox::core
 		return true;
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	void FixedString<N>::AppendRequired(char ascii) noexcept
 	{
 		ASSERT(static_cast<unsigned char>(ascii) < 0x80, "FixedString character append requires ASCII.");
@@ -234,8 +234,8 @@ namespace rox::core
 		m_Data[m_Size] = '\0';
 	}
 
-	template <rox::core::usize N>
-	void FixedString<N>::Truncate(rox::core::usize bytes) noexcept
+	template <usize N>
+	void FixedString<N>::Truncate(usize bytes) noexcept
 	{
 		ASSERT(bytes <= m_Size, "FixedString truncation must not grow text.");
 		ASSERT(bytes == m_Size || (static_cast<unsigned char>(m_Data[bytes]) & 0xC0) != 0x80, "FixedString truncation requires a UTF-8 scalar boundary.");
@@ -243,19 +243,19 @@ namespace rox::core
 		m_Data[m_Size] = '\0';
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	void FixedString<N>::assignValidated(StringView text) noexcept
 	{
 		if (!text.IsEmpty())
 		{
-			rox::core::MoveBytes(m_Data, text.Data(), text.Size());
+			core::MoveBytes(m_Data, text.Data(), text.Size());
 		}
 
 		m_Size = text.Size();
 		m_Data[m_Size] = '\0';
 	}
 
-	template <rox::core::usize N>
+	template <usize N>
 	void FixedString<N>::appendValidated(StringView text) noexcept
 	{
 		if (text.IsEmpty())
@@ -263,7 +263,7 @@ namespace rox::core
 			return;
 		}
 
-		rox::core::MoveBytes(m_Data + m_Size, text.Data(), text.Size());
+		core::MoveBytes(m_Data + m_Size, text.Data(), text.Size());
 		m_Size += text.Size();
 		m_Data[m_Size] = '\0';
 	}

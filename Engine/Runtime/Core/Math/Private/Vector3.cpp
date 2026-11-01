@@ -10,27 +10,27 @@ namespace rox::math
 	template <MathScalar T>
 	T Vector3<T>::Length() const noexcept
 	{
-		return static_cast<T>(rox::core::Hypot(static_cast<T>(X), static_cast<T>(Y), static_cast<T>(Z)));
+		return static_cast<T>(core::Hypot(static_cast<T>(X), static_cast<T>(Y), static_cast<T>(Z)));
 	}
 
 	template <MathScalar T>
 	bool Vector3<T>::TryNormalize(Vector3<T>* outNormalized, T epsilon) const noexcept
 	{
 		ASSERT(outNormalized != nullptr, "Normalized vector output must not be null.");
-		ASSERT(rox::core::IsFinite(epsilon) && epsilon >= T(0), "Normalization epsilon must be finite and nonnegative.");
+		ASSERT(core::IsFinite(epsilon) && epsilon >= T(0), "Normalization epsilon must be finite and nonnegative.");
 		if (!IsFinite())
 		{
 			return false;
 		}
 
-		const T scale = rox::core::Max({rox::core::Abs(X), rox::core::Abs(Y), rox::core::Abs(Z)});
+		const T scale = core::Max({core::Abs(X), core::Abs(Y), core::Abs(Z)});
 		if (scale == T(0))
 		{
 			return false;
 		}
 
 		const Vector3<T> scaled{X / scale, Y / scale, Z / scale};
-		const T length = rox::core::Hypot(scaled.X, scaled.Y, scaled.Z);
+		const T length = core::Hypot(scaled.X, scaled.Y, scaled.Z);
 		if (scale <= epsilon / length)
 		{
 			return false;
@@ -62,7 +62,7 @@ namespace rox::math
 		const T deltaX = X - other.X;
 		const T deltaY = Y - other.Y;
 		const T deltaZ = Z - other.Z;
-		return rox::core::Hypot(deltaX, deltaY, deltaZ);
+		return core::Hypot(deltaX, deltaY, deltaZ);
 	}
 
 	template <MathScalar T>
@@ -79,21 +79,21 @@ namespace rox::math
 	Vector3<T> Vector3<T>::Min(const Vector3<T>& other) const noexcept
 	{
 		ASSERT(IsFinite() && other.IsFinite(), "Vector3 operands must be finite.");
-		return {rox::core::Min(X, other.X), rox::core::Min(Y, other.Y), rox::core::Min(Z, other.Z)};
+		return {core::Min(X, other.X), core::Min(Y, other.Y), core::Min(Z, other.Z)};
 	}
 
 	template <MathScalar T>
 	Vector3<T> Vector3<T>::Max(const Vector3<T>& other) const noexcept
 	{
 		ASSERT(IsFinite() && other.IsFinite(), "Vector3 operands must be finite.");
-		return {rox::core::Max(X, other.X), rox::core::Max(Y, other.Y), rox::core::Max(Z, other.Z)};
+		return {core::Max(X, other.X), core::Max(Y, other.Y), core::Max(Z, other.Z)};
 	}
 
 	template <MathScalar T>
 	Vector3<T> Vector3<T>::Abs() const noexcept
 	{
 		ASSERT(IsFinite(), "Vector3 operand must be finite.");
-		return {rox::core::Abs(X), rox::core::Abs(Y), rox::core::Abs(Z)};
+		return {core::Abs(X), core::Abs(Y), core::Abs(Z)};
 	}
 
 	template <MathScalar T>
@@ -101,24 +101,24 @@ namespace rox::math
 	{
 		ASSERT(IsFinite() && minimum.IsFinite() && maximum.IsFinite(), "Vector3 clamp operands must be finite.");
 		ASSERT(minimum.X <= maximum.X && minimum.Y <= maximum.Y && minimum.Z <= maximum.Z, "Vector3 clamp bounds must be ordered per component.");
-		return {rox::core::ClampValue(X, minimum.X, maximum.X), rox::core::ClampValue(Y, minimum.Y, maximum.Y),
-		        rox::core::ClampValue(Z, minimum.Z, maximum.Z)};
+		return {core::ClampValue(X, minimum.X, maximum.X), core::ClampValue(Y, minimum.Y, maximum.Y),
+		        core::ClampValue(Z, minimum.Z, maximum.Z)};
 	}
 
 	template <MathScalar T>
 	bool Vector3<T>::IsNearlyZero(T tolerance) const noexcept
 	{
-		ASSERT(rox::core::IsFinite(tolerance) && tolerance >= T(0.0), "Vector3 comparison tolerance must be finite and nonnegative.");
-		return rox::core::Abs(X) <= tolerance && rox::core::Abs(Y) <= tolerance && rox::core::Abs(Z) <= tolerance;
+		ASSERT(core::IsFinite(tolerance) && tolerance >= T(0.0), "Vector3 comparison tolerance must be finite and nonnegative.");
+		return core::Abs(X) <= tolerance && core::Abs(Y) <= tolerance && core::Abs(Z) <= tolerance;
 	}
 
 	template <MathScalar T>
 	bool Vector3<T>::NearlyEquals(const Vector3<T>& other, T tolerance) const noexcept
 	{
-		ASSERT(rox::core::IsFinite(tolerance) && tolerance >= T(0.0), "Vector3 comparison tolerance must be finite and nonnegative.");
-		return IsFinite() && other.IsFinite() && rox::core::Abs(static_cast<T>(X) - other.X) <= tolerance &&
-		       rox::core::Abs(static_cast<T>(Y) - other.Y) <= tolerance &&
-		       rox::core::Abs(static_cast<T>(Z) - other.Z) <= tolerance;
+		ASSERT(core::IsFinite(tolerance) && tolerance >= T(0.0), "Vector3 comparison tolerance must be finite and nonnegative.");
+		return IsFinite() && other.IsFinite() && core::Abs(static_cast<T>(X) - other.X) <= tolerance &&
+		       core::Abs(static_cast<T>(Y) - other.Y) <= tolerance &&
+		       core::Abs(static_cast<T>(Z) - other.Z) <= tolerance;
 	}
 
 	template <MathScalar T>
@@ -133,7 +133,7 @@ namespace rox::math
 	template <MathScalar T>
 	Vector3<T> Vector3<T>::ClampedLength(T maximumLength) const noexcept
 	{
-		ASSERT(IsFinite() && rox::core::IsFinite(maximumLength) && maximumLength >= T(0), "Length limit and vector must be finite and nonnegative.");
+		ASSERT(IsFinite() && core::IsFinite(maximumLength) && maximumLength >= T(0), "Length limit and vector must be finite and nonnegative.");
 		if (Length() <= maximumLength)
 		{
 			return *this;
@@ -147,13 +147,13 @@ namespace rox::math
 	{
 		const Vector3<T> a = Normalized(T(0));
 		const Vector3<T> b = other.Normalized(T(0));
-		return rox::core::Atan2(a.Cross(b).Length(), a.Dot(b));
+		return core::Atan2(a.Cross(b).Length(), a.Dot(b));
 	}
 
 	template <MathScalar T>
 	T Vector3<T>::SignedAngle(const Vector3<T>& other, const Vector3<T>& unitAxis) const noexcept
 	{
-		ASSERT(unitAxis.IsFinite() && rox::core::Abs(unitAxis.LengthSquared() - T(1.0)) <= T(1.0e-4), "Signed angle axis must have unit length.");
+		ASSERT(unitAxis.IsFinite() && core::Abs(unitAxis.LengthSquared() - T(1.0)) <= T(1.0e-4), "Signed angle axis must have unit length.");
 		const T angle = Angle(other);
 		const Vector3<T> a = Normalized(T(0));
 		const Vector3<T> b = other.Normalized(T(0));
@@ -166,7 +166,7 @@ namespace rox::math
 	{
 		ASSERT(IsFinite(), "Projection input must be finite.");
 		const Vector3<T> unit = basis.Normalized(T(0));
-		const T scale = rox::core::Max({rox::core::Abs(X), rox::core::Abs(Y), rox::core::Abs(Z)});
+		const T scale = core::Max({core::Abs(X), core::Abs(Y), core::Abs(Z)});
 		if (scale == T(0))
 		{
 			return Zero();
@@ -181,7 +181,7 @@ namespace rox::math
 	{
 		ASSERT(IsFinite(), "Projection input must be finite.");
 		const Vector3<T> unit = basis.Normalized(T(0));
-		const T scale = rox::core::Max({rox::core::Abs(X), rox::core::Abs(Y), rox::core::Abs(Z)});
+		const T scale = core::Max({core::Abs(X), core::Abs(Y), core::Abs(Z)});
 		if (scale == T(0))
 		{
 			return Zero();
@@ -195,7 +195,7 @@ namespace rox::math
 	Vector3<T> Vector3<T>::Reflected(const Vector3<T>& unitNormal) const noexcept
 	{
 		ASSERT(IsFinite(), "Vector3 reflection input must be finite.");
-		ASSERT(unitNormal.IsFinite() && rox::core::Abs(unitNormal.LengthSquared() - T(1.0)) <= T(1.0e-4), "Reflection normal must have unit length.");
+		ASSERT(unitNormal.IsFinite() && core::Abs(unitNormal.LengthSquared() - T(1.0)) <= T(1.0e-4), "Reflection normal must have unit length.");
 		const T dot = static_cast<T>(X) * unitNormal.X + static_cast<T>(Y) * unitNormal.Y + static_cast<T>(Z) * unitNormal.Z;
 		return {static_cast<T>(X - T(2.0) * dot * unitNormal.X), 
 				static_cast<T>(Y - T(2.0) * dot * unitNormal.Y),
@@ -206,7 +206,7 @@ namespace rox::math
 	Vector3<T> Vector3<T>::Slide(const Vector3<T>& unitNormal) const noexcept
 	{
 		ASSERT(IsFinite(), "Vector3 slide input must be finite.");
-		ASSERT(unitNormal.IsFinite() && rox::core::Abs(unitNormal.LengthSquared() - T(1.0)) <= T(1.0e-4), "Slide normal must have unit length.");
+		ASSERT(unitNormal.IsFinite() && core::Abs(unitNormal.LengthSquared() - T(1.0)) <= T(1.0e-4), "Slide normal must have unit length.");
 		const T dot = static_cast<T>(X) * unitNormal.X + static_cast<T>(Y) * unitNormal.Y + static_cast<T>(Z) * unitNormal.Z;
 		return {static_cast<T>(X - dot * unitNormal.X),
 				static_cast<T>(Y - dot * unitNormal.Y),
@@ -217,11 +217,11 @@ namespace rox::math
 	Vector3<T> Vector3<T>::MoveTowards(const Vector3<T>& target, T maximumDelta) const noexcept
 	{
 		ASSERT(IsFinite() && target.IsFinite(), "Vector3 movement operands must be finite.");
-		ASSERT(rox::core::IsFinite(maximumDelta) && maximumDelta >= T(0.0), "Maximum movement must be finite and nonnegative.");
+		ASSERT(core::IsFinite(maximumDelta) && maximumDelta >= T(0.0), "Maximum movement must be finite and nonnegative.");
 		const T deltaX = static_cast<T>(target.X) - X;
 		const T deltaY = static_cast<T>(target.Y) - Y;
 		const T deltaZ = static_cast<T>(target.Z) - Z;
-		const T distance = rox::core::Hypot(deltaX, deltaY, deltaZ);
+		const T distance = core::Hypot(deltaX, deltaY, deltaZ);
 
 		if (distance <= maximumDelta)
 		{
@@ -249,16 +249,16 @@ namespace rox::math
 	bool Vector3<T>::Refracted(const Vector3<T>& unitNormal, T indexRatio, Vector3<T>* outDirection) const noexcept
 	{
 		ASSERT(outDirection != nullptr, "Refraction output must not be null.");
-		ASSERT(IsFinite() && rox::core::Abs(LengthSquared() - T(1.0)) <= T(1.0e-4), "Incident direction must have unit length.");
-		ASSERT(unitNormal.IsFinite() && rox::core::Abs(unitNormal.LengthSquared() - T(1.0)) <= T(1.0e-4), "Refraction normal must have unit length.");
-		ASSERT(rox::core::IsFinite(indexRatio) && indexRatio > T(0.0), "Refraction index ratio must be positive and finite.");
+		ASSERT(IsFinite() && core::Abs(LengthSquared() - T(1.0)) <= T(1.0e-4), "Incident direction must have unit length.");
+		ASSERT(unitNormal.IsFinite() && core::Abs(unitNormal.LengthSquared() - T(1.0)) <= T(1.0e-4), "Refraction normal must have unit length.");
+		ASSERT(core::IsFinite(indexRatio) && indexRatio > T(0.0), "Refraction index ratio must be positive and finite.");
 		const T incidentDot = static_cast<T>(X) * unitNormal.X + static_cast<T>(Y) * unitNormal.Y + static_cast<T>(Z) * unitNormal.Z;
 		ASSERT(incidentDot <= T(1.0e-4), "Refraction normal must oppose the incident direction.");
 		const T normalSquared = static_cast<T>(unitNormal.X) * unitNormal.X +
 		                        static_cast<T>(unitNormal.Y) * unitNormal.Y +
 		                        static_cast<T>(unitNormal.Z) * unitNormal.Z;
-		const T normalLength = rox::core::Sqrt(normalSquared);
-		const T incidentLength = rox::core::Sqrt(static_cast<T>(X) * X + static_cast<T>(Y) * Y + static_cast<T>(Z) * Z);
+		const T normalLength = core::Sqrt(normalSquared);
+		const T incidentLength = core::Sqrt(static_cast<T>(X) * X + static_cast<T>(Y) * Y + static_cast<T>(Z) * Z);
 		const T crossX = static_cast<T>(Y) * unitNormal.Z - static_cast<T>(Z) * unitNormal.Y;
 		const T crossY = static_cast<T>(Z) * unitNormal.X - static_cast<T>(X) * unitNormal.Z;
 		const T crossZ = static_cast<T>(X) * unitNormal.Y - static_cast<T>(Y) * unitNormal.X;
@@ -276,7 +276,7 @@ namespace rox::math
 			return false;
 		}
 
-		const T normalScale = rox::core::Sqrt(discriminant) / normalLength;
+		const T normalScale = core::Sqrt(discriminant) / normalLength;
 		const Vector3<T> refracted{static_cast<T>(tangentX - normalScale * unitNormal.X),
 		                           static_cast<T>(tangentY - normalScale * unitNormal.Y),
 		                           static_cast<T>(tangentZ - normalScale * unitNormal.Z)};

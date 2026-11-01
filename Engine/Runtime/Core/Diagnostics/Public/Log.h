@@ -31,18 +31,18 @@ namespace rox::core
 	{
 		ELogLevel Level = ELogLevel::Information;
 
-		rox::core::DiagnosticText Category;
-		rox::core::DiagnosticText Message;
-		rox::core::DiagnosticText Expression;
+		DiagnosticText Category;
+		DiagnosticText Message;
+		DiagnosticText Expression;
 
-		rox::core::SourceLocation Source;
+		SourceLocation Source;
 	};
 
 	struct LogEvent
 	{
-		rox::core::uint64 Sequence = 0;
-		rox::core::uint64 TimestampUnixMicroseconds = 0;
-		rox::core::uint64 ThreadID = 0;
+		uint64 Sequence = 0;
+		uint64 TimestampUnixMicroseconds = 0;
+		uint64 ThreadID = 0;
 
 		LogRecord Record;
 
@@ -73,7 +73,7 @@ namespace rox::core
 
 		// Write and Flush may overlap. Event data and the null-terminated JSON line are borrowed for this call.
 		// Sequence reflects creation order, not callback arrival order.
-		virtual void Write(const LogEvent& event, rox::core::DiagnosticText jsonLine) noexcept = 0;
+		virtual void Write(const LogEvent& event, DiagnosticText jsonLine) noexcept = 0;
 		virtual void Flush() noexcept = 0;
 	};
 

@@ -44,7 +44,7 @@ namespace rox::core
 		return String(StringView(text, sizeof(text)));
 	}
 
-	template <typename TTag> [[nodiscard]] bool TryParseStrongId(rox::core::StringView text, StrongId<TTag>* outId) noexcept
+	template <typename TTag> [[nodiscard]] bool TryParseStrongId(StringView text, StrongId<TTag>* outId) noexcept
 	{
 		ASSERT(outId != nullptr, "Strong ID output must not be null.");
 
@@ -118,12 +118,12 @@ namespace rox::core
 
 	template <typename TTag> struct StrongIdHash
 	{
-		[[nodiscard]] rox::core::usize operator()(StrongId<TTag> id) const noexcept
+		[[nodiscard]] usize operator()(StrongId<TTag> id) const noexcept
 		{
-			const rox::core::usize highHash = rox::core::HashFunction<uint64>{}(id.High);
-			const rox::core::usize lowHash = rox::core::HashFunction<uint64>{}(id.Low);
+			const usize highHash = core::HashFunction<uint64>{}(id.High);
+			const usize lowHash = core::HashFunction<uint64>{}(id.Low);
 			return highHash ^
-			       (lowHash + static_cast<rox::core::usize>(0x9e3779b97f4a7c15ull) + (highHash << 6) + (highHash >> 2));
+			       (lowHash + static_cast<usize>(0x9e3779b97f4a7c15ull) + (highHash << 6) + (highHash >> 2));
 		}
 	};
 
@@ -150,16 +150,16 @@ namespace rox::core
 		ASSERT(idNamespace.IsValid(), "A deterministic strong ID requires a valid namespace.");
 
 		static constexpr char DOMAIN_SEPARATOR[] = "Roxell.StrongId.v1";
-		static constexpr rox::core::usize DOMAIN_SEPARATOR_SIZE = sizeof(DOMAIN_SEPARATOR) - 1;
-		static constexpr rox::core::usize NAMESPACE_SIZE = 16;
-		static constexpr rox::core::usize NAME_HASH_SIZE = 32;
-		static constexpr rox::core::usize MATERIAL_SIZE = DOMAIN_SEPARATOR_SIZE + NAMESPACE_SIZE + NAME_HASH_SIZE;
+		static constexpr usize DOMAIN_SEPARATOR_SIZE = sizeof(DOMAIN_SEPARATOR) - 1;
+		static constexpr usize NAMESPACE_SIZE = 16;
+		static constexpr usize NAME_HASH_SIZE = 32;
+		static constexpr usize MATERIAL_SIZE = DOMAIN_SEPARATOR_SIZE + NAMESPACE_SIZE + NAME_HASH_SIZE;
 
-		const Hash256 nameHash = ComputeSha256(rox::core::Span<const Byte>(name.Data(), name.Size()));
+		const Hash256 nameHash = ComputeSha256(Span<const Byte>(name.Data(), name.Size()));
 		Byte material[MATERIAL_SIZE] = {};
-		rox::core::usize materialOffset = 0;
+		usize materialOffset = 0;
 
-		for (rox::core::usize index = 0; index < DOMAIN_SEPARATOR_SIZE; ++index)
+		for (usize index = 0; index < DOMAIN_SEPARATOR_SIZE; ++index)
 		{
 			material[materialOffset++] = static_cast<Byte>(static_cast<uint8>(DOMAIN_SEPARATOR[index]));
 		}
@@ -182,7 +182,7 @@ namespace rox::core
 
 		ASSERT(materialOffset == MATERIAL_SIZE, "Strong ID derivation material must have the expected size.");
 
-		const Hash256 derivedHash = ComputeSha256(rox::core::Span<const Byte>(material, MATERIAL_SIZE));
+		const Hash256 derivedHash = ComputeSha256(Span<const Byte>(material, MATERIAL_SIZE));
 		StrongId<TTag> id;
 
 		for (uint32 index = 0; index < 8; ++index)

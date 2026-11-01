@@ -18,8 +18,8 @@ namespace rox::math
 		template <MathScalar T>
 		[[nodiscard]] T finiteScalar(T value) noexcept
 		{
-			ASSERT(rox::core::IsFinite(value), "Matrix calculation must produce a finite value.");
-			ASSERT(rox::core::Abs(value) <= static_cast<T>(rox::core::NumericLimits<T>::max()), "Matrix calculation must fit in the scalar type.");
+			ASSERT(core::IsFinite(value), "Matrix calculation must produce a finite value.");
+			ASSERT(core::Abs(value) <= static_cast<T>(core::NumericLimits<T>::max()), "Matrix calculation must fit in the scalar type.");
 			return static_cast<T>(value);
 		}
 	} // namespace
@@ -84,8 +84,8 @@ namespace rox::math
 	template <MathScalar T>
 	Matrix4x4<T> Matrix4x4<T>::RotationX(T radians) noexcept
 	{
-		const T cosine = rox::core::Cos(radians);
-		const T sine = rox::core::Sin(radians);
+		const T cosine = core::Cos(radians);
+		const T sine = core::Sin(radians);
 		return {T(1.0), T(0.0), T(0.0), T(0.0), 
 				T(0.0), cosine, sine,   T(0.0),
 		        T(0.0), -sine,  cosine, T(0.0), 
@@ -95,8 +95,8 @@ namespace rox::math
 	template <MathScalar T>
 	Matrix4x4<T> Matrix4x4<T>::RotationY(T radians) noexcept
 	{
-		const T cosine = rox::core::Cos(radians);
-		const T sine = rox::core::Sin(radians);
+		const T cosine = core::Cos(radians);
+		const T sine = core::Sin(radians);
 		return {cosine, T(0.0), -sine,  T(0.0), 
 				T(0.0), T(1.0), T(0.0), T(0.0),
 		        sine,   T(0.0), cosine, T(0.0), 
@@ -106,8 +106,8 @@ namespace rox::math
 	template <MathScalar T>
 	Matrix4x4<T> Matrix4x4<T>::RotationZ(T radians) noexcept
 	{
-		const T cosine = rox::core::Cos(radians);
-		const T sine = rox::core::Sin(radians);
+		const T cosine = core::Cos(radians);
+		const T sine = core::Sin(radians);
 		return {cosine, sine,   T(0.0), T(0.0), 
 				-sine,  cosine, T(0.0), T(0.0),
 		        T(0.0), T(0.0), T(1.0), T(0.0), 
@@ -145,16 +145,16 @@ namespace rox::math
 	template <MathScalar T>
 	Matrix4x4<T> Matrix4x4<T>::PerspectiveFovLH(T verticalFovRadians, T aspectRatio, T nearPlane, T farPlane) noexcept
 	{
-		ASSERT(rox::core::IsFinite(verticalFovRadians), "Perspective field of view must be finite.");
-		ASSERT(rox::core::IsFinite(aspectRatio), "Perspective aspect ratio must be finite.");
-		ASSERT(rox::core::IsFinite(nearPlane), "Perspective near plane must be finite.");
-		ASSERT(rox::core::IsFinite(farPlane), "Perspective far plane must be finite.");
-		ASSERT(verticalFovRadians > T(0.0) && verticalFovRadians < rox::core::PI<T>, "Perspective field of view must be between zero and pi radians.");
+		ASSERT(core::IsFinite(verticalFovRadians), "Perspective field of view must be finite.");
+		ASSERT(core::IsFinite(aspectRatio), "Perspective aspect ratio must be finite.");
+		ASSERT(core::IsFinite(nearPlane), "Perspective near plane must be finite.");
+		ASSERT(core::IsFinite(farPlane), "Perspective far plane must be finite.");
+		ASSERT(verticalFovRadians > T(0.0) && verticalFovRadians < core::PI<T>, "Perspective field of view must be between zero and pi radians.");
 		ASSERT(aspectRatio > T(0.0), "Perspective aspect ratio must be positive.");
 		ASSERT(nearPlane > T(0.0), "Perspective near plane must be positive.");
 		ASSERT(farPlane > nearPlane, "Perspective far plane must be farther than the near plane.");
 
-		const T yScale = T(1.0) / rox::core::Tan(static_cast<T>(verticalFovRadians) * T(0.5));
+		const T yScale = T(1.0) / core::Tan(static_cast<T>(verticalFovRadians) * T(0.5));
 		const T xScale = yScale / static_cast<T>(aspectRatio);
 		const T depthRange = static_cast<T>(farPlane) - static_cast<T>(nearPlane);
 		const T depthScale = static_cast<T>(farPlane) / depthRange;
@@ -168,9 +168,9 @@ namespace rox::math
 	template <MathScalar T>
 	Matrix4x4<T> Matrix4x4<T>::OrthographicOffCenterLH(T left, T right, T bottom, T top, T nearPlane, T farPlane) noexcept
 	{
-		ASSERT(rox::core::IsFinite(left) && rox::core::IsFinite(right), "Orthographic horizontal bounds must be finite.");
-		ASSERT(rox::core::IsFinite(bottom) && rox::core::IsFinite(top), "Orthographic vertical bounds must be finite.");
-		ASSERT(rox::core::IsFinite(nearPlane) && rox::core::IsFinite(farPlane), "Orthographic depth bounds must be finite.");
+		ASSERT(core::IsFinite(left) && core::IsFinite(right), "Orthographic horizontal bounds must be finite.");
+		ASSERT(core::IsFinite(bottom) && core::IsFinite(top), "Orthographic vertical bounds must be finite.");
+		ASSERT(core::IsFinite(nearPlane) && core::IsFinite(farPlane), "Orthographic depth bounds must be finite.");
 		ASSERT(right != left, "Orthographic horizontal bounds must span a non-zero range.");
 		ASSERT(top != bottom, "Orthographic vertical bounds must span a non-zero range.");
 		ASSERT(farPlane > nearPlane, "Orthographic far plane must be farther than the near plane.");
@@ -205,9 +205,9 @@ namespace rox::math
 	template <MathScalar T>
 	Vector3<T> Matrix4x4<T>::TransformPosition(const Vector3<T>& position, T epsilon) const noexcept
 	{
-		ASSERT(rox::core::IsFinite(epsilon) && epsilon >= T(0.0), "Position transform epsilon must be finite and non-negative.");
+		ASSERT(core::IsFinite(epsilon) && epsilon >= T(0.0), "Position transform epsilon must be finite and non-negative.");
 		const Vector4<T> transformed = TransformVector4(Vector4<T>(position, T(1.0)));
-		ASSERT(rox::core::IsFinite(transformed.W) && rox::core::Abs(transformed.W) > epsilon, "Position transform must produce a usable homogeneous coordinate.");
+		ASSERT(core::IsFinite(transformed.W) && core::Abs(transformed.W) > epsilon, "Position transform must produce a usable homogeneous coordinate.");
 		return transformed.XYZ() / transformed.W;
 	}
 
@@ -230,18 +230,18 @@ namespace rox::math
 	bool Matrix4x4<T>::TryInverse(Matrix4x4<T>* outInverse, T epsilon) const noexcept
 	{
 		ASSERT(outInverse != nullptr, "Inverse Matrix4x4 output must not be null.");
-		ASSERT(rox::core::IsFinite(epsilon) && epsilon >= T(0.0), "Matrix4x4 inversion epsilon must be finite and non-negative.");
+		ASSERT(core::IsFinite(epsilon) && epsilon >= T(0.0), "Matrix4x4 inversion epsilon must be finite and non-negative.");
 
 		T maximumMagnitude = T(0.0);
 
 		for (uint32 index = 0; index < 16; ++index)
 		{
-			if (!rox::core::IsFinite(Data()[index]))
+			if (!core::IsFinite(Data()[index]))
 			{
 				return false;
 			}
 
-			maximumMagnitude = rox::core::Max(maximumMagnitude, rox::core::Abs(Data()[index]));
+			maximumMagnitude = core::Max(maximumMagnitude, core::Abs(Data()[index]));
 		}
 
 		if (maximumMagnitude == T(0.0))
@@ -266,11 +266,11 @@ namespace rox::math
 		for (uint32 pivotColumn = 0; pivotColumn < 4; ++pivotColumn)
 		{
 			uint32 pivotRow = pivotColumn;
-			T pivotMagnitude = rox::core::Abs(augmented[pivotRow][pivotColumn]);
+			T pivotMagnitude = core::Abs(augmented[pivotRow][pivotColumn]);
 
 			for (uint32 row = pivotColumn + 1; row < 4; ++row)
 			{
-				const T magnitude = rox::core::Abs(augmented[row][pivotColumn]);
+				const T magnitude = core::Abs(augmented[row][pivotColumn]);
 
 				if (magnitude > pivotMagnitude)
 				{
@@ -279,7 +279,7 @@ namespace rox::math
 				}
 			}
 
-			if (!rox::core::IsFinite(pivotMagnitude) || pivotMagnitude <= epsilon)
+			if (!core::IsFinite(pivotMagnitude) || pivotMagnitude <= epsilon)
 			{
 				return false;
 			}
@@ -288,7 +288,7 @@ namespace rox::math
 			{
 				for (uint32 column = 0; column < 8; ++column)
 				{
-					rox::core::Swap(augmented[pivotRow][column], augmented[pivotColumn][column]);
+					core::Swap(augmented[pivotRow][column], augmented[pivotColumn][column]);
 				}
 			}
 
@@ -323,7 +323,7 @@ namespace rox::math
 			{
 				const T value = augmented[row][column + 4] * inverseScale;
 
-				if (!rox::core::IsFinite(value))
+				if (!core::IsFinite(value))
 				{
 					return false;
 				}

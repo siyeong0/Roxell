@@ -15,7 +15,7 @@ namespace rox::math
 		template <MathScalar T>
 		T projectionCoefficient(T value) noexcept
 		{
-			ASSERT(rox::core::IsFinite(value), "Projection coefficients must be representable in the finite scalar range.");
+			ASSERT(core::IsFinite(value), "Projection coefficients must be representable in the finite scalar range.");
 			return static_cast<T>(value);
 		}
 	} // namespace
@@ -23,9 +23,9 @@ namespace rox::math
 	template <MathScalar T>
 	Matrix4x4<T> PerspectiveOffCenterLH(T left, T right, T bottom, T top, T nearPlane, T farPlane, EProjectionDepth depth) noexcept
 	{
-		ASSERT(rox::core::IsFinite(left) && rox::core::IsFinite(right) && rox::core::IsFinite(bottom) && rox::core::IsFinite(top) && left < right && bottom < top, "Perspective lateral bounds must be finite and ordered.");
-		ASSERT(rox::core::IsFinite(nearPlane) && nearPlane > 0, "Perspective near plane must be finite and positive.");
-		ASSERT(rox::core::IsFinite(farPlane) && farPlane > nearPlane, "Perspective far plane must be finite and farther than near.");
+		ASSERT(core::IsFinite(left) && core::IsFinite(right) && core::IsFinite(bottom) && core::IsFinite(top) && left < right && bottom < top, "Perspective lateral bounds must be finite and ordered.");
+		ASSERT(core::IsFinite(nearPlane) && nearPlane > 0, "Perspective near plane must be finite and positive.");
+		ASSERT(core::IsFinite(farPlane) && farPlane > nearPlane, "Perspective far plane must be finite and farther than near.");
 		ASSERT(depth == EProjectionDepth::Forward || depth == EProjectionDepth::Reversed, "Projection depth mode must be a listed value.");
 		const T n = nearPlane;
 		const T f = farPlane;
@@ -57,8 +57,8 @@ namespace rox::math
 	template <MathScalar T>
 	Matrix4x4<T> PerspectiveOffCenterInfiniteLH(T left, T right, T bottom, T top, T nearPlane, EProjectionDepth depth) noexcept
 	{
-		ASSERT(rox::core::IsFinite(left) && rox::core::IsFinite(right) && rox::core::IsFinite(bottom) && rox::core::IsFinite(top) && left < right && bottom < top, "Perspective lateral bounds must be finite and ordered.");
-		ASSERT(rox::core::IsFinite(nearPlane) && nearPlane > 0, "Perspective near plane must be finite and positive.");
+		ASSERT(core::IsFinite(left) && core::IsFinite(right) && core::IsFinite(bottom) && core::IsFinite(top) && left < right && bottom < top, "Perspective lateral bounds must be finite and ordered.");
+		ASSERT(core::IsFinite(nearPlane) && nearPlane > 0, "Perspective near plane must be finite and positive.");
 		ASSERT(depth == EProjectionDepth::Forward || depth == EProjectionDepth::Reversed, "Projection depth mode must be a listed value.");
 		const T n = nearPlane;
 		const T width = static_cast<T>(right) - left;
@@ -88,10 +88,10 @@ namespace rox::math
 	template <MathScalar T>
 	Matrix4x4<T> PerspectiveFovInfiniteLH(T verticalFovRadians, T aspectRatio, T nearPlane, EProjectionDepth depth) noexcept
 	{
-		ASSERT(rox::core::IsFinite(verticalFovRadians) && verticalFovRadians > 0 && verticalFovRadians < rox::core::PI<T> && rox::core::IsFinite(aspectRatio) && aspectRatio > 0, "Perspective field of view and aspect must be finite and valid.");
-		ASSERT(rox::core::IsFinite(nearPlane) && nearPlane > 0, "Perspective near plane must be finite and positive.");
+		ASSERT(core::IsFinite(verticalFovRadians) && verticalFovRadians > 0 && verticalFovRadians < core::PI<T> && core::IsFinite(aspectRatio) && aspectRatio > 0, "Perspective field of view and aspect must be finite and valid.");
+		ASSERT(core::IsFinite(nearPlane) && nearPlane > 0, "Perspective near plane must be finite and positive.");
 		ASSERT(depth == EProjectionDepth::Forward || depth == EProjectionDepth::Reversed, "Projection depth mode must be a listed value.");
-		const T scale = 1 / rox::core::Tan(static_cast<T>(verticalFovRadians) * T(0.5));
+		const T scale = 1 / core::Tan(static_cast<T>(verticalFovRadians) * T(0.5));
 		const T x = projectionCoefficient<T>(scale / aspectRatio);
 		const T y = projectionCoefficient<T>(scale);
 		ASSERT(x > 0 && y > 0, "Perspective scale coefficients must remain positive.");
@@ -125,8 +125,8 @@ namespace rox::math
 	template <MathScalar T>
 	bool ProjectionViewport<T>::IsValid() const noexcept
 	{
-		return rox::core::IsFinite(X) && rox::core::IsFinite(Y) && rox::core::IsFinite(Width) &&
-		       rox::core::IsFinite(Height) && rox::core::IsFinite(MinDepth) && rox::core::IsFinite(MaxDepth) &&
+		return core::IsFinite(X) && core::IsFinite(Y) && core::IsFinite(Width) &&
+		       core::IsFinite(Height) && core::IsFinite(MinDepth) && core::IsFinite(MaxDepth) &&
 		       Width > 0 && Height > 0 && MinDepth < MaxDepth;
 	}
 
@@ -202,14 +202,14 @@ namespace rox::math
 
 		// An interior depth avoids the projective horizon at an infinite far plane.
 		const detail::ProjectionVector4<T> middle = detail::ProjectionTransform<T>(clipToWorld, {x, y, T(0.5)});
-		if (middle.W == T(0) || !rox::core::IsFinite(middle.X) || !rox::core::IsFinite(middle.Y) || !rox::core::IsFinite(middle.Z) || !rox::core::IsFinite(middle.W))
+		if (middle.W == T(0) || !core::IsFinite(middle.X) || !core::IsFinite(middle.Y) || !core::IsFinite(middle.Z) || !core::IsFinite(middle.W))
 		{
 			return false;
 		}
 
 		// Form the direction in homogeneous coordinates; the interior point need not fit in T after division.
-		const T middleScale = rox::core::Max({rox::core::Abs(middle.X), rox::core::Abs(middle.Y), rox::core::Abs(middle.Z), rox::core::Abs(middle.W)});
-		const T originScale = rox::core::Max({T(1), rox::core::Abs(origin.X), rox::core::Abs(origin.Y), rox::core::Abs(origin.Z)});
+		const T middleScale = core::Max({core::Abs(middle.X), core::Abs(middle.Y), core::Abs(middle.Z), core::Abs(middle.W)});
+		const T originScale = core::Max({T(1), core::Abs(origin.X), core::Abs(origin.Y), core::Abs(origin.Z)});
 		Vector3<T> delta = Vector3<T>{middle.X / middleScale, middle.Y / middleScale, middle.Z / middleScale} / originScale - (origin / originScale) * (middle.W / middleScale);
 		if (middle.W < T(0))
 		{

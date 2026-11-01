@@ -20,7 +20,7 @@ namespace rox::core
 	class Span
 	{
 	public:
-		[[nodiscard]] constexpr TValue& At(rox::core::usize index) const noexcept { return (*this)[index]; }
+		[[nodiscard]] constexpr TValue& At(usize index) const noexcept { return (*this)[index]; }
 
 		[[nodiscard]] constexpr TValue& Front() const noexcept
 		{
@@ -35,23 +35,23 @@ namespace rox::core
 		}
 
 		using ElementType = TValue;
-		using SizeType = rox::core::usize;
+		using SizeType = usize;
 
 		constexpr Span() noexcept = default;
 
 		template <typename TRange>
-		    requires requires(TRange& range) { std::data(range); rox::core::Size(range); } && rox::core::IsConvertible<rox::core::RemovePointer<decltype(std::data(rox::core::Declval<TRange&>()))> (*)[], TValue (*)[]>
+		    requires requires(TRange& range) { std::data(range); core::Size(range); } && IsConvertible<RemovePointer<decltype(std::data(core::Declval<TRange&>()))> (*)[], TValue (*)[]>
 		constexpr Span(TRange& range) noexcept
-		    : Span(std::data(range), rox::core::Size(range))
+		    : Span(std::data(range), core::Size(range))
 		{
 		}
 
 		template <typename TOther, usize Extent>
-		    requires rox::core::IsConvertible<TOther (*)[], TValue (*)[]>
+		    requires IsConvertible<TOther (*)[], TValue (*)[]>
 		constexpr Span(std::span<TOther, Extent> range) noexcept : Span(range.data(), range.size()) {}
 
 		using element_type = TValue;
-		using value_type = rox::core::RemoveCv<TValue>;
+		using value_type = RemoveCv<TValue>;
 		using iterator = TValue*;
 
 		[[nodiscard]] constexpr TValue* data() const noexcept { return Data(); }
@@ -72,14 +72,14 @@ namespace rox::core
 		[[nodiscard]] constexpr operator std::span<TValue>() const noexcept { return {Data(), Size()}; }
 
 
-		constexpr Span(TValue* data, const rox::core::usize size) noexcept
+		constexpr Span(TValue* data, const usize size) noexcept
 		    : m_Data(data)
 		    , m_Size(size)
 		{
 			ASSERT(m_Data != nullptr || m_Size == 0, "A non-empty Span requires a valid data pointer.");
 		}
 
-		template <rox::core::usize Size>
+		template <usize Size>
 		constexpr Span(TValue (&values)[Size]) noexcept
 		    : m_Data(values)
 		    , m_Size(Size)
@@ -87,7 +87,7 @@ namespace rox::core
 		}
 
 		template <typename TOther>
-		    requires rox::core::IsConvertible<TOther (*)[], TValue (*)[]>
+		    requires IsConvertible<TOther (*)[], TValue (*)[]>
 		constexpr Span(const Span<TOther>& other) noexcept
 		    : m_Data(other.Data())
 		    , m_Size(other.Size())
@@ -96,11 +96,11 @@ namespace rox::core
 
 		[[nodiscard]] constexpr TValue* Data() const noexcept { return m_Data; }
 
-		[[nodiscard]] constexpr rox::core::usize Size() const noexcept { return m_Size; }
+		[[nodiscard]] constexpr usize Size() const noexcept { return m_Size; }
 
 		[[nodiscard]] constexpr bool IsEmpty() const noexcept { return m_Size == 0; }
 
-		[[nodiscard]] constexpr Span Subspan(const rox::core::usize offset) const noexcept
+		[[nodiscard]] constexpr Span Subspan(const usize offset) const noexcept
 		{
 			ASSERT(offset <= m_Size, "Span::Subspan offset must fit the viewed range.");
 			Span result = *this;
@@ -109,7 +109,7 @@ namespace rox::core
 			return result;
 		}
 
-		[[nodiscard]] constexpr Span Subspan(const rox::core::usize offset, const rox::core::usize count) const noexcept
+		[[nodiscard]] constexpr Span Subspan(const usize offset, const usize count) const noexcept
 		{
 			ASSERT(offset <= m_Size, "Span::Subspan offset must fit the viewed range.");
 			ASSERT(count <= m_Size - offset, "Span::Subspan count must fit the remaining viewed range.");
@@ -120,7 +120,7 @@ namespace rox::core
 			return result;
 		}
 
-		[[nodiscard]] constexpr Span First(const rox::core::usize count) const noexcept
+		[[nodiscard]] constexpr Span First(const usize count) const noexcept
 		{
 			ASSERT(count <= m_Size, "Span::First count must fit the viewed range.");
 			Span result = *this;
@@ -128,7 +128,7 @@ namespace rox::core
 			return result;
 		}
 
-		[[nodiscard]] constexpr Span Last(const rox::core::usize count) const noexcept
+		[[nodiscard]] constexpr Span Last(const usize count) const noexcept
 		{
 			ASSERT(count <= m_Size, "Span::Last count must fit the viewed range.");
 			Span result = *this;
@@ -137,13 +137,13 @@ namespace rox::core
 			return result;
 		}
 
-		[[nodiscard]] constexpr rox::core::usize SizeBytes() const noexcept
+		[[nodiscard]] constexpr usize SizeBytes() const noexcept
 		{
-			ASSERT(m_Size <= rox::core::NumericLimits<rox::core::usize>::max() / sizeof(TValue), "Span::SizeBytes byte count must fit size_t.");
+			ASSERT(m_Size <= NumericLimits<usize>::max() / sizeof(TValue), "Span::SizeBytes byte count must fit size_t.");
 			return m_Size * sizeof(TValue);
 		}
 
-		[[nodiscard]] constexpr TValue& operator[](const rox::core::usize index) const noexcept
+		[[nodiscard]] constexpr TValue& operator[](const usize index) const noexcept
 		{
 			ASSERT(index < m_Size, "Span index must be within the viewed range.");
 			return m_Data[index];
@@ -154,7 +154,7 @@ namespace rox::core
 
 	private:
 		TValue* m_Data = nullptr;
-		rox::core::usize m_Size = 0;
+		usize m_Size = 0;
 	};
 	template <typename TRange> Span(TRange&) -> Span<std::remove_pointer_t<decltype(std::data(std::declval<TRange&>()))>>;
 	template <typename T> Span(T*, usize) -> Span<T>;

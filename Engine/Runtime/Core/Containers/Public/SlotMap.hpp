@@ -14,46 +14,46 @@
 
 namespace rox::core
 {
-	template <typename T, rox::core::usize PageSize> class SlotMap;
+	template <typename T, usize PageSize> class SlotMap;
 
 	template <typename T> 
 	class SlotMapHandle final
 	{
-		template <typename, rox::core::usize> friend class SlotMap;
+		template <typename, usize> friend class SlotMap;
 
 	public:
 		SlotMapHandle() noexcept = default;
 
 		[[nodiscard]] bool IsValid() const noexcept;
 
-		[[nodiscard]] rox::core::usize GetIndex() const noexcept;
-		[[nodiscard]] rox::core::uint64 GetGeneration() const noexcept;
+		[[nodiscard]] usize GetIndex() const noexcept;
+		[[nodiscard]] uint64 GetGeneration() const noexcept;
 
 		bool operator==(const SlotMapHandle&) const noexcept = default;
 
 	private:
-		SlotMapHandle(rox::core::uint64 owner, rox::core::usize index, rox::core::uint64 generation) noexcept;
+		SlotMapHandle(uint64 owner, usize index, uint64 generation) noexcept;
 
-		static rox::core::uint64 acquireOwner() noexcept;
+		static uint64 acquireOwner() noexcept;
 
 	private:
-		static inline rox::core::Atomic<rox::core::uint64> s_NextOwner{1};
-		rox::core::uint64 m_Owner = 0;
-		rox::core::usize m_Index = 0;
-		rox::core::uint64 m_Generation = 0;
+		static inline Atomic<uint64> s_NextOwner{1};
+		uint64 m_Owner = 0;
+		usize m_Index = 0;
+		uint64 m_Generation = 0;
 	};
 
-	template <typename T, rox::core::usize PageSize = 64> class SlotMap final
+	template <typename T, usize PageSize = 64> class SlotMap final
 	{
-		static_assert(rox::core::IsObject<T> && !rox::core::IsArray<T> && rox::core::IsSame<T, rox::core::RemoveCv<T>>);
-		static_assert(rox::core::IsNothrowDestructible<T>);
-		static constexpr rox::core::usize NO_SLOT = rox::core::NumericLimits<rox::core::usize>::max();
+		static_assert(IsObject<T> && !IsArray<T> && IsSame<T, RemoveCv<T>>);
+		static_assert(IsNothrowDestructible<T>);
+		static constexpr usize NO_SLOT = NumericLimits<usize>::max();
 
 		struct Slot final
 		{
-			alignas(T) rox::core::Byte Storage[sizeof(T)];
-			rox::core::uint64 Generation = 1;
-			rox::core::usize NextFree = NO_SLOT;
+			alignas(T) Byte Storage[sizeof(T)];
+			uint64 Generation = 1;
+			usize NextFree = NO_SLOT;
 			bool Occupied = false;
 
 			Slot() noexcept = default;
@@ -74,24 +74,24 @@ namespace rox::core
 		SlotMap(SlotMap&& other) noexcept;
 		SlotMap& operator=(SlotMap&& other) noexcept;
 
-		[[nodiscard]] rox::core::usize Size() const noexcept;
-		[[nodiscard]] rox::core::usize Capacity() const noexcept;
+		[[nodiscard]] usize Size() const noexcept;
+		[[nodiscard]] usize Capacity() const noexcept;
 
 		[[nodiscard]] bool IsEmpty() const noexcept;
 
 		[[nodiscard]] MemoryResource& GetResource() const noexcept;
 
-		void ReserveRequired(rox::core::usize capacity) noexcept;
-		[[nodiscard]] bool Reserve(rox::core::usize capacity) noexcept;
+		void ReserveRequired(usize capacity) noexcept;
+		[[nodiscard]] bool Reserve(usize capacity) noexcept;
 
 		// Exhaustion returns an invalid handle without consuming arguments or changing existing handles.
 		template <typename... Arguments>
 		[[nodiscard]] Handle Emplace(Arguments&&... arguments) noexcept
-		    requires rox::core::IsNothrowConstructible<T, Arguments&&...>;
+		    requires IsNothrowConstructible<T, Arguments&&...>;
 
 		template <typename... Arguments>
 		Handle EmplaceRequired(Arguments&&... arguments) noexcept
-		    requires rox::core::IsNothrowConstructible<T, Arguments&&...>;
+		    requires IsNothrowConstructible<T, Arguments&&...>;
 
 		[[nodiscard]] ROXELL_FORCE_INLINE T* Find(Handle handle) noexcept;
 		[[nodiscard]] ROXELL_FORCE_INLINE const T* Find(Handle handle) const noexcept;
@@ -109,23 +109,23 @@ namespace rox::core
 		// Callbacks may update values but must not structurally mutate the map.
 		template <typename Callback>
 		void ForEach(Callback&& callback) noexcept
-		    requires rox::core::IsNothrowInvocable<Callback&, Handle, T&>;
+		    requires IsNothrowInvocable<Callback&, Handle, T&>;
 
 		template <typename Callback>
 		void ForEach(Callback&& callback) const noexcept
-		    requires rox::core::IsNothrowInvocable<Callback&, Handle, const T&>;
+		    requires IsNothrowInvocable<Callback&, Handle, const T&>;
 
 	private:
 		[[nodiscard]] ROXELL_FORCE_INLINE const Slot* findSlot(Handle handle) const noexcept;
 		[[nodiscard]] ROXELL_FORCE_INLINE Slot* findSlot(Handle handle) noexcept;
 
-		void eraseSlot(Slot& slot, rox::core::usize index) noexcept;
+		void eraseSlot(Slot& slot, usize index) noexcept;
 
 	private:
 		PagedArray<Slot, PageSize> m_Slots;
-		rox::core::uint64 m_Owner;
-		rox::core::usize m_Size = 0;
-		rox::core::usize m_FreeHead = NO_SLOT;
+		uint64 m_Owner;
+		usize m_Size = 0;
+		usize m_FreeHead = NO_SLOT;
 	};
 }
 
@@ -138,19 +138,19 @@ namespace rox::core
 	}
 
 	template <typename T>
-	rox::core::usize SlotMapHandle<T>::GetIndex() const noexcept
+	usize SlotMapHandle<T>::GetIndex() const noexcept
 	{
 		return m_Index;
 	}
 
 	template <typename T>
-	rox::core::uint64 SlotMapHandle<T>::GetGeneration() const noexcept
+	uint64 SlotMapHandle<T>::GetGeneration() const noexcept
 	{
 		return m_Generation;
 	}
 
 	template <typename T>
-	SlotMapHandle<T>::SlotMapHandle(rox::core::uint64 owner, rox::core::usize index, rox::core::uint64 generation) noexcept
+	SlotMapHandle<T>::SlotMapHandle(uint64 owner, usize index, uint64 generation) noexcept
 	    : m_Owner(owner)
 	    , m_Index(index)
 	    , m_Generation(generation)
@@ -158,52 +158,52 @@ namespace rox::core
 	}
 
 	template <typename T>
-	rox::core::uint64 SlotMapHandle<T>::acquireOwner() noexcept
+	uint64 SlotMapHandle<T>::acquireOwner() noexcept
 	{
-		const auto owner = s_NextOwner.fetch_add(1, rox::core::MemoryOrderRelaxed);
-		ASSERT(owner != 0 && owner != rox::core::NumericLimits<rox::core::uint64>::max(),
+		const auto owner = s_NextOwner.fetch_add(1, core::MemoryOrderRelaxed);
+		ASSERT(owner != 0 && owner != NumericLimits<uint64>::max(),
 		       "Slot map owner identity must remain representable.");
 		return owner;
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	SlotMap<T, PageSize>::Slot::~Slot() noexcept
 	{
 		if (Occupied)
 		{
-			rox::core::DestroyAt(value());
+			core::DestroyAt(value());
 		}
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	T* SlotMap<T, PageSize>::Slot::value() noexcept
 	{
-		return rox::core::Launder(reinterpret_cast<T*>(Storage));
+		return core::Launder(reinterpret_cast<T*>(Storage));
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	const T* SlotMap<T, PageSize>::Slot::value() const noexcept
 	{
-		return rox::core::Launder(reinterpret_cast<const T*>(Storage));
+		return core::Launder(reinterpret_cast<const T*>(Storage));
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	SlotMap<T, PageSize>::SlotMap(MemoryResource& resource) noexcept
 	    : m_Slots(resource)
 	    , m_Owner(Handle::acquireOwner())
 	{
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	SlotMap<T, PageSize>::SlotMap(SlotMap&& other) noexcept
-	    : m_Slots(rox::core::Move(other.m_Slots))
-	    , m_Owner(rox::core::Exchange(other.m_Owner, Handle::acquireOwner()))
-	    , m_Size(rox::core::Exchange(other.m_Size, 0))
-	    , m_FreeHead(rox::core::Exchange(other.m_FreeHead, NO_SLOT))
+	    : m_Slots(core::Move(other.m_Slots))
+	    , m_Owner(core::Exchange(other.m_Owner, Handle::acquireOwner()))
+	    , m_Size(core::Exchange(other.m_Size, 0))
+	    , m_FreeHead(core::Exchange(other.m_FreeHead, NO_SLOT))
 	{
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	SlotMap<T, PageSize>& SlotMap<T, PageSize>::operator=(SlotMap&& other) noexcept
 	{
 		if (this == &other)
@@ -211,102 +211,102 @@ namespace rox::core
 			return *this;
 		}
 
-		m_Slots = rox::core::Move(other.m_Slots);
-		m_Owner = rox::core::Exchange(other.m_Owner, Handle::acquireOwner());
-		m_Size = rox::core::Exchange(other.m_Size, 0);
-		m_FreeHead = rox::core::Exchange(other.m_FreeHead, NO_SLOT);
+		m_Slots = core::Move(other.m_Slots);
+		m_Owner = core::Exchange(other.m_Owner, Handle::acquireOwner());
+		m_Size = core::Exchange(other.m_Size, 0);
+		m_FreeHead = core::Exchange(other.m_FreeHead, NO_SLOT);
 		return *this;
 	}
 
-	template <typename T, rox::core::usize PageSize>
-	rox::core::usize SlotMap<T, PageSize>::Size() const noexcept
+	template <typename T, usize PageSize>
+	usize SlotMap<T, PageSize>::Size() const noexcept
 	{
 		return m_Size;
 	}
 
-	template <typename T, rox::core::usize PageSize>
-	rox::core::usize SlotMap<T, PageSize>::Capacity() const noexcept
+	template <typename T, usize PageSize>
+	usize SlotMap<T, PageSize>::Capacity() const noexcept
 	{
 		return m_Slots.Capacity();
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	bool SlotMap<T, PageSize>::IsEmpty() const noexcept
 	{
 		return m_Size == 0;
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	MemoryResource& SlotMap<T, PageSize>::GetResource() const noexcept
 	{
 		return m_Slots.GetResource();
 	}
 
-	template <typename T, rox::core::usize PageSize>
-	void SlotMap<T, PageSize>::ReserveRequired(rox::core::usize capacity) noexcept
+	template <typename T, usize PageSize>
+	void SlotMap<T, PageSize>::ReserveRequired(usize capacity) noexcept
 	{
 		m_Slots.ReserveRequired(capacity);
 	}
 
-	template <typename T, rox::core::usize PageSize>
-	bool SlotMap<T, PageSize>::Reserve(rox::core::usize capacity) noexcept
+	template <typename T, usize PageSize>
+	bool SlotMap<T, PageSize>::Reserve(usize capacity) noexcept
 	{
 		return m_Slots.Reserve(capacity);
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	template <typename... Arguments>
 	typename SlotMap<T, PageSize>::Handle SlotMap<T, PageSize>::Emplace(Arguments&&... arguments) noexcept
-	    requires rox::core::IsNothrowConstructible<T, Arguments&&...>
+	    requires IsNothrowConstructible<T, Arguments&&...>
 	{
-		const rox::core::usize index = m_FreeHead == NO_SLOT ? m_Slots.Size() : m_FreeHead;
-		Slot* slot = m_FreeHead == NO_SLOT ? m_Slots.Emplace() : rox::core::AddressOf(m_Slots[m_FreeHead]);
+		const usize index = m_FreeHead == NO_SLOT ? m_Slots.Size() : m_FreeHead;
+		Slot* slot = m_FreeHead == NO_SLOT ? m_Slots.Emplace() : core::AddressOf(m_Slots[m_FreeHead]);
 		if (slot == nullptr)
 		{
 			return {};
 		}
 		m_FreeHead = slot->NextFree;
-		rox::core::ConstructAt(reinterpret_cast<T*>(slot->Storage), rox::core::Forward<Arguments>(arguments)...);
+		core::ConstructAt(reinterpret_cast<T*>(slot->Storage), core::Forward<Arguments>(arguments)...);
 		slot->Occupied = true;
 		++m_Size;
 		return Handle(m_Owner, index, slot->Generation);
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	template <typename... Arguments>
 	typename SlotMap<T, PageSize>::Handle SlotMap<T, PageSize>::EmplaceRequired(Arguments&&... arguments) noexcept
-	    requires rox::core::IsNothrowConstructible<T, Arguments&&...>
+	    requires IsNothrowConstructible<T, Arguments&&...>
 	{
-		const rox::core::usize index = m_FreeHead == NO_SLOT ? m_Slots.Size() : m_FreeHead;
+		const usize index = m_FreeHead == NO_SLOT ? m_Slots.Size() : m_FreeHead;
 		Slot& slot = m_FreeHead == NO_SLOT ? m_Slots.EmplaceRequired() : m_Slots[m_FreeHead];
 		m_FreeHead = slot.NextFree;
-		rox::core::ConstructAt(reinterpret_cast<T*>(slot.Storage), rox::core::Forward<Arguments>(arguments)...);
+		core::ConstructAt(reinterpret_cast<T*>(slot.Storage), core::Forward<Arguments>(arguments)...);
 		slot.Occupied = true;
 		++m_Size;
 		return Handle(m_Owner, index, slot.Generation);
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	ROXELL_FORCE_INLINE T* SlotMap<T, PageSize>::Find(Handle handle) noexcept
 	{
 		Slot* slot = findSlot(handle);
 		return slot != nullptr ? slot->value() : nullptr;
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	ROXELL_FORCE_INLINE const T* SlotMap<T, PageSize>::Find(Handle handle) const noexcept
 	{
 		const Slot* slot = findSlot(handle);
 		return slot != nullptr ? slot->value() : nullptr;
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	bool SlotMap<T, PageSize>::Contains(Handle handle) const noexcept
 	{
 		return findSlot(handle) != nullptr;
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	T& SlotMap<T, PageSize>::Get(Handle handle) noexcept
 	{
 		Slot* slot = findSlot(handle);
@@ -314,7 +314,7 @@ namespace rox::core
 		return *slot->value();
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	const T& SlotMap<T, PageSize>::Get(Handle handle) const noexcept
 	{
 		const Slot* slot = findSlot(handle);
@@ -322,7 +322,7 @@ namespace rox::core
 		return *slot->value();
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	bool SlotMap<T, PageSize>::Erase(Handle handle) noexcept
 	{
 		Slot* slot = findSlot(handle);
@@ -334,16 +334,16 @@ namespace rox::core
 		return true;
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	void SlotMap<T, PageSize>::Clear() noexcept
 	{
-		const rox::core::usize size = m_Slots.Size();
-		for (rox::core::usize first = 0; first < size;)
+		const usize size = m_Slots.Size();
+		for (usize first = 0; first < size;)
 		{
-			const rox::core::usize remaining = size - first;
-			const rox::core::usize count = remaining < PageSize ? remaining : PageSize;
-			Slot* page = rox::core::AddressOf(m_Slots[first]);
-			for (rox::core::usize offset = 0; offset < count; ++offset)
+			const usize remaining = size - first;
+			const usize count = remaining < PageSize ? remaining : PageSize;
+			Slot* page = core::AddressOf(m_Slots[first]);
+			for (usize offset = 0; offset < count; ++offset)
 			{
 				Slot& slot = page[offset];
 				if (slot.Occupied)
@@ -355,7 +355,7 @@ namespace rox::core
 		}
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	void SlotMap<T, PageSize>::Reset() noexcept
 	{
 		m_Slots.Reset();
@@ -364,30 +364,30 @@ namespace rox::core
 		m_Owner = Handle::acquireOwner();
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	template <typename Callback>
 	void SlotMap<T, PageSize>::ForEach(Callback&& callback) noexcept
-	    requires rox::core::IsNothrowInvocable<Callback&, Handle, T&>
+	    requires IsNothrowInvocable<Callback&, Handle, T&>
 	{
 		if (m_Size == 0)
 		{
 			return;
 		}
-		const rox::core::usize size = m_Slots.Size();
-		for (rox::core::usize first = 0; first < size;)
+		const usize size = m_Slots.Size();
+		for (usize first = 0; first < size;)
 		{
-			const rox::core::usize remaining = size - first;
-			const rox::core::usize count = remaining < PageSize ? remaining : PageSize;
-			Slot* page = rox::core::AddressOf(m_Slots[first]);
-			auto visit = [&](rox::core::usize offset) noexcept
+			const usize remaining = size - first;
+			const usize count = remaining < PageSize ? remaining : PageSize;
+			Slot* page = core::AddressOf(m_Slots[first]);
+			auto visit = [&](usize offset) noexcept
 			{
 				Slot& slot = page[offset];
 				if (slot.Occupied)
 				{
-					rox::core::Invoke(callback, Handle(m_Owner, first + offset, slot.Generation), *slot.value());
+					core::Invoke(callback, Handle(m_Owner, first + offset, slot.Generation), *slot.value());
 				}
 			};
-			rox::core::usize offset = 0;
+			usize offset = 0;
 			for (; count - offset >= 4; offset += 4)
 			{
 				visit(offset);
@@ -403,30 +403,30 @@ namespace rox::core
 		}
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	template <typename Callback>
 	void SlotMap<T, PageSize>::ForEach(Callback&& callback) const noexcept
-	    requires rox::core::IsNothrowInvocable<Callback&, Handle, const T&>
+	    requires IsNothrowInvocable<Callback&, Handle, const T&>
 	{
 		if (m_Size == 0)
 		{
 			return;
 		}
-		const rox::core::usize size = m_Slots.Size();
-		for (rox::core::usize first = 0; first < size;)
+		const usize size = m_Slots.Size();
+		for (usize first = 0; first < size;)
 		{
-			const rox::core::usize remaining = size - first;
-			const rox::core::usize count = remaining < PageSize ? remaining : PageSize;
-			const Slot* page = rox::core::AddressOf(m_Slots[first]);
-			auto visit = [&](rox::core::usize offset) noexcept
+			const usize remaining = size - first;
+			const usize count = remaining < PageSize ? remaining : PageSize;
+			const Slot* page = core::AddressOf(m_Slots[first]);
+			auto visit = [&](usize offset) noexcept
 			{
 				const Slot& slot = page[offset];
 				if (slot.Occupied)
 				{
-					rox::core::Invoke(callback, Handle(m_Owner, first + offset, slot.Generation), *slot.value());
+					core::Invoke(callback, Handle(m_Owner, first + offset, slot.Generation), *slot.value());
 				}
 			};
-			rox::core::usize offset = 0;
+			usize offset = 0;
 			for (; count - offset >= 4; offset += 4)
 			{
 				visit(offset);
@@ -442,7 +442,7 @@ namespace rox::core
 		}
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	ROXELL_FORCE_INLINE const typename SlotMap<T, PageSize>::Slot* SlotMap<T, PageSize>::findSlot(Handle handle) const noexcept
 	{
 		if (handle.m_Owner != m_Owner || handle.m_Index >= m_Slots.Size())
@@ -450,21 +450,21 @@ namespace rox::core
 			return nullptr;
 		}
 		const Slot& slot = m_Slots[handle.m_Index];
-		return slot.Occupied && slot.Generation == handle.m_Generation ? rox::core::AddressOf(slot) : nullptr;
+		return slot.Occupied && slot.Generation == handle.m_Generation ? core::AddressOf(slot) : nullptr;
 	}
 
-	template <typename T, rox::core::usize PageSize>
+	template <typename T, usize PageSize>
 	ROXELL_FORCE_INLINE typename SlotMap<T, PageSize>::Slot* SlotMap<T, PageSize>::findSlot(Handle handle) noexcept
 	{
 		return const_cast<Slot*>(static_cast<const SlotMap&>(*this).findSlot(handle));
 	}
 
-	template <typename T, rox::core::usize PageSize>
-	void SlotMap<T, PageSize>::eraseSlot(Slot& slot, rox::core::usize index) noexcept
+	template <typename T, usize PageSize>
+	void SlotMap<T, PageSize>::eraseSlot(Slot& slot, usize index) noexcept
 	{
-		ASSERT(slot.Generation != rox::core::NumericLimits<rox::core::uint64>::max(),
+		ASSERT(slot.Generation != NumericLimits<uint64>::max(),
 		       "Slot map generation must remain representable.");
-		rox::core::DestroyAt(slot.value());
+		core::DestroyAt(slot.value());
 		slot.Occupied = false;
 		++slot.Generation;
 		slot.NextFree = m_FreeHead;

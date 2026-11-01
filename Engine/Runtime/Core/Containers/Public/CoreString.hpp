@@ -28,7 +28,7 @@ namespace rox::core
 		friend class StringBuilder;
 
 	public:
-		static constexpr rox::core::usize INLINE_CAPACITY = 31;
+		static constexpr usize INLINE_CAPACITY = 31;
 
 		String() noexcept
 		    : m_Storage(SystemMemoryResource::Get())
@@ -40,15 +40,15 @@ namespace rox::core
 		String(StringView text, MemoryResource& resource) noexcept;
 
 		// Pointer and length, mirroring StringView. Byte-buffer boundaries hand text over in this shape.
-		String(const char* text, rox::core::usize byteSize) noexcept;
-		String(const char* text, rox::core::usize byteSize, MemoryResource& resource) noexcept;
+		String(const char* text, usize byteSize) noexcept;
+		String(const char* text, usize byteSize, MemoryResource& resource) noexcept;
 
 		// Fill. The character must be ASCII: repeating a continuation or lead byte would not be valid UTF-8.
-		String(rox::core::usize count, char character) noexcept;
-		String(rox::core::usize count, char character, MemoryResource& resource) noexcept;
+		String(usize count, char character) noexcept;
+		String(usize count, char character, MemoryResource& resource) noexcept;
 
 		// Character arrays use the bootstrap resource and the same UTF-8 precondition as explicit views.
-		template <rox::core::usize Size>
+		template <usize Size>
 		String(const char (&text)[Size]) noexcept
 		    : String(StringView(text))
 		{
@@ -71,11 +71,11 @@ namespace rox::core
 			       "String storage must remain null-terminated.");
 			return m_Storage.IsEmpty() ? EMPTY_STRING : m_Storage.Data();
 		}
-		[[nodiscard]] rox::core::usize Size() const noexcept
+		[[nodiscard]] usize Size() const noexcept
 		{
 			return m_Storage.IsEmpty() ? 0 : m_Storage.Size() - 1;
 		}
-		[[nodiscard]] rox::core::usize Capacity() const noexcept
+		[[nodiscard]] usize Capacity() const noexcept
 		{
 			return m_Storage.Capacity() == 0 ? 0 : m_Storage.Capacity() - 1;
 		}
@@ -92,7 +92,7 @@ namespace rox::core
 			return {CStr(), Size()};
 		}
 
-		[[nodiscard]] char operator[](const rox::core::usize index) const noexcept
+		[[nodiscard]] char operator[](const usize index) const noexcept
 		{
 			ASSERT(index < Size(), "String index must be within the stored text.");
 			return CStr()[index];
@@ -191,10 +191,10 @@ namespace rox::core
 			return *this;
 		}
 		// Shortens to byteSize. The cut must not land inside a multi-byte sequence, so the invariant holds.
-		void Truncate(rox::core::usize byteSize) noexcept;
+		void Truncate(usize byteSize) noexcept;
 
-		[[nodiscard]] bool Reserve(rox::core::usize byteCapacity) noexcept;
-		void ReserveRequired(rox::core::usize byteCapacity) noexcept;
+		[[nodiscard]] bool Reserve(usize byteCapacity) noexcept;
+		void ReserveRequired(usize byteCapacity) noexcept;
 		void Clear() noexcept;
 		void Reset() noexcept;
 
@@ -226,8 +226,8 @@ namespace rox::core
 
 		[[nodiscard]] bool tryAppendValidated(StringView text) noexcept;
 		void appendValidated(StringView text) noexcept;
-		[[nodiscard]] bool canAppend(rox::core::usize byteCount) const noexcept;
-		[[nodiscard]] rox::core::usize growthStorageCapacity(rox::core::usize requiredStorageSize) const noexcept;
+		[[nodiscard]] bool canAppend(usize byteCount) const noexcept;
+		[[nodiscard]] usize growthStorageCapacity(usize requiredStorageSize) const noexcept;
 
 	private:
 		static constexpr char EMPTY_STRING[] = "";
@@ -246,7 +246,7 @@ namespace rox::core
 	{
 		return left.View() == StringView(right);
 	}
-	[[nodiscard]] rox::core::StrongOrdering operator<=>(const String& left, const String& right) noexcept;
+	[[nodiscard]] core::StrongOrdering operator<=>(const String& left, const String& right) noexcept;
 
 	// Same-type only, for the reason given above the comparisons: mixed String/StringView overloads make
 	// every `string + "literal"` ambiguous. A StringView operand is spelled String(view) or goes through
@@ -256,19 +256,19 @@ namespace rox::core
 	// Decimal rendering. Lives here rather than beside the Hash256 and StrongId overloads because Containers
 	// is below Base, and this needs nothing from Base.
 	template <typename TInteger>
-	    requires rox::core::IsIntegral<TInteger> && (!rox::core::IsSame<rox::core::RemoveCv<TInteger>, bool>)
+	    requires IsIntegral<TInteger> && (!IsSame<RemoveCv<TInteger>, bool>)
 	[[nodiscard]] String ToString(const TInteger value) noexcept
 	{
 		char text[24] = {};
-		const rox::core::ToCharsResult converted = rox::core::ToChars(text, text + sizeof(text), value);
-		ASSERT(converted.ec == rox::core::EErrorCondition(), "A 64-bit integer must render into 24 bytes.");
-		return String(StringView(text, static_cast<rox::core::usize>(converted.ptr - text)));
+		const core::ToCharsResult converted = core::ToChars(text, text + sizeof(text), value);
+		ASSERT(converted.ec == core::EErrorCondition(), "A 64-bit integer must render into 24 bytes.");
+		return String(StringView(text, static_cast<usize>(converted.ptr - text)));
 	}
 
 	// Joins the parts in order. Every part must be well-formed UTF-8, so this is for assembled text such as
 	// paths and messages, not for arbitrary input; use MakeLossyString plus Append for that.
-	[[nodiscard]] String Concat(rox::core::InitializerList<StringView> parts) noexcept;
-	[[nodiscard]] String Concat(rox::core::InitializerList<StringView> parts, MemoryResource& resource) noexcept;
+	[[nodiscard]] String Concat(InitializerList<StringView> parts) noexcept;
+	[[nodiscard]] String Concat(InitializerList<StringView> parts, MemoryResource& resource) noexcept;
 
 	// Diagnostic text can carry bytes from untrusted input and is produced on failure paths, so neither
 	// malformed UTF-8 nor an exhausted resource may abort. Returns the text when it is well-formed UTF-8 and

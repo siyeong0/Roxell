@@ -35,7 +35,7 @@ namespace rox::core
 
 	void* SystemMemoryResource::allocate(const MemoryAllocationRequest allocation) noexcept
 	{
-		const usize effectiveAlignment = rox::core::Max(allocation.Alignment, alignof(SystemAllocationHeader));
+		const usize effectiveAlignment = core::Max(allocation.Alignment, alignof(SystemAllocationHeader));
 		usize allocationOverhead = 0;
 
 		if (!AddMemorySize(sizeof(SystemAllocationHeader), effectiveAlignment - 1, &allocationOverhead))
@@ -46,7 +46,7 @@ namespace rox::core
 		usize totalByteCount = 0;
 
 		if (!AddMemorySize(allocationOverhead, allocation.ByteCount, &totalByteCount) ||
-		    totalByteCount > static_cast<usize>(rox::core::NumericLimits<isize>::max()))
+		    totalByteCount > static_cast<usize>(NumericLimits<isize>::max()))
 		{
 			return nullptr;
 		}

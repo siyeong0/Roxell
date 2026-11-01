@@ -33,7 +33,7 @@ namespace rox::math
 	static T cellCoordinate(T point, T origin, T size) noexcept
 	{
 		const T difference = point - origin;
-		return rox::core::Floor(rox::core::IsFinite(difference) ? difference / size : point / size - origin / size);
+		return core::Floor(core::IsFinite(difference) ? difference / size : point / size - origin / size);
 	}
 
 	template <MathScalar T>
@@ -61,10 +61,10 @@ namespace rox::math
 	Vector2<T> CellMinimum(const Int2& cell, const Vector2<T>& origin, const Vector2<T>& cellSize) noexcept
 	{
 		ASSERT(origin.IsFinite() && cellSize.IsFinite() && cellSize.X > 0 && cellSize.Y > 0, "Grid inputs must be finite with positive cell sizes.");
-		const T x = rox::core::Fma(static_cast<T>(cell.X), cellSize.X, origin.X);
-		const T y = rox::core::Fma(static_cast<T>(cell.Y), cellSize.Y, origin.Y);
-		constexpr T MAXIMUM = rox::core::NumericLimits<T>::max();
-		ASSERT(rox::core::Abs(x) <= MAXIMUM && rox::core::Abs(y) <= MAXIMUM, "Grid point must be representable in the finite scalar range.");
+		const T x = core::Fma(static_cast<T>(cell.X), cellSize.X, origin.X);
+		const T y = core::Fma(static_cast<T>(cell.Y), cellSize.Y, origin.Y);
+		constexpr T MAXIMUM = core::NumericLimits<T>::max();
+		ASSERT(core::Abs(x) <= MAXIMUM && core::Abs(y) <= MAXIMUM, "Grid point must be representable in the finite scalar range.");
 		return {static_cast<T>(x), static_cast<T>(y)};
 	}
 
@@ -72,11 +72,11 @@ namespace rox::math
 	Vector3<T> CellMinimum(const Int3& cell, const Vector3<T>& origin, const Vector3<T>& cellSize) noexcept
 	{
 		ASSERT(origin.IsFinite() && cellSize.IsFinite() && cellSize.X > 0 && cellSize.Y > 0 && cellSize.Z > 0, "Grid inputs must be finite with positive cell sizes.");
-		const T x = rox::core::Fma(static_cast<T>(cell.X), cellSize.X, origin.X);
-		const T y = rox::core::Fma(static_cast<T>(cell.Y), cellSize.Y, origin.Y);
-		const T z = rox::core::Fma(static_cast<T>(cell.Z), cellSize.Z, origin.Z);
-		constexpr T MAXIMUM = rox::core::NumericLimits<T>::max();
-		ASSERT(rox::core::Abs(x) <= MAXIMUM && rox::core::Abs(y) <= MAXIMUM && rox::core::Abs(z) <= MAXIMUM, "Grid point must be representable in the finite scalar range.");
+		const T x = core::Fma(static_cast<T>(cell.X), cellSize.X, origin.X);
+		const T y = core::Fma(static_cast<T>(cell.Y), cellSize.Y, origin.Y);
+		const T z = core::Fma(static_cast<T>(cell.Z), cellSize.Z, origin.Z);
+		constexpr T MAXIMUM = core::NumericLimits<T>::max();
+		ASSERT(core::Abs(x) <= MAXIMUM && core::Abs(y) <= MAXIMUM && core::Abs(z) <= MAXIMUM, "Grid point must be representable in the finite scalar range.");
 		return {static_cast<T>(x), static_cast<T>(y), static_cast<T>(z)};
 	}
 

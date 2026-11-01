@@ -17,9 +17,9 @@ namespace rox::core
 {
 	namespace
 	{
-		template <rox::core::usize Size> rox::core::uint8 copyLabel(char (&out)[Size], rox::core::StringView text) noexcept
+		template <usize Size> uint8 copyLabel(char (&out)[Size], StringView text) noexcept
 		{
-			rox::core::usize count = rox::core::Min(text.size(), Size - 1);
+			usize count = core::Min(text.size(), Size - 1);
 
 			while (count != 0 && !IsValidUtf8(StringView(text.data(), count)))
 			{
@@ -28,15 +28,15 @@ namespace rox::core
 
 			if (count != 0)
 			{
-				rox::core::CopyBytes(out, text.data(), count);
+				core::CopyBytes(out, text.data(), count);
 			}
 
 			out[count] = '\0';
-			return static_cast<rox::core::uint8>(count);
+			return static_cast<uint8>(count);
 		}
 	}
 
-	TraceCapture::TraceCapture(MemoryResource& resource, rox::core::usize capacity) noexcept
+	TraceCapture::TraceCapture(MemoryResource& resource, usize capacity) noexcept
 	    : m_Events(resource)
 	    , m_Capacity(capacity)
 	{
@@ -45,7 +45,7 @@ namespace rox::core
 		if (!m_Events.Reserve(capacity))
 		{
 			m_Capacity = 0;
-			m_ActiveCapture.store(0, rox::core::MemoryOrderRelaxed);
+			m_ActiveCapture.store(0, core::MemoryOrderRelaxed);
 		}
 	}
 
@@ -55,19 +55,19 @@ namespace rox::core
 		       "Trace labels must be valid UTF-8.");
 		ASSERT(event.Type >= ETraceEventType::Scope && event.Type <= ETraceEventType::GpuDuration,
 		       "Trace event type must be supported.");
-		ASSERT(event.Type != ETraceEventType::Counter || rox::core::IsFinite(event.Value),
+		ASSERT(event.Type != ETraceEventType::Counter || core::IsFinite(event.Value),
 		       "Trace counters require a finite value.");
 
-		rox::core::LockGuard lock(m_Mutex);
+		core::LockGuard lock(m_Mutex);
 
-		if (event.CaptureId != m_ActiveCapture.load(rox::core::MemoryOrderRelaxed) || event.CaptureId == 0)
+		if (event.CaptureId != m_ActiveCapture.load(core::MemoryOrderRelaxed) || event.CaptureId == 0)
 		{
 			return;
 		}
 
 		if (m_Events.Size() == m_Capacity)
 		{
-			if (m_Dropped != rox::core::NumericLimits<rox::core::uint64>::max())
+			if (m_Dropped != NumericLimits<uint64>::max())
 			{
 				++m_Dropped;
 			}
@@ -104,33 +104,33 @@ namespace rox::core
 		(void)BeginCapture();
 	}
 
-	rox::core::uint64 TraceCapture::BeginCapture() noexcept
+	uint64 TraceCapture::BeginCapture() noexcept
 	{
-		rox::core::LockGuard lock(m_Mutex);
+		core::LockGuard lock(m_Mutex);
 		if (m_Capacity == 0)
 		{
 			return 0;
 		}
 
-		ASSERT(m_Generation != rox::core::NumericLimits<rox::core::uint64>::max(), "Capture generations must remain representable.");
+		ASSERT(m_Generation != NumericLimits<uint64>::max(), "Capture generations must remain representable.");
 
 		m_Events.Clear();
 		m_Dropped = 0;
 		++m_Generation;
-		m_ActiveCapture.store(m_Generation, rox::core::MemoryOrderRelease);
+		m_ActiveCapture.store(m_Generation, core::MemoryOrderRelease);
 
 		return m_Generation;
 	}
 
 	void TraceCapture::StopCapture() noexcept
 	{
-		rox::core::LockGuard lock(m_Mutex);
-		m_ActiveCapture.store(0, rox::core::MemoryOrderRelease);
+		core::LockGuard lock(m_Mutex);
+		m_ActiveCapture.store(0, core::MemoryOrderRelease);
 	}
 
-	rox::core::uint64 TraceCapture::GetDroppedCount() const noexcept
+	uint64 TraceCapture::GetDroppedCount() const noexcept
 	{
-		rox::core::LockGuard lock(m_Mutex);
+		core::LockGuard lock(m_Mutex);
 		return m_Dropped;
 	}
 
@@ -142,7 +142,7 @@ namespace rox::core
 			return false;
 		}
 
-		rox::core::LockGuard lock(m_Mutex);
+		core::LockGuard lock(m_Mutex);
 		output.Events.Clear();
 
 		for (const auto& event : m_Events)
@@ -152,7 +152,7 @@ namespace rox::core
 
 		output.CaptureId = m_Generation;
 		output.Dropped = m_Dropped;
-		output.bRecording = m_ActiveCapture.load(rox::core::MemoryOrderRelaxed) != 0;
+		output.bRecording = m_ActiveCapture.load(core::MemoryOrderRelaxed) != 0;
 
 		return true;
 	}

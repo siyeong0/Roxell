@@ -36,18 +36,18 @@ namespace rox::math
 	bool Matrix3x3<T>::TryInverse(Matrix3x3<T>* outInverse, T epsilon) const noexcept
 	{
 		ASSERT(outInverse != nullptr, "Inverse Matrix3x3 output must not be null.");
-		ASSERT(rox::core::IsFinite(epsilon) && epsilon >= T(0.0), "Matrix3x3 inversion epsilon must be finite and non-negative.");
+		ASSERT(core::IsFinite(epsilon) && epsilon >= T(0.0), "Matrix3x3 inversion epsilon must be finite and non-negative.");
 
 		T maximumMagnitude = T(0.0);
 
 		for (uint32 index = 0; index < 9; ++index)
 		{
-			if (!rox::core::IsFinite(Data()[index]))
+			if (!core::IsFinite(Data()[index]))
 			{
 				return false;
 			}
 
-			maximumMagnitude = rox::core::Max(maximumMagnitude, rox::core::Abs(Data()[index]));
+			maximumMagnitude = core::Max(maximumMagnitude, core::Abs(Data()[index]));
 		}
 
 		if (maximumMagnitude == T(0.0))
@@ -83,7 +83,7 @@ namespace rox::math
 
 		const T determinant = normalized[0][0] * cofactors[0][0] + normalized[0][1] * cofactors[1][0] + normalized[0][2] * cofactors[2][0];
 
-		if (!rox::core::IsFinite(determinant) || rox::core::Abs(determinant) <= epsilon)
+		if (!core::IsFinite(determinant) || core::Abs(determinant) <= epsilon)
 		{
 			return false;
 		}
@@ -96,7 +96,7 @@ namespace rox::math
 			{
 				const T value = cofactors[row][column] / determinant * inverseScale;
 
-				if (!rox::core::IsFinite(value))
+				if (!core::IsFinite(value))
 				{
 					return false;
 				}
@@ -121,8 +121,8 @@ namespace rox::math
 	template <MathScalar T>
 	Matrix3x3<T> Matrix3x3<T>::RotationX(T radians) noexcept
 	{
-		const T cosine = rox::core::Cos(radians);
-		const T sine = rox::core::Sin(radians);
+		const T cosine = core::Cos(radians);
+		const T sine = core::Sin(radians);
 
 		return {T(1.0), T(0.0), T(0.0),
 		        T(0.0), cosine, sine,
@@ -132,8 +132,8 @@ namespace rox::math
 	template <MathScalar T>
 	Matrix3x3<T> Matrix3x3<T>::RotationY(T radians) noexcept
 	{
-		const T cosine = rox::core::Cos(radians);
-		const T sine = rox::core::Sin(radians);
+		const T cosine = core::Cos(radians);
+		const T sine = core::Sin(radians);
 
 		return {cosine, T(0.0), -sine,
 		        T(0.0), T(1.0), T(0.0),
@@ -143,8 +143,8 @@ namespace rox::math
 	template <MathScalar T>
 	Matrix3x3<T> Matrix3x3<T>::RotationZ(T radians) noexcept
 	{
-		const T cosine = rox::core::Cos(radians);
-		const T sine = rox::core::Sin(radians);
+		const T cosine = core::Cos(radians);
+		const T sine = core::Sin(radians);
 
 		return {cosine, sine,   T(0.0),
 		        -sine,  cosine, T(0.0),
@@ -158,8 +158,8 @@ namespace rox::math
 		const T x = normalizedAxis.X;
 		const T y = normalizedAxis.Y;
 		const T z = normalizedAxis.Z;
-		const T cosine = rox::core::Cos(radians);
-		const T sine = -rox::core::Sin(radians);
+		const T cosine = core::Cos(radians);
+		const T sine = -core::Sin(radians);
 		const T oneMinusCosine = T(1.0) - cosine;
 
 		return {cosine + x * x * oneMinusCosine,    x * y * oneMinusCosine - z * sine, x * z * oneMinusCosine + y * sine,

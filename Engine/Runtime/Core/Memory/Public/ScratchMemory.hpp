@@ -15,7 +15,7 @@ namespace rox::core
 
 		// Adopts already allocated storage; an empty block creates a valid zero-capacity arena.
 		explicit ScratchMemory(MemoryBlock&& backing) noexcept
-		    : m_Backing(rox::core::Move(backing))
+		    : m_Backing(core::Move(backing))
 		{
 			m_Resource.emplace(m_Backing.GetData(), m_Backing.GetByteCount());
 		}

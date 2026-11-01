@@ -20,7 +20,7 @@ namespace rox::core
 	MemoryBlock::MemoryBlock(MemoryBlock&& other) noexcept
 	    : MemoryBlock()
 	{
-		moveFrom(rox::core::Move(other));
+		moveFrom(core::Move(other));
 	}
 
 	MemoryBlock& MemoryBlock::operator=(MemoryBlock&& other) noexcept
@@ -28,8 +28,8 @@ namespace rox::core
 		if (this != &other)
 		{
 			// Publish the replacement before releasing the old block: release callbacks may reset this owner.
-			MemoryBlock previous(rox::core::Move(*this));
-			moveFrom(rox::core::Move(other));
+			MemoryBlock previous(core::Move(*this));
+			moveFrom(core::Move(other));
 		}
 
 		return *this;
@@ -54,7 +54,7 @@ namespace rox::core
 		}
 
 		MemoryBlock replacement(resource, memory, allocation);
-		*outBlock = rox::core::Move(replacement);
+		*outBlock = core::Move(replacement);
 		return true;
 	}
 
@@ -67,9 +67,9 @@ namespace rox::core
 	{
 		ASSERT((m_Resource == nullptr) == (m_Memory == nullptr), "A memory block must keep its resource and storage ownership paired.");
 
-		MemoryResource* const resource = rox::core::Exchange(m_Resource, nullptr);
-		void* const memory = rox::core::Exchange(m_Memory, nullptr);
-		const MemoryAllocationRequest allocation = rox::core::Exchange(m_Allocation, MemoryAllocationRequest{});
+		MemoryResource* const resource = core::Exchange(m_Resource, nullptr);
+		void* const memory = core::Exchange(m_Memory, nullptr);
+		const MemoryAllocationRequest allocation = core::Exchange(m_Allocation, MemoryAllocationRequest{});
 		if (resource != nullptr)
 		{
 			ASSERT(allocation.ByteCount != 0, "An owned memory block must have a non-zero byte count.");

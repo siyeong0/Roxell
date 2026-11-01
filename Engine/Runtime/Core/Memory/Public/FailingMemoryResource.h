@@ -13,14 +13,14 @@ namespace rox::core
 	{
 	public:
 		// The first configured attempts delegate upstream; every later attempt fails until Reset.
-		FailingMemoryResource(MemoryResource& upstream, rox::core::usize allocationAttemptsBeforeFailure) noexcept;
+		FailingMemoryResource(MemoryResource& upstream, usize allocationAttemptsBeforeFailure) noexcept;
 
-		void Reset(rox::core::usize allocationAttemptsBeforeFailure) noexcept;
+		void Reset(usize allocationAttemptsBeforeFailure) noexcept;
 
-		rox::core::usize GetAllocationAttemptCount() const noexcept;
-		rox::core::usize GetAllocationAttemptsBeforeFailure() const noexcept;
+		usize GetAllocationAttemptCount() const noexcept;
+		usize GetAllocationAttemptsBeforeFailure() const noexcept;
 
-		rox::core::DiagnosticText GetName() const noexcept override;
+		DiagnosticText GetName() const noexcept override;
 		EMemoryResourceThreadSafety GetThreadSafety() const noexcept override;
 
 	protected:
@@ -34,8 +34,8 @@ namespace rox::core
 	private:
 		MemoryResource& m_Upstream;
 
-		mutable rox::core::Mutex m_StateLock;
-		rox::core::usize m_AllocationAttemptCount;
-		rox::core::usize m_AllocationAttemptsBeforeFailure;
+		mutable core::Mutex m_StateLock;
+		usize m_AllocationAttemptCount;
+		usize m_AllocationAttemptsBeforeFailure;
 	};
 } // namespace rox::core

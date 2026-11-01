@@ -8,7 +8,7 @@ namespace rox::core
 	struct Thread::Control final
 	{
 		explicit Control(UniqueFunction<void() noexcept>&& target) noexcept
-		    : Target(rox::core::Move(target))
+		    : Target(core::Move(target))
 		    , Entry{execute, this}
 		{
 		}
@@ -50,7 +50,7 @@ namespace rox::core
 		ASSERT(!IsJoinable(), "Thread start requires empty ownership.");
 		ASSERT(static_cast<bool>(target), "Thread start requires a callable target.");
 
-		Control* const control = CreateObjectRequired<Control>(*m_Resource, rox::core::Move(target));
+		Control* const control = CreateObjectRequired<Control>(*m_Resource, core::Move(target));
 		const NativeThreadStartResult started = m_Backend->Start(control->Entry);
 
 		if (started.Result.Status == EThreadStartStatus::Started)
@@ -98,7 +98,7 @@ namespace rox::core
 	{
 		m_Resource = other.m_Resource;
 		m_Backend = other.m_Backend;
-		m_Control = rox::core::Exchange(other.m_Control, nullptr);
-		m_Native = rox::core::Exchange(other.m_Native, NativeThread{});
+		m_Control = core::Exchange(other.m_Control, nullptr);
+		m_Native = core::Exchange(other.m_Native, NativeThread{});
 	}
 }

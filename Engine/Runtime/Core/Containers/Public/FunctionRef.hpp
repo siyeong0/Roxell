@@ -24,15 +24,15 @@ namespace rox::core
 		{
 			template <typename TTarget> explicit Binding(TTarget* object) noexcept
 			{
-				if constexpr (rox::core::IsConst<TTarget> && rox::core::IsVolatile<TTarget>)
+				if constexpr (IsConst<TTarget> && IsVolatile<TTarget>)
 				{
 					ConstVolatileObject = object;
 				}
-				else if constexpr (rox::core::IsConst<TTarget>)
+				else if constexpr (IsConst<TTarget>)
 				{
 					ConstObject = object;
 				}
-				else if constexpr (rox::core::IsVolatile<TTarget>)
+				else if constexpr (IsVolatile<TTarget>)
 				{
 					VolatileObject = object;
 				}
@@ -64,10 +64,10 @@ namespace rox::core
 
 		template <typename TTarget>
 		FunctionRef(TTarget& target) noexcept
-		    requires(!rox::core::IsSame<rox::core::RemoveCv<TTarget>, FunctionRef> && rox::core::IsObject<TTarget> &&
-		             !rox::core::IsMemberPointer<TTarget> && !rox::core::IsFunction<rox::core::RemovePointer<TTarget>> &&
+		    requires(!IsSame<RemoveCv<TTarget>, FunctionRef> && IsObject<TTarget> &&
+		             !IsMemberPointer<TTarget> && !IsFunction<RemovePointer<TTarget>> &&
 		             NothrowFunctionTarget<TResult, TTarget, TArguments...>)
-		    : m_Binding(rox::core::AddressOf(target))
+		    : m_Binding(core::AddressOf(target))
 		    , m_Invoke(&invokeObject<TTarget>)
 		{
 		}
@@ -79,21 +79,21 @@ namespace rox::core
 
 		TResult operator()(TArguments... arguments) const noexcept
 		{
-			return m_Invoke(m_Binding, rox::core::Forward<TArguments>(arguments)...);
+			return m_Invoke(m_Binding, core::Forward<TArguments>(arguments)...);
 		}
 
 	private:
 		template <typename TTarget> static TTarget* getObject(Binding binding) noexcept
 		{
-			if constexpr (rox::core::IsConst<TTarget> && rox::core::IsVolatile<TTarget>)
+			if constexpr (IsConst<TTarget> && IsVolatile<TTarget>)
 			{
 				return static_cast<TTarget*>(binding.ConstVolatileObject);
 			}
-			else if constexpr (rox::core::IsConst<TTarget>)
+			else if constexpr (IsConst<TTarget>)
 			{
 				return static_cast<TTarget*>(binding.ConstObject);
 			}
-			else if constexpr (rox::core::IsVolatile<TTarget>)
+			else if constexpr (IsVolatile<TTarget>)
 			{
 				return static_cast<TTarget*>(binding.VolatileObject);
 			}
@@ -105,19 +105,19 @@ namespace rox::core
 
 		template <typename TTarget> static TResult invokeObject(Binding binding, TArguments&&... arguments) noexcept
 		{
-			if constexpr (rox::core::IsVoid<TResult>)
+			if constexpr (IsVoid<TResult>)
 			{
-				rox::core::Invoke(*getObject<TTarget>(binding), rox::core::Forward<TArguments>(arguments)...);
+				core::Invoke(*getObject<TTarget>(binding), core::Forward<TArguments>(arguments)...);
 			}
 			else
 			{
-				return rox::core::Invoke(*getObject<TTarget>(binding), rox::core::Forward<TArguments>(arguments)...);
+				return core::Invoke(*getObject<TTarget>(binding), core::Forward<TArguments>(arguments)...);
 			}
 		}
 
 		static TResult invokeFunction(Binding binding, TArguments&&... arguments) noexcept
 		{
-			return binding.Function(rox::core::Forward<TArguments>(arguments)...);
+			return binding.Function(core::Forward<TArguments>(arguments)...);
 		}
 
 	private:

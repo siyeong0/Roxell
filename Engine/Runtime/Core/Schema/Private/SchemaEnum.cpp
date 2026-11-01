@@ -26,12 +26,12 @@ namespace rox::core
 
 		bool valid = field.EnumEntries.size() <= MAXIMUM_SCHEMA_ENUM_ENTRIES && (kind == ESchemaValueKind::SignedInteger || kind == ESchemaValueKind::UnsignedInteger);
 
-		for (rox::core::usize index = 0; valid && index < field.EnumEntries.size(); ++index)
+		for (usize index = 0; valid && index < field.EnumEntries.size(); ++index)
 		{
 			const SchemaEnumEntry& entry = field.EnumEntries[index];
 			valid = !entry.Name.empty() && IsValidUtf8(StringView(entry.Name));
 
-			for (rox::core::usize earlier = 0; valid && earlier < index; ++earlier)
+			for (usize earlier = 0; valid && earlier < index; ++earlier)
 			{
 				valid = entry.Name != field.EnumEntries[earlier].Name && entry.Bits != field.EnumEntries[earlier].Bits;
 			}
@@ -53,7 +53,7 @@ namespace rox::core
 		}
 
 		ASSERT(value.GetSignedInteger() != nullptr || value.GetUnsignedInteger() != nullptr, "Enum validation requires a type-checked integer value.");
-		const uint64 bits = value.GetSignedInteger() != nullptr ? rox::core::BitCast<uint64>(*value.GetSignedInteger()) : *value.GetUnsignedInteger();
+		const uint64 bits = value.GetSignedInteger() != nullptr ? core::BitCast<uint64>(*value.GetSignedInteger()) : *value.GetUnsignedInteger();
 
 		if (FindSchemaEnumEntry(field, bits) == nullptr)
 		{
@@ -92,10 +92,10 @@ namespace rox::core
 				return failure();
 			}
 
-			owned->Names.AddRequired(rox::core::Move(name));
+			owned->Names.AddRequired(core::Move(name));
 			owned->Entries.AddRequired(SchemaEnumEntry{owned->Names[owned->Names.Size() - 1], entry.Bits});
 		}
 
-		return CopyResult::Success(rox::core::Move(owned));
+		return CopyResult::Success(core::Move(owned));
 	}
 }

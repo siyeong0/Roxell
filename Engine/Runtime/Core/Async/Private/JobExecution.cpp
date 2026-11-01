@@ -22,7 +22,7 @@ namespace rox::core
 		return s_CurrentExecution;
 	}
 
-	JobExecutionScope::JobExecutionScope(LinearMemoryResource& scratch, rox::core::usize workerIndex, const CancellationToken& cancellation, EJobExecutionContext executionContext) noexcept
+	JobExecutionScope::JobExecutionScope(LinearMemoryResource& scratch, usize workerIndex, const CancellationToken& cancellation, EJobExecutionContext executionContext) noexcept
 	    : m_Marker(beginScratch(scratch))
 	    , m_Context{scratch, workerIndex, cancellation, executionContext}
 	    , m_State{&m_Context, &scratch}

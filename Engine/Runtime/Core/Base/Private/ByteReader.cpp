@@ -39,15 +39,15 @@ namespace rox::core
 		return readUnsigned(8, false);
 	}
 
-	uint64 ByteReader::readUnsigned(const rox::core::usize byteCount, const bool bLittleEndian) noexcept
+	uint64 ByteReader::readUnsigned(const usize byteCount, const bool bLittleEndian) noexcept
 	{
 		ASSERT(CanRead(byteCount), "ByteReader requires enough remaining bytes.");
 
 		uint64 value = 0;
 
-		for (rox::core::usize index = 0; index < byteCount; ++index)
+		for (usize index = 0; index < byteCount; ++index)
 		{
-			const rox::core::usize shift = (bLittleEndian ? index : byteCount - index - 1) * 8;
+			const usize shift = (bLittleEndian ? index : byteCount - index - 1) * 8;
 			value |= static_cast<uint64>(m_Bytes[m_Offset + index]) << shift;
 		}
 
@@ -56,7 +56,7 @@ namespace rox::core
 		return value;
 	}
 
-	Span<const Byte> ByteReader::ReadBytes(const rox::core::usize byteCount) noexcept
+	Span<const Byte> ByteReader::ReadBytes(const usize byteCount) noexcept
 	{
 		ASSERT(CanRead(byteCount), "ByteReader requires enough remaining bytes.");
 

@@ -28,8 +28,8 @@ namespace rox::core
 
 		void* GetData() noexcept { return m_Memory; }
 		const void* GetData() const noexcept { return m_Memory; }
-		rox::core::usize GetByteCount() const noexcept;
-		rox::core::usize GetAlignment() const noexcept;
+		usize GetByteCount() const noexcept;
+		usize GetAlignment() const noexcept;
 		MemoryResource* GetResource() const noexcept;
 		bool IsEmpty() const noexcept;
 

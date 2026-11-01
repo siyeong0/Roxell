@@ -17,7 +17,7 @@ namespace rox::core
 {
 	struct Hash256
 	{
-		rox::core::StaticArray<uint8, 32> Bytes = {};
+		StaticArray<uint8, 32> Bytes = {};
 
 		[[nodiscard]] bool IsValid() const noexcept;
 
@@ -25,15 +25,15 @@ namespace rox::core
 		auto operator<=>(const Hash256&) const = default;
 	};
 
-	[[nodiscard]] Hash256 ComputeSha256(rox::core::Span<const Byte> data) noexcept;
+	[[nodiscard]] Hash256 ComputeSha256(Span<const Byte> data) noexcept;
 
 	[[nodiscard]] String ToString(const Hash256& hash);
 
-	[[nodiscard]] bool TryParseHash256(rox::core::StringView text, Hash256* outHash) noexcept;
+	[[nodiscard]] bool TryParseHash256(StringView text, Hash256* outHash) noexcept;
 
 	struct Hash256Hash
 	{
-		[[nodiscard]] rox::core::usize operator()(const Hash256& hash) const noexcept;
+		[[nodiscard]] usize operator()(const Hash256& hash) const noexcept;
 	};
 
 	template <> struct DefaultHash<Hash256>

@@ -9,9 +9,9 @@ namespace rox::core
 {
 	namespace
 	{
-		void processBlock(const uint8* block, rox::core::StaticArray<uint32, 8>& state) noexcept
+		void processBlock(const uint8* block, StaticArray<uint32, 8>& state) noexcept
 		{
-			rox::core::StaticArray<uint32, 64> words = {};
+			StaticArray<uint32, 64> words = {};
 
 			for (uint32 index = 0; index < 16; ++index)
 			{
@@ -24,9 +24,9 @@ namespace rox::core
 			for (uint32 index = 16; index < 64; ++index)
 			{
 				const uint32 sigma0 =
-					rox::core::RotateRight(words[index - 15], 7) ^ rox::core::RotateRight(words[index - 15], 18) ^ (words[index - 15] >> 3);
+					core::RotateRight(words[index - 15], 7) ^ core::RotateRight(words[index - 15], 18) ^ (words[index - 15] >> 3);
 				const uint32 sigma1 =
-					rox::core::RotateRight(words[index - 2], 17) ^ rox::core::RotateRight(words[index - 2], 19) ^ (words[index - 2] >> 10);
+					core::RotateRight(words[index - 2], 17) ^ core::RotateRight(words[index - 2], 19) ^ (words[index - 2] >> 10);
 				words[index] = words[index - 16] + sigma0 + words[index - 7] + sigma1;
 			}
 
@@ -41,10 +41,10 @@ namespace rox::core
 
 			for (uint32 index = 0; index < 64; ++index)
 			{
-				const uint32 sum1 = rox::core::RotateRight(e, 6) ^ rox::core::RotateRight(e, 11) ^ rox::core::RotateRight(e, 25);
+				const uint32 sum1 = core::RotateRight(e, 6) ^ core::RotateRight(e, 11) ^ core::RotateRight(e, 25);
 				const uint32 choice = (e & f) ^ (~e & g);
 				const uint32 temp1 = h + sum1 + choice + ROUND_CONSTANTS[index] + words[index];
-				const uint32 sum0 = rox::core::RotateRight(a, 2) ^ rox::core::RotateRight(a, 13) ^ rox::core::RotateRight(a, 22);
+				const uint32 sum0 = core::RotateRight(a, 2) ^ core::RotateRight(a, 13) ^ core::RotateRight(a, 22);
 				const uint32 majority = (a & b) ^ (a & c) ^ (b & c);
 				const uint32 temp2 = sum0 + majority;
 
@@ -70,17 +70,17 @@ namespace rox::core
 
 	} // namespace
 
-	void ProcessScalarBlocks(const uint8* blocks, rox::core::usize count, rox::core::StaticArray<uint32, 8>& state) noexcept
+	void ProcessScalarBlocks(const uint8* blocks, usize count, StaticArray<uint32, 8>& state) noexcept
 	{
 		ASSERT(blocks != nullptr || count == 0, "Nonempty SHA-256 blocks require readable storage.");
 
-		for (rox::core::usize index = 0; index < count; ++index)
+		for (usize index = 0; index < count; ++index)
 		{
 			processBlock(blocks + index * 64, state);
 		}
 	}
 
-	void ProcessBlocks(const uint8* blocks, rox::core::usize count, rox::core::StaticArray<uint32, 8>& state) noexcept
+	void ProcessBlocks(const uint8* blocks, usize count, StaticArray<uint32, 8>& state) noexcept
 	{
 		static const auto process = IsHardwareSupported() ? &ProcessHardwareBlocks : &ProcessScalarBlocks;
 		process(blocks, count, state);

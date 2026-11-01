@@ -29,15 +29,15 @@ namespace rox::core
 	struct ValueFieldNameLess final
 	{
 		bool operator()(const ValueFieldName& left, const ValueFieldName& right) const noexcept;
-		bool operator()(const ValueFieldName& left, rox::core::StringView right) const noexcept;
-		bool operator()(rox::core::StringView left, const ValueFieldName& right) const noexcept;
+		bool operator()(const ValueFieldName& left, StringView right) const noexcept;
+		bool operator()(StringView left, const ValueFieldName& right) const noexcept;
 	};
 
 	class Value final
 	{
 	public:
-		using Bytes = rox::core::Array<Byte>;
-		using Array = rox::core::Array<Value>;
+		using Bytes = core::Array<Byte>;
+		using Array = core::Array<Value>;
 		using FieldMap = FlatMap<FieldId, Value>;
 		using UnknownFieldMap = FlatMap<ValueFieldName, Value, ValueFieldNameLess>;
 
@@ -56,26 +56,26 @@ namespace rox::core
 		explicit Value(uint64 value) noexcept;
 		explicit Value(float64 value) noexcept;
 
-		template <rox::core::usize Size>
+		template <usize Size>
 		explicit Value(const char (&value)[Size]) noexcept
-		    : Value(rox::core::StringView(value, Size - (value[Size - 1] == '\0' ? 1 : 0)))
+		    : Value(StringView(value, Size - (value[Size - 1] == '\0' ? 1 : 0)))
 		{
 		}
 
 		template <typename TPointer>
-		    requires rox::core::IsPointer<rox::core::RemoveCv<rox::core::RemoveReference<TPointer>>>
+		    requires IsPointer<RemoveCv<RemoveReference<TPointer>>>
 		explicit Value(TPointer&&) = delete;
-		explicit Value(rox::core::Nullptr) = delete;
+		explicit Value(core::Nullptr) = delete;
 
-		explicit Value(rox::core::StringView value) noexcept;
-		Value(rox::core::StringView value, MemoryResource& resource) noexcept;
-		[[nodiscard]] static Result<Value> CreateString(rox::core::StringView value, MemoryResource& resource) noexcept;
+		explicit Value(StringView value) noexcept;
+		Value(StringView value, MemoryResource& resource) noexcept;
+		[[nodiscard]] static Result<Value> CreateString(StringView value, MemoryResource& resource) noexcept;
 
 		explicit Value(StableValueId value) noexcept;
 
 		explicit Value(Bytes value) noexcept;
 		Value(Span<const Byte> bytes, MemoryResource& resource) noexcept;
-		explicit Value(rox::core::InitializerList<Byte> bytes) noexcept;
+		explicit Value(InitializerList<Byte> bytes) noexcept;
 		[[nodiscard]] static Result<Value> CreateBytes(Bytes&& bytes) noexcept;
 		[[nodiscard]] static Result<Value> CreateBytes(Span<const Byte> bytes, MemoryResource& resource) noexcept;
 
@@ -92,7 +92,7 @@ namespace rox::core
 		[[nodiscard]] const int64* GetSignedInteger() const noexcept;
 		[[nodiscard]] const uint64* GetUnsignedInteger() const noexcept;
 		[[nodiscard]] const float64* GetFloatingPoint() const noexcept;
-		[[nodiscard]] const rox::core::StringView* GetString() const noexcept;
+		[[nodiscard]] const StringView* GetString() const noexcept;
 		[[nodiscard]] const StableValueId* GetStableId() const noexcept;
 		[[nodiscard]] const Span<const Byte>* GetBytes() const noexcept;
 		[[nodiscard]] const Array* GetArray() const noexcept;
@@ -101,10 +101,10 @@ namespace rox::core
 	private:
 		struct TextBuffer final
 		{
-			rox::core::Array<char> Bytes;
+			core::Array<char> Bytes;
 
-			explicit TextBuffer(rox::core::Array<char>&& bytes) noexcept
-			    : Bytes(rox::core::Move(bytes))
+			explicit TextBuffer(core::Array<char>&& bytes) noexcept
+			    : Bytes(core::Move(bytes))
 			{
 			}
 		};
@@ -112,7 +112,7 @@ namespace rox::core
 		struct TextStorage final
 		{
 			SharedPtr<TextBuffer> Owner;
-			rox::core::StringView View;
+			StringView View;
 		};
 
 		struct ArrayOwner;
@@ -128,7 +128,7 @@ namespace rox::core
 		using ObjectStorage = SharedPtr<ObjectOwner>;
 
 		// Raw text preserves malformed UTF-8 for schema validation. Shared buffers remain immutable.
-		using Storage = rox::core::Variant<rox::core::EmptyValue, bool, int64, uint64, float64, TextStorage, StableValueId, ByteStorage, ArrayStorage, ObjectStorage>;
+		using Storage = core::Variant<core::EmptyValue, bool, int64, uint64, float64, TextStorage, StableValueId, ByteStorage, ArrayStorage, ObjectStorage>;
 
 	private:
 		Storage m_Storage;
@@ -140,14 +140,14 @@ namespace rox::core
 	class ValueFieldName final
 	{
 	public:
-		ValueFieldName(rox::core::StringView name, MemoryResource& resource) noexcept
+		ValueFieldName(StringView name, MemoryResource& resource) noexcept
 		    : m_Text(name, resource)
 		{
 		}
 
-		[[nodiscard]] static Result<ValueFieldName> Copy(rox::core::StringView name, MemoryResource& resource) noexcept;
+		[[nodiscard]] static Result<ValueFieldName> Copy(StringView name, MemoryResource& resource) noexcept;
 
-		[[nodiscard]] rox::core::StringView View() const noexcept
+		[[nodiscard]] StringView View() const noexcept
 		{
 			ASSERT(m_Text.GetString() != nullptr, "Value field name access requires an unmoved name.");
 			return *m_Text.GetString();
@@ -160,7 +160,7 @@ namespace rox::core
 
 	private:
 		explicit ValueFieldName(Value&& text) noexcept
-		    : m_Text(rox::core::Move(text))
+		    : m_Text(core::Move(text))
 		{
 		}
 
@@ -191,7 +191,7 @@ namespace rox::core
 	struct Value::ArrayOwner final
 	{
 		explicit ArrayOwner(Array&& values) noexcept
-		    : Data(rox::core::Move(values))
+		    : Data(core::Move(values))
 		{
 		}
 
@@ -201,7 +201,7 @@ namespace rox::core
 	struct Value::ObjectOwner final
 	{
 		explicit ObjectOwner(Object&& value) noexcept
-		    : Data(rox::core::Move(value))
+		    : Data(core::Move(value))
 		{
 		}
 

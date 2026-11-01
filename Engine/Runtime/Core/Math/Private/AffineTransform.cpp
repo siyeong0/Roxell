@@ -14,7 +14,7 @@ namespace rox::math
 		template <MathScalar T>
 		T narrow(T value) noexcept
 		{
-			ASSERT(rox::core::IsFinite(value), "Affine transform result must be representable in the finite scalar range.");
+			ASSERT(core::IsFinite(value), "Affine transform result must be representable in the finite scalar range.");
 			return static_cast<T>(value);
 		}
 

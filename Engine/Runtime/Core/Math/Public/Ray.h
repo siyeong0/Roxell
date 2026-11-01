@@ -39,6 +39,6 @@ namespace rox::math
 
 	static_assert(sizeof(Ray<float32>) == 2 * sizeof(Vector3<float32>));
 	static_assert(sizeof(Ray<float64>) == 2 * sizeof(Vector3<float64>));
-	static_assert(rox::core::IsStandardLayout<Ray<float32>> && rox::core::IsTriviallyCopyable<Ray<float32>>);
-	static_assert(rox::core::IsStandardLayout<Ray<float64>> && rox::core::IsTriviallyCopyable<Ray<float64>>);
+	static_assert(core::IsStandardLayout<Ray<float32>> && core::IsTriviallyCopyable<Ray<float32>>);
+	static_assert(core::IsStandardLayout<Ray<float64>> && core::IsTriviallyCopyable<Ray<float64>>);
 } // namespace rox::math

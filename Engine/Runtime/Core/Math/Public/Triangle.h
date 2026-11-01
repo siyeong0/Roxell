@@ -43,6 +43,6 @@ namespace rox::math
 
 	static_assert(sizeof(Triangle<float32>) == 3 * sizeof(Vector3<float32>));
 	static_assert(sizeof(Triangle<float64>) == 3 * sizeof(Vector3<float64>));
-	static_assert(rox::core::IsStandardLayout<Triangle<float32>> && rox::core::IsTriviallyCopyable<Triangle<float32>>);
-	static_assert(rox::core::IsStandardLayout<Triangle<float64>> && rox::core::IsTriviallyCopyable<Triangle<float64>>);
+	static_assert(core::IsStandardLayout<Triangle<float32>> && core::IsTriviallyCopyable<Triangle<float32>>);
+	static_assert(core::IsStandardLayout<Triangle<float64>> && core::IsTriviallyCopyable<Triangle<float64>>);
 } // namespace rox::math

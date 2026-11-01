@@ -12,21 +12,21 @@ namespace rox::core
 	// Release cancels invocation while retaining captures until destruction. The callback cannot reenter its guard.
 	template <typename TFunction> class ScopeExit final
 	{
-		static_assert(rox::core::IsNothrowInvocable<TFunction&>);
-		static_assert(rox::core::IsNothrowMoveConstructible<TFunction>);
-		static_assert(rox::core::IsNothrowDestructible<TFunction>);
+		static_assert(IsNothrowInvocable<TFunction&>);
+		static_assert(IsNothrowMoveConstructible<TFunction>);
+		static_assert(IsNothrowDestructible<TFunction>);
 
 	public:
 		template <typename TCallable>
 		explicit ScopeExit(TCallable&& callable) noexcept
-		    requires rox::core::IsNothrowConstructible<TFunction, TCallable&&>
-		    : m_Function(rox::core::Forward<TCallable>(callable))
+		    requires IsNothrowConstructible<TFunction, TCallable&&>
+		    : m_Function(core::Forward<TCallable>(callable))
 		{
 		}
 
 		ScopeExit(ScopeExit&& other) noexcept
-		    : m_Function(rox::core::Move(other.m_Function))
-		    , m_bActive(rox::core::Exchange(other.m_bActive, false))
+		    : m_Function(core::Move(other.m_Function))
+		    , m_bActive(core::Exchange(other.m_bActive, false))
 		{
 		}
 
@@ -38,7 +38,7 @@ namespace rox::core
 		{
 			if (m_bActive)
 			{
-				rox::core::Invoke(m_Function);
+				core::Invoke(m_Function);
 			}
 		}
 
@@ -51,5 +51,5 @@ namespace rox::core
 		bool m_bActive = true;
 	};
 
-	template <typename TCallable> ScopeExit(TCallable&&) -> ScopeExit<rox::core::Decay<TCallable>>;
+	template <typename TCallable> ScopeExit(TCallable&&) -> ScopeExit<core::Decay<TCallable>>;
 }

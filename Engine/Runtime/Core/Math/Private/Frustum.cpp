@@ -13,7 +13,7 @@ namespace rox::math
 		template <MathScalar T>
 		[[nodiscard]] T planeNormalLength(const Plane<T>& plane) noexcept
 		{
-			return rox::core::Hypot(static_cast<T>(plane.Normal.X), static_cast<T>(plane.Normal.Y), static_cast<T>(plane.Normal.Z));
+			return core::Hypot(static_cast<T>(plane.Normal.X), static_cast<T>(plane.Normal.Y), static_cast<T>(plane.Normal.Z));
 		}
 
 		template <MathScalar T>
@@ -41,7 +41,7 @@ namespace rox::math
 		{
 			Plane<T>& plane = result.GetPlane(index);
 			const bool unbounded = (index == EFrustumPlane::Near || index == EFrustumPlane::Far) &&
-			                       plane.Normal == Vector3<T>::Zero() && rox::core::IsFinite(plane.Distance) &&
+			                       plane.Normal == Vector3<T>::Zero() && core::IsFinite(plane.Distance) &&
 			                       plane.Distance > T(0.0);
 
 			if (unbounded)
@@ -116,14 +116,14 @@ namespace rox::math
 	template <MathScalar T>
 	bool Frustum<T>::IsValid(T epsilon) const noexcept
 	{
-		ASSERT(rox::core::IsFinite(epsilon) && epsilon >= T(0.0), "Frustum validation epsilon must be finite and non-negative.");
+		ASSERT(core::IsFinite(epsilon) && epsilon >= T(0.0), "Frustum validation epsilon must be finite and non-negative.");
 
 		for (const EFrustumPlane plane : FRUSTUM_PLANES)
 		{
 			const Plane<T>& boundary = GetPlane(plane);
 
 			if ((plane == EFrustumPlane::Near || plane == EFrustumPlane::Far) &&
-			    boundary.Normal == Vector3<T>::Zero() && rox::core::IsFinite(boundary.Distance) &&
+			    boundary.Normal == Vector3<T>::Zero() && core::IsFinite(boundary.Distance) &&
 			    boundary.Distance > T(0.0))
 			{
 				continue;
@@ -208,9 +208,9 @@ namespace rox::math
 		for (const EFrustumPlane plane : FRUSTUM_PLANES)
 		{
 			const Plane<T>& boundary = GetPlane(plane);
-			const T projectedRadius = rox::core::Abs(static_cast<T>(boundary.Normal.X)) * extents.X +
-			                          rox::core::Abs(static_cast<T>(boundary.Normal.Y)) * extents.Y +
-			                          rox::core::Abs(static_cast<T>(boundary.Normal.Z)) * extents.Z;
+			const T projectedRadius = core::Abs(static_cast<T>(boundary.Normal.X)) * extents.X +
+			                          core::Abs(static_cast<T>(boundary.Normal.Y)) * extents.Y +
+			                          core::Abs(static_cast<T>(boundary.Normal.Z)) * extents.Z;
 			const T distance = signedDistance<T>(boundary, center);
 
 			if (distance < -projectedRadius)

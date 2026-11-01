@@ -19,7 +19,7 @@ namespace rox::math
 	[[nodiscard]] core::Optional<Box<T>> TransformedBounds(const Box<T>& box, const AffineTransform<T>& transform) noexcept;
 
 	template <MathScalar T = float32>
-	[[nodiscard]] bool Intersect(const Ray<T>& ray, const Triangle<T>& triangle, T* outParameter, T maxParameter = rox::core::NumericLimits<T>::max()) noexcept;
+	[[nodiscard]] bool Intersect(const Ray<T>& ray, const Triangle<T>& triangle, T* outParameter, T maxParameter = core::NumericLimits<T>::max()) noexcept;
 
 	template <MathScalar T = float32>
 	struct RayInterval final
@@ -29,15 +29,15 @@ namespace rox::math
 	};
 
 	template <MathScalar T = float32>
-	[[nodiscard]] bool Intersect(const Ray<T>& ray, const Box<T>& box, RayInterval<T>* outInterval, T maxParameter = rox::core::NumericLimits<T>::max()) noexcept;
+	[[nodiscard]] bool Intersect(const Ray<T>& ray, const Box<T>& box, RayInterval<T>* outInterval, T maxParameter = core::NumericLimits<T>::max()) noexcept;
 
 	template <MathScalar T = float32>
-	[[nodiscard]] bool Intersect(const Ray<T>& ray, const Sphere<T>& sphere, RayInterval<T>* outInterval, T maxParameter = rox::core::NumericLimits<T>::max()) noexcept;
+	[[nodiscard]] bool Intersect(const Ray<T>& ray, const Sphere<T>& sphere, RayInterval<T>* outInterval, T maxParameter = core::NumericLimits<T>::max()) noexcept;
 
 	// Finite coefficients and a nonzero normal are required. False preserves the output,
 	// including when the parameter remains nonfinite after rescaling.
 	template <MathScalar T = float32>
-	[[nodiscard]] bool Intersect(const Ray<T>& ray, const Plane<T>& plane, T* outParameter, T maxParameter = rox::core::NumericLimits<T>::max()) noexcept;
+	[[nodiscard]] bool Intersect(const Ray<T>& ray, const Plane<T>& plane, T* outParameter, T maxParameter = core::NumericLimits<T>::max()) noexcept;
 
 	template <MathScalar T = float32>
 	[[nodiscard]] Vector3<T> ClosestPoint(const Vector3<T>& point, const Plane<T>& plane) noexcept;

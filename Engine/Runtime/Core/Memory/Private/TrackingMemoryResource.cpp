@@ -56,7 +56,7 @@ namespace rox::core
 
 	void* TrackingMemoryResource::allocate(const MemoryAllocationRequest allocation) noexcept
 	{
-		const usize effectiveAlignment = rox::core::Max(allocation.Alignment, alignof(TrackingHeader));
+		const usize effectiveAlignment = core::Max(allocation.Alignment, alignof(TrackingHeader));
 		const usize alignmentMask = effectiveAlignment - 1;
 		usize paddedHeaderSize = 0;
 
@@ -73,7 +73,7 @@ namespace rox::core
 			return nullptr;
 		}
 
-		if (upstreamByteCount > static_cast<usize>(rox::core::NumericLimits<isize>::max()))
+		if (upstreamByteCount > static_cast<usize>(NumericLimits<isize>::max()))
 		{
 			return nullptr;
 		}

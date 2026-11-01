@@ -34,6 +34,6 @@ namespace rox::math
 		}
 	};
 
-	static_assert(rox::core::IsStandardLayout<Capsule<float32>> && rox::core::IsTriviallyCopyable<Capsule<float32>>);
-	static_assert(rox::core::IsStandardLayout<Capsule<float64>> && rox::core::IsTriviallyCopyable<Capsule<float64>>);
+	static_assert(core::IsStandardLayout<Capsule<float32>> && core::IsTriviallyCopyable<Capsule<float32>>);
+	static_assert(core::IsStandardLayout<Capsule<float64>> && core::IsTriviallyCopyable<Capsule<float64>>);
 } // namespace rox::math

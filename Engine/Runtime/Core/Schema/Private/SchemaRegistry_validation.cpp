@@ -16,7 +16,7 @@ namespace rox::core
 			// Keep the primary failure if adding diagnostic context exhausts its resource.
 			if (message.Append("Field \"") && message.Append(name) && message.Append("\": ") && message.Append(error.Message.View()))
 			{
-				error.Message = rox::core::Move(message);
+				error.Message = core::Move(message);
 			}
 
 			return false;
@@ -32,7 +32,7 @@ namespace rox::core
 				message.Append({digits, static_cast<usize>(converted.ptr - digits)}) && message.Append("]: ") &&
 				message.Append(error.Message.View()))
 			{
-				error.Message = rox::core::Move(message);
+				error.Message = core::Move(message);
 			}
 
 			return false;
@@ -57,7 +57,7 @@ namespace rox::core
 				return true;
 			}
 
-			error = rox::core::Move(result.GetError());
+			error = core::Move(result.GetError());
 			return false;
 		}
 
@@ -74,7 +74,7 @@ namespace rox::core
 				const float64* const floatingPoint = value.GetFloatingPoint();
 				ASSERT(floatingPoint != nullptr, "Floating-point Value kind must have floating-point storage.");
 
-				if (!rox::core::IsFinite(*floatingPoint))
+				if (!core::IsFinite(*floatingPoint))
 				{
 					return setValidationFailure(error, EErrorCode::InvalidArgument, "ROX-CORE-SCHEMA-NON-FINITE-NUMBER", "Authored values cannot contain NaN or infinity.", "Provide a finite floating-point value.");
 				}
@@ -297,7 +297,7 @@ namespace rox::core
 		if (!validateFieldValueImpl(field, value, error))
 		{
 			fieldFailure(error, field.Name);
-			return Result<void>::Failure(rox::core::Move(error));
+			return Result<void>::Failure(core::Move(error));
 		}
 
 		return Result<void>::Success();
@@ -424,7 +424,7 @@ namespace rox::core
 
 		if (!validateObjectImpl(descriptor, value, error))
 		{
-			return Result<void>::Failure(rox::core::Move(error));
+			return Result<void>::Failure(core::Move(error));
 		}
 
 		return Result<void>::Success();

@@ -16,7 +16,7 @@ namespace rox::core
 	class MpscQueue final
 	{
 	public:
-		explicit MpscQueue(MemoryResource& resource, rox::core::usize capacity) noexcept
+		explicit MpscQueue(MemoryResource& resource, usize capacity) noexcept
 		    : m_Queue(resource, capacity)
 		{
 		}
@@ -26,33 +26,33 @@ namespace rox::core
 		MpscQueue(MpscQueue&&) = delete;
 		MpscQueue& operator=(MpscQueue&&) = delete;
 
-		rox::core::usize Capacity() const noexcept { return m_Queue.Capacity(); }
+		usize Capacity() const noexcept { return m_Queue.Capacity(); }
 
 		MemoryResource& GetResource() const noexcept { return m_Queue.GetResource(); }
 
 		template <typename... TArguments>
 		[[nodiscard]] bool Emplace(TArguments&&... arguments) noexcept
-		    requires rox::core::IsNothrowConstructible<TValue, TArguments&&...>
+		    requires IsNothrowConstructible<TValue, TArguments&&...>
 		{
-			rox::core::LockGuard lock(m_ProducerMutex);
+			core::LockGuard lock(m_ProducerMutex);
 
-			return m_Queue.Emplace(rox::core::Forward<TArguments>(arguments)...);
+			return m_Queue.Emplace(core::Forward<TArguments>(arguments)...);
 		}
 
 		[[nodiscard]] bool Push(TValue&& value) noexcept
-		    requires rox::core::IsNothrowMoveConstructible<TValue>
+		    requires IsNothrowMoveConstructible<TValue>
 		{
-			return Emplace(rox::core::Move(value));
+			return Emplace(core::Move(value));
 		}
 
 		[[nodiscard]] bool Push(const TValue& value) noexcept
-		    requires rox::core::IsNothrowCopyConstructible<TValue>
+		    requires IsNothrowCopyConstructible<TValue>
 		{
 			return Emplace(value);
 		}
 
 		[[nodiscard]] bool Pop(TValue* out) noexcept
-		    requires rox::core::IsNothrowMoveAssignable<TValue>
+		    requires IsNothrowMoveAssignable<TValue>
 		{
 			ASSERT(out != nullptr, "Pop requires a valid output pointer.");
 
@@ -61,6 +61,6 @@ namespace rox::core
 
 	private:
 		SpscQueue<TValue> m_Queue;
-		rox::core::Mutex m_ProducerMutex;
+		core::Mutex m_ProducerMutex;
 	};
 }

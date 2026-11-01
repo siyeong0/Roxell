@@ -14,7 +14,7 @@ namespace rox::core
 		// default-constructed String or Error pays no call or guard for it.
 		static SystemMemoryResource& Get() noexcept { return s_Instance; }
 
-		rox::core::DiagnosticText GetName() const noexcept override;
+		DiagnosticText GetName() const noexcept override;
 		EMemoryResourceThreadSafety GetThreadSafety() const noexcept override;
 
 	protected:

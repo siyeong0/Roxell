@@ -12,13 +12,13 @@ namespace rox::core
 {
 	namespace
 	{
-		rox::core::Atomic<MemoryFailureHandler> s_FailureHandler = nullptr;
+		Atomic<MemoryFailureHandler> s_FailureHandler = nullptr;
 		thread_local bool s_bReportingFailure = false;
 	}
 
 	MemoryFailureHandler SetMemoryFailureHandler(MemoryFailureHandler handler) noexcept
 	{
-		return s_FailureHandler.exchange(handler, rox::core::MemoryOrderAcqRel);
+		return s_FailureHandler.exchange(handler, core::MemoryOrderAcqRel);
 	}
 
 	[[noreturn]] void ReportMemoryFailure(const MemoryFailure& failure) noexcept
@@ -35,7 +35,7 @@ namespace rox::core
 		LOG_CRITICAL("Memory", "A mandatory memory allocation failed.");
 		FlushLog();
 
-		if (const MemoryFailureHandler handler = s_FailureHandler.load(rox::core::MemoryOrderAcquire))
+		if (const MemoryFailureHandler handler = s_FailureHandler.load(core::MemoryOrderAcquire))
 		{
 			handler(failure);
 		}

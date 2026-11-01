@@ -15,24 +15,24 @@ namespace rox::math
 	namespace
 	{
 		template <MathScalar T>
-		void transformBatch(const AffineTransform<T>& transform, const Vector3<T>* source, Vector3<T>* destination, rox::core::usize count, bool positions) noexcept
+		void transformBatch(const AffineTransform<T>& transform, const Vector3<T>* source, Vector3<T>* destination, core::usize count, bool positions) noexcept
 		{
 			ASSERT(transform.IsFinite(), "Batch affine transform must be finite.");
-			ASSERT(count <= rox::core::NumericLimits<rox::core::usize>::max() / sizeof(Vector3<T>), "Batch affine range size must be representable.");
+			ASSERT(count <= core::NumericLimits<core::usize>::max() / sizeof(Vector3<T>), "Batch affine range size must be representable.");
 			ASSERT(count == 0 || (source != nullptr && destination != nullptr), "Nonempty batch affine ranges require valid storage.");
-			const rox::core::uintptr sourceAddress = reinterpret_cast<rox::core::uintptr>(source);
-			const rox::core::uintptr destinationAddress = reinterpret_cast<rox::core::uintptr>(destination);
-			const rox::core::uintptr distance = sourceAddress > destinationAddress ? sourceAddress - destinationAddress : destinationAddress - sourceAddress;
+			const core::uintptr sourceAddress = reinterpret_cast<core::uintptr>(source);
+			const core::uintptr destinationAddress = reinterpret_cast<core::uintptr>(destination);
+			const core::uintptr distance = sourceAddress > destinationAddress ? sourceAddress - destinationAddress : destinationAddress - sourceAddress;
 			ASSERT(source == destination || distance >= count * sizeof(Vector3<T>), "Batch affine ranges must be disjoint or exactly in-place.");
 
-			for (rox::core::usize index = 0; index < count; ++index)
+			for (core::usize index = 0; index < count; ++index)
 			{
 				ASSERT(source[index].IsFinite(), "Batch affine input vectors must be finite.");
 			}
 
 			// Snapshot permits the caller's transform to reside alongside destination storage.
 			const AffineTransform<T> local = transform;
-			rox::core::usize index = 0;
+			core::usize index = 0;
 			const T offsets[3] = {positions ? local.Translation.X : T(0.0), positions ? local.Translation.Y : T(0.0), positions ? local.Translation.Z : T(0.0)};
 			BatchPair<T> coefficients[3][3];
 			BatchPair<T> translation[3];
@@ -62,7 +62,7 @@ namespace rox::math
 
 					for (uint32 lane = 0; lane < 2; ++lane)
 					{
-						ASSERT(rox::core::IsFinite(output[column][lane]), "Batch affine result must be representable in the finite scalar range.");
+						ASSERT(core::IsFinite(output[column][lane]), "Batch affine result must be representable in the finite scalar range.");
 					}
 				}
 
@@ -80,49 +80,49 @@ namespace rox::math
 	} // namespace
 
 	template <MathScalar T>
-	void TransformPositions(const AffineTransform<T>& transform, const Vector3<T>* source, Vector3<T>* destination, rox::core::usize count) noexcept
+	void TransformPositions(const AffineTransform<T>& transform, const Vector3<T>* source, Vector3<T>* destination, core::usize count) noexcept
 	{
 		transformBatch<T>(transform, source, destination, count, true);
 	}
 
 	template <MathScalar T>
-	void TransformDirections(const AffineTransform<T>& transform, const Vector3<T>* source, Vector3<T>* destination, rox::core::usize count) noexcept
+	void TransformDirections(const AffineTransform<T>& transform, const Vector3<T>* source, Vector3<T>* destination, core::usize count) noexcept
 	{
 		transformBatch<T>(transform, source, destination, count, false);
 	}
 
 	template <MathScalar T>
-	void TransformNormals(const AffineTransform<T>& transform, const Vector3<T>* source, Vector3<T>* outNormals, rox::core::usize count) noexcept
+	void TransformNormals(const AffineTransform<T>& transform, const Vector3<T>* source, Vector3<T>* outNormals, core::usize count) noexcept
 	{
 		TransformDirections<T>({transform.NormalMatrix(), Vector3<T>::Zero()}, source, outNormals, count);
 	}
 
 	namespace
 	{
-		bool disjoint(const void* first, rox::core::usize firstBytes, const void* second, rox::core::usize secondBytes) noexcept
+		bool disjoint(const void* first, core::usize firstBytes, const void* second, core::usize secondBytes) noexcept
 		{
-			const rox::core::uintptr a = reinterpret_cast<rox::core::uintptr>(first);
-			const rox::core::uintptr b = reinterpret_cast<rox::core::uintptr>(second);
+			const core::uintptr a = reinterpret_cast<core::uintptr>(first);
+			const core::uintptr b = reinterpret_cast<core::uintptr>(second);
 			return a <= b ? b - a >= firstBytes : a - b >= secondBytes;
 		}
 
 		template <MathScalar T>
 		T narrowBatch(T value) noexcept
 		{
-			ASSERT(rox::core::IsFinite(value), "Batch result must be representable in the finite scalar range.");
+			ASSERT(core::IsFinite(value), "Batch result must be representable in the finite scalar range.");
 			return static_cast<T>(value);
 		}
 	} // namespace
 
 	template <MathScalar T>
-	void TransformVectors(const Matrix4x4<T>& transform, const Vector4<T>* source, Vector4<T>* outVectors, rox::core::usize count) noexcept
+	void TransformVectors(const Matrix4x4<T>& transform, const Vector4<T>* source, Vector4<T>* outVectors, core::usize count) noexcept
 	{
 		ASSERT(transform.IsFinite(), "Batch matrix must be finite.");
-		ASSERT(count <= rox::core::NumericLimits<rox::core::usize>::max() / sizeof(Vector4<T>), "Batch range must be representable.");
+		ASSERT(count <= core::NumericLimits<core::usize>::max() / sizeof(Vector4<T>), "Batch range must be representable.");
 		ASSERT(count == 0 || (source != nullptr && outVectors != nullptr), "Nonempty batch requires valid storage.");
 		ASSERT(source == outVectors || disjoint(source, count * sizeof(Vector4<T>), outVectors, count * sizeof(Vector4<T>)), "Batch vector ranges must be disjoint or exactly in-place.");
 
-		for (rox::core::usize i = 0; i < count; ++i)
+		for (core::usize i = 0; i < count; ++i)
 		{
 			ASSERT(source[i].IsFinite(), "Batch input vectors must be finite.");
 		}
@@ -137,7 +137,7 @@ namespace rox::math
 			}
 		}
 
-		for (rox::core::usize i = 0; i < count; i += 2)
+		for (core::usize i = 0; i < count; i += 2)
 		{
 			const Vector4<T>& first = source[i];
 			const Vector4<T>& second = source[i + (count - i > 1 ? 1 : 0)];
@@ -156,7 +156,7 @@ namespace rox::math
 				store(output[column], value);
 			}
 
-			for (rox::core::usize lane = 0; lane < 2 && lane < count - i; ++lane)
+			for (core::usize lane = 0; lane < 2 && lane < count - i; ++lane)
 			{
 				outVectors[i + lane] = {narrowBatch<T>(output[0][lane]), narrowBatch<T>(output[1][lane]), narrowBatch<T>(output[2][lane]), narrowBatch<T>(output[3][lane])};
 			}
@@ -164,20 +164,20 @@ namespace rox::math
 	}
 
 	template <MathScalar T>
-	void DotProducts(const Vector3<T>* left, const Vector3<T>* right, T* outProducts, rox::core::usize count) noexcept
+	void DotProducts(const Vector3<T>* left, const Vector3<T>* right, T* outProducts, core::usize count) noexcept
 	{
-		ASSERT(count <= rox::core::NumericLimits<rox::core::usize>::max() / sizeof(Vector3<T>), "Batch range must be representable.");
+		ASSERT(count <= core::NumericLimits<core::usize>::max() / sizeof(Vector3<T>), "Batch range must be representable.");
 		ASSERT(count == 0 || (left != nullptr && right != nullptr && outProducts != nullptr), "Nonempty batch requires valid storage.");
 		ASSERT(disjoint(left, count * sizeof(Vector3<T>), outProducts, count * sizeof(T)) && disjoint(right, count * sizeof(Vector3<T>), outProducts, count * sizeof(T)), "Dot product output must not overlap inputs.");
 
-		for (rox::core::usize i = 0; i < count; ++i)
+		for (core::usize i = 0; i < count; ++i)
 		{
 			ASSERT(left[i].IsFinite() && right[i].IsFinite(), "Batch input vectors must be finite.");
 		}
 
-		for (rox::core::usize i = 0; i < count; i += 2)
+		for (core::usize i = 0; i < count; i += 2)
 		{
-			const rox::core::usize j = i + (count - i > 1 ? 1 : 0);
+			const core::usize j = i + (count - i > 1 ? 1 : 0);
 			const BatchPair<T> x = multiply(pair(left[i].X, left[j].X), pair(right[i].X, right[j].X));
 			const BatchPair<T> y = multiply(pair(left[i].Y, left[j].Y), pair(right[i].Y, right[j].Y));
 			const BatchPair<T> z = multiply(pair(left[i].Z, left[j].Z), pair(right[i].Z, right[j].Z));
@@ -192,14 +192,14 @@ namespace rox::math
 		}
 	}
 
-	template void TransformPositions(const AffineTransform<float32>& transform, const Vector3<float32>* source, Vector3<float32>* destination, rox::core::usize count) noexcept;
-	template void TransformPositions(const AffineTransform<float64>& transform, const Vector3<float64>* source, Vector3<float64>* destination, rox::core::usize count) noexcept;
-	template void TransformDirections(const AffineTransform<float32>& transform, const Vector3<float32>* source, Vector3<float32>* destination, rox::core::usize count) noexcept;
-	template void TransformDirections(const AffineTransform<float64>& transform, const Vector3<float64>* source, Vector3<float64>* destination, rox::core::usize count) noexcept;
-	template void TransformNormals(const AffineTransform<float32>& transform, const Vector3<float32>* source, Vector3<float32>* outNormals, rox::core::usize count) noexcept;
-	template void TransformNormals(const AffineTransform<float64>& transform, const Vector3<float64>* source, Vector3<float64>* outNormals, rox::core::usize count) noexcept;
-	template void TransformVectors(const Matrix4x4<float32>& transform, const Vector4<float32>* source, Vector4<float32>* outVectors, rox::core::usize count) noexcept;
-	template void TransformVectors(const Matrix4x4<float64>& transform, const Vector4<float64>* source, Vector4<float64>* outVectors, rox::core::usize count) noexcept;
-	template void DotProducts(const Vector3<float32>* left, const Vector3<float32>* right, float32* outProducts, rox::core::usize count) noexcept;
-	template void DotProducts(const Vector3<float64>* left, const Vector3<float64>* right, float64* outProducts, rox::core::usize count) noexcept;
+	template void TransformPositions(const AffineTransform<float32>& transform, const Vector3<float32>* source, Vector3<float32>* destination, core::usize count) noexcept;
+	template void TransformPositions(const AffineTransform<float64>& transform, const Vector3<float64>* source, Vector3<float64>* destination, core::usize count) noexcept;
+	template void TransformDirections(const AffineTransform<float32>& transform, const Vector3<float32>* source, Vector3<float32>* destination, core::usize count) noexcept;
+	template void TransformDirections(const AffineTransform<float64>& transform, const Vector3<float64>* source, Vector3<float64>* destination, core::usize count) noexcept;
+	template void TransformNormals(const AffineTransform<float32>& transform, const Vector3<float32>* source, Vector3<float32>* outNormals, core::usize count) noexcept;
+	template void TransformNormals(const AffineTransform<float64>& transform, const Vector3<float64>* source, Vector3<float64>* outNormals, core::usize count) noexcept;
+	template void TransformVectors(const Matrix4x4<float32>& transform, const Vector4<float32>* source, Vector4<float32>* outVectors, core::usize count) noexcept;
+	template void TransformVectors(const Matrix4x4<float64>& transform, const Vector4<float64>* source, Vector4<float64>* outVectors, core::usize count) noexcept;
+	template void DotProducts(const Vector3<float32>* left, const Vector3<float32>* right, float32* outProducts, core::usize count) noexcept;
+	template void DotProducts(const Vector3<float64>* left, const Vector3<float64>* right, float64* outProducts, core::usize count) noexcept;
 } // namespace rox::math

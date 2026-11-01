@@ -36,9 +36,9 @@ namespace rox::core
 		detail::CancellationState* const state = m_State.Get();
 		bool bRegistered = false;
 		{
-			rox::core::LockGuard lock(state->Mutex);
+			core::LockGuard lock(state->Mutex);
 
-			if (state->DispatchPhase.load(rox::core::MemoryOrderAcquire) == detail::ECancellationDispatchPhase::Open)
+			if (state->DispatchPhase.load(core::MemoryOrderAcquire) == detail::ECancellationDispatchPhase::Open)
 			{
 				m_Node.Next = state->RegistrationHead;
 
@@ -48,12 +48,12 @@ namespace rox::core
 				}
 
 				state->RegistrationHead = &m_Node;
-				m_Node.Phase.store(detail::ECancellationNodePhase::Registered, rox::core::MemoryOrderRelease);
+				m_Node.Phase.store(detail::ECancellationNodePhase::Registered, core::MemoryOrderRelease);
 				bRegistered = true;
 			}
 			else
 			{
-				m_Node.Phase.store(detail::ECancellationNodePhase::Invoking, rox::core::MemoryOrderRelease);
+				m_Node.Phase.store(detail::ECancellationNodePhase::Invoking, core::MemoryOrderRelease);
 			}
 		}
 
@@ -65,13 +65,13 @@ namespace rox::core
 		}
 
 		detail::InvokeCallback(this, callback, context);
-		m_Node.Phase.store(detail::ECancellationNodePhase::Completed, rox::core::MemoryOrderRelease);
-		state->RegistrationChangeSequence.fetch_add(1, rox::core::MemoryOrderRelease);
+		m_Node.Phase.store(detail::ECancellationNodePhase::Completed, core::MemoryOrderRelease);
+		state->RegistrationChangeSequence.fetch_add(1, core::MemoryOrderRelease);
 		state->RegistrationChangeSequence.notify_all();
 		m_State.Reset();
 		m_Node.Callback = nullptr;
 		m_Node.Context = nullptr;
-		m_Node.Phase.store(detail::ECancellationNodePhase::Idle, rox::core::MemoryOrderRelease);
+		m_Node.Phase.store(detail::ECancellationNodePhase::Idle, core::MemoryOrderRelease);
 		releaseOperation();
 
 		return ECancellationRegistrationResult::InvokedSynchronously;
@@ -87,14 +87,14 @@ namespace rox::core
 	void CancellationRegistration::acquireOperation() noexcept
 	{
 		bool bExpected = false;
-		const bool bAcquired = m_bOperationActive.compare_exchange_strong(bExpected, true, rox::core::MemoryOrderAcqRel,
-		                                                                  rox::core::MemoryOrderAcquire);
+		const bool bAcquired = m_bOperationActive.compare_exchange_strong(bExpected, true, core::MemoryOrderAcqRel,
+		                                                                  core::MemoryOrderAcquire);
 		ASSERT(bAcquired, "CancellationRegistration operations require external synchronization.");
 	}
 
 	void CancellationRegistration::releaseOperation() noexcept
 	{
-		const bool bWasActive = m_bOperationActive.exchange(false, rox::core::MemoryOrderRelease);
+		const bool bWasActive = m_bOperationActive.exchange(false, core::MemoryOrderRelease);
 		ASSERT(bWasActive, "CancellationRegistration operation state is invalid.");
 	}
 
@@ -103,19 +103,19 @@ namespace rox::core
 		ASSERT(!detail::IsInvokingOnCurrentThread(this), "A cancellation callback cannot reset or destroy its own registration.");
 
 		SharedPtr<detail::CancellationState> state = m_State;
-		detail::ECancellationNodePhase phase = m_Node.Phase.load(rox::core::MemoryOrderAcquire);
+		detail::ECancellationNodePhase phase = m_Node.Phase.load(core::MemoryOrderAcquire);
 
 		if (phase == detail::ECancellationNodePhase::Registered)
 		{
 			ASSERT(state, "A registered cancellation callback must own its state.");
 
-			rox::core::LockGuard lock(state->Mutex);
-			phase = m_Node.Phase.load(rox::core::MemoryOrderAcquire);
+			core::LockGuard lock(state->Mutex);
+			phase = m_Node.Phase.load(core::MemoryOrderAcquire);
 
 			if (phase == detail::ECancellationNodePhase::Registered)
 			{
 				m_Node.Unlink(*state);
-				m_Node.Phase.store(detail::ECancellationNodePhase::Idle, rox::core::MemoryOrderRelease);
+				m_Node.Phase.store(detail::ECancellationNodePhase::Idle, core::MemoryOrderRelease);
 				phase = detail::ECancellationNodePhase::Idle;
 			}
 		}
@@ -125,13 +125,13 @@ namespace rox::core
 			ASSERT(!detail::IsDispatchingOnCurrentThread(), "Cancellation callbacks cannot wait for another in-flight registration.");
 			ASSERT(state, "An invoking cancellation callback must own its state.");
 
-			const rox::core::uint64 changeSequence = state->RegistrationChangeSequence.load(rox::core::MemoryOrderAcquire);
-			phase = m_Node.Phase.load(rox::core::MemoryOrderAcquire);
+			const uint64 changeSequence = state->RegistrationChangeSequence.load(core::MemoryOrderAcquire);
+			phase = m_Node.Phase.load(core::MemoryOrderAcquire);
 
 			if (phase == detail::ECancellationNodePhase::Invoking)
 			{
-				state->RegistrationChangeSequence.wait(changeSequence, rox::core::MemoryOrderAcquire);
-				phase = m_Node.Phase.load(rox::core::MemoryOrderAcquire);
+				state->RegistrationChangeSequence.wait(changeSequence, core::MemoryOrderAcquire);
+				phase = m_Node.Phase.load(core::MemoryOrderAcquire);
 			}
 		}
 
@@ -142,7 +142,7 @@ namespace rox::core
 		m_Node.Context = nullptr;
 		m_Node.Previous = nullptr;
 		m_Node.Next = nullptr;
-		m_Node.Phase.store(detail::ECancellationNodePhase::Idle, rox::core::MemoryOrderRelease);
+		m_Node.Phase.store(detail::ECancellationNodePhase::Idle, core::MemoryOrderRelease);
 	}
 
 	void detail::CancellationNode::Unlink(CancellationState& state) noexcept

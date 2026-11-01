@@ -62,7 +62,7 @@ namespace rox::core
 			(void)MakeSharedInto<SharedState>(resource, &state, Move(signal));
 		}
 
-		return TaskSource(rox::core::Move(state));
+		return TaskSource(core::Move(state));
 	}
 
 	template <typename TValue>
@@ -75,7 +75,7 @@ namespace rox::core
 				m_State->ValidateRelease();
 			}
 
-			m_State = rox::core::Move(other.m_State);
+			m_State = core::Move(other.m_State);
 		}
 
 		return *this;
@@ -118,7 +118,7 @@ namespace rox::core
 	{
 		ASSERT(m_State.Get() != nullptr, "TaskSource has no shared state.");
 
-		m_State->Complete(rox::core::Move(result));
+		m_State->Complete(core::Move(result));
 	}
 
 	template <typename TValue>
@@ -126,12 +126,12 @@ namespace rox::core
 	{
 		ASSERT(m_State.Get() != nullptr, "TaskSource has no shared state.");
 
-		return m_State->TryComplete(rox::core::Move(result));
+		return m_State->TryComplete(core::Move(result));
 	}
 
 	template <typename TValue>
 	TaskSource<TValue>::TaskSource(SharedPtr<SharedState>&& state) noexcept
-	    : m_State(rox::core::Move(state))
+	    : m_State(core::Move(state))
 	{
 	}
 

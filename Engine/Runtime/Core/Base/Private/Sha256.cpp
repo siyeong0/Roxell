@@ -27,19 +27,19 @@ namespace rox::core
 		m_TailBytes = 0;
 	}
 
-	void Sha256::Update(rox::core::Span<const Byte> data) noexcept
+	void Sha256::Update(Span<const Byte> data) noexcept
 	{
-		constexpr uint64 MAXIMUM_BYTES = rox::core::NumericLimits<uint64>::max() / 8;
+		constexpr uint64 MAXIMUM_BYTES = NumericLimits<uint64>::max() / 8;
 		ASSERT(data.size() <= MAXIMUM_BYTES - m_TotalBytes, "SHA-256 input must fit its 64-bit bit length.");
 
 		m_TotalBytes += static_cast<uint64>(data.size());
 		const uint8* bytes = reinterpret_cast<const uint8*>(data.data());
-		rox::core::usize offset = 0;
+		usize offset = 0;
 
 		if (m_TailBytes != 0 && !data.empty())
 		{
-			const rox::core::usize count = rox::core::Min(data.size(), m_Tail.size() - m_TailBytes);
-			rox::core::CopyN(bytes, count, m_Tail.data() + m_TailBytes);
+			const usize count = core::Min(data.size(), m_Tail.size() - m_TailBytes);
+			core::CopyN(bytes, count, m_Tail.data() + m_TailBytes);
 			m_TailBytes += count;
 			offset += count;
 
@@ -50,28 +50,28 @@ namespace rox::core
 			}
 		}
 
-		const rox::core::usize blocks = (data.size() - offset) / m_Tail.size();
+		const usize blocks = (data.size() - offset) / m_Tail.size();
 		if (blocks != 0)
 		{
 			ProcessBlocks(bytes + offset, blocks, m_State);
 			offset += blocks * m_Tail.size();
 		}
 
-		const rox::core::usize remaining = data.size() - offset;
+		const usize remaining = data.size() - offset;
 		if (remaining != 0)
 		{
-			rox::core::CopyN(bytes + offset, remaining, m_Tail.data());
+			core::CopyN(bytes + offset, remaining, m_Tail.data());
 			m_TailBytes = remaining;
 		}
 	}
 
 	Hash256 Sha256::Finalize() const noexcept
 	{
-		rox::core::StaticArray<uint32, 8> state = m_State;
-		rox::core::StaticArray<uint8, 128> tail = {};
-		rox::core::CopyN(m_Tail.data(), m_TailBytes, tail.data());
+		StaticArray<uint32, 8> state = m_State;
+		StaticArray<uint8, 128> tail = {};
+		core::CopyN(m_Tail.data(), m_TailBytes, tail.data());
 		tail[m_TailBytes] = 0x80;
-		const rox::core::usize tailBytes = m_TailBytes < 56 ? 64 : 128;
+		const usize tailBytes = m_TailBytes < 56 ? 64 : 128;
 		const uint64 bitLength = m_TotalBytes * 8;
 
 		for (uint32 index = 0; index < 8; ++index)

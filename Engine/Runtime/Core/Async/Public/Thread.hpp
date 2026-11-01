@@ -30,10 +30,10 @@ namespace rox::core
 
 		template <typename TTarget>
 		[[nodiscard]] ThreadStartResult Start(TTarget&& target) noexcept
-		    requires(!rox::core::IsSame<rox::core::Decay<TTarget>, UniqueFunction<void() noexcept>> && rox::core::IsConstructible<UniqueFunction<void() noexcept>, MemoryResource&, TTarget&&>)
+		    requires(!IsSame<core::Decay<TTarget>, UniqueFunction<void() noexcept>> && IsConstructible<UniqueFunction<void() noexcept>, MemoryResource&, TTarget&&>)
 		{
 			ASSERT(!IsJoinable(), "Thread start requires empty ownership.");
-			return Start(UniqueFunction<void() noexcept>(*m_Resource, rox::core::Forward<TTarget>(target)));
+			return Start(UniqueFunction<void() noexcept>(*m_Resource, core::Forward<TTarget>(target)));
 		}
 
 		// Waits for native termination before destroying the callable on the joining thread.

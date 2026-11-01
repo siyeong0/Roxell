@@ -21,13 +21,13 @@ namespace rox::core
 	// The resource and borrowed keys/comparator state outlive the map. Mutation requires exclusive access.
 	template <typename TKey, typename TValue, typename TCompare = DefaultLess<TKey>> class FlatMap
 	{
-		static_assert(rox::core::IsNothrowMoveConstructible<TKey> && rox::core::IsNothrowDestructible<TKey>);
-		static_assert(rox::core::IsNothrowMoveConstructible<TValue> && rox::core::IsNothrowDestructible<TValue>);
-		static_assert(rox::core::IsNothrowCopyConstructible<TCompare> && rox::core::IsNothrowCopyAssignable<TCompare>);
-		static_assert(rox::core::IsNothrowDestructible<TCompare>);
-		static_assert(rox::core::IsNothrowInvocableR<bool, const TCompare&, const TKey&, const TKey&>);
+		static_assert(IsNothrowMoveConstructible<TKey> && IsNothrowDestructible<TKey>);
+		static_assert(IsNothrowMoveConstructible<TValue> && IsNothrowDestructible<TValue>);
+		static_assert(IsNothrowCopyConstructible<TCompare> && IsNothrowCopyAssignable<TCompare>);
+		static_assert(IsNothrowDestructible<TCompare>);
+		static_assert(IsNothrowInvocableR<bool, const TCompare&, const TKey&, const TKey&>);
 		template <typename TLookup>
-		static constexpr bool SUPPORTS_LOOKUP = rox::core::IsNothrowInvocableR<bool, const TCompare&, const TKey&, const TLookup&> && rox::core::IsNothrowInvocableR<bool, const TCompare&, const TLookup&, const TKey&>;
+		static constexpr bool SUPPORTS_LOOKUP = IsNothrowInvocableR<bool, const TCompare&, const TKey&, const TLookup&> && IsNothrowInvocableR<bool, const TCompare&, const TLookup&, const TKey&>;
 
 	public:
 #if defined(_MSC_VER)
@@ -42,8 +42,8 @@ namespace rox::core
 		public:
 			template <typename TKeyArgument, typename... TArguments>
 			Entry(TKeyArgument&& key, TArguments&&... arguments) noexcept
-			    requires(rox::core::IsNothrowConstructible<TKey, TKeyArgument &&> &&
-			             rox::core::IsNothrowConstructible<TValue, TArguments && ...>);
+			    requires(IsNothrowConstructible<TKey, TKeyArgument &&> &&
+			             IsNothrowConstructible<TValue, TArguments && ...>);
 
 			Entry& operator=(const Entry&) = delete;
 			Entry& operator=(Entry&&) = delete;
@@ -77,22 +77,22 @@ namespace rox::core
 
 			template <typename TKeyArgument, typename... TArguments>
 			Slot(TKeyArgument&& key, TArguments&&... arguments) noexcept
-			    requires(rox::core::IsNothrowConstructible<TKey, TKeyArgument &&> &&
-			             rox::core::IsNothrowConstructible<TValue, TArguments && ...>);
+			    requires(IsNothrowConstructible<TKey, TKeyArgument &&> &&
+			             IsNothrowConstructible<TValue, TArguments && ...>);
 
 			Slot(Slot&&) noexcept
-			    requires rox::core::IsTriviallyCopyable<Entry>
+			    requires IsTriviallyCopyable<Entry>
 			= default;
 
 			Slot(Slot&& other) noexcept
-			    requires(!rox::core::IsTriviallyCopyable<Entry>);
+			    requires(!IsTriviallyCopyable<Entry>);
 
 			Slot(const Slot&) noexcept
-			    requires(rox::core::IsTriviallyCopyable<Entry> && rox::core::IsNothrowCopyConstructible<TKey> && rox::core::IsNothrowCopyConstructible<TValue>)
+			    requires(IsTriviallyCopyable<Entry> && IsNothrowCopyConstructible<TKey> && IsNothrowCopyConstructible<TValue>)
 			= default;
 
 			Slot(const Slot& other) noexcept
-			    requires(!rox::core::IsTriviallyCopyable<Entry> && rox::core::IsNothrowCopyConstructible<TKey> && rox::core::IsNothrowCopyConstructible<TValue>);
+			    requires(!IsTriviallyCopyable<Entry> && IsNothrowCopyConstructible<TKey> && IsNothrowCopyConstructible<TValue>);
 
 			Slot& operator=(const Slot&) = delete;
 			Slot& operator=(Slot&&) = delete;
@@ -102,16 +102,16 @@ namespace rox::core
 		template <bool TConst> class BasicIterator final
 		{
 			template <bool> friend class BasicIterator;
-			using MapType = rox::core::Conditional<TConst, const FlatMap, FlatMap>;
+			using MapType = core::Conditional<TConst, const FlatMap, FlatMap>;
 
 		public:
-			BasicIterator(MapType& map, rox::core::usize index) noexcept;
+			BasicIterator(MapType& map, usize index) noexcept;
 
-			using iterator_category = rox::core::ForwardIteratorTag;
+			using iterator_category = core::ForwardIteratorTag;
 			using value_type = Entry;
-			using difference_type = rox::core::isize;
-			using reference = rox::core::Conditional<TConst, const Entry&, Entry&>;
-			using pointer = rox::core::Conditional<TConst, const Entry*, Entry*>;
+			using difference_type = isize;
+			using reference = core::Conditional<TConst, const Entry&, Entry&>;
+			using pointer = core::Conditional<TConst, const Entry*, Entry*>;
 			BasicIterator() noexcept = default;
 			BasicIterator(const BasicIterator&) noexcept = default;
 			BasicIterator& operator=(const BasicIterator&) noexcept = default;
@@ -129,7 +129,7 @@ namespace rox::core
 
 		private:
 			MapType* m_Map = nullptr;
-			rox::core::usize m_Index = 0;
+			usize m_Index = 0;
 		};
 
 		using Iterator = BasicIterator<false>;
@@ -138,19 +138,19 @@ namespace rox::core
 		explicit FlatMap(MemoryResource& resource, const TCompare& compare = {}) noexcept;
 
 		FlatMap(const FlatMap& other) noexcept
-		    requires rox::core::IsNothrowCopyConstructible<Slot>;
+		    requires IsNothrowCopyConstructible<Slot>;
 
 		FlatMap(FlatMap&& other) noexcept;
 
 		FlatMap& operator=(const FlatMap& other) noexcept
-		    requires rox::core::IsNothrowCopyConstructible<Slot>;
+		    requires IsNothrowCopyConstructible<Slot>;
 
 		FlatMap& operator=(FlatMap&& other) noexcept;
 
 		~FlatMap() noexcept = default;
 
-		[[nodiscard]] rox::core::usize Size() const noexcept;
-		[[nodiscard]] rox::core::usize Capacity() const noexcept;
+		[[nodiscard]] usize Size() const noexcept;
+		[[nodiscard]] usize Capacity() const noexcept;
 
 		[[nodiscard]] bool IsEmpty() const noexcept;
 
@@ -179,9 +179,9 @@ namespace rox::core
 		    requires SUPPORTS_LOOKUP<TLookup>;
 
 		// No-op reserve preserves views; growth invalidates every entry view.
-		[[nodiscard]] bool Reserve(const rox::core::usize capacity) noexcept;
-		[[nodiscard]] bool Grow(const rox::core::usize capacity) noexcept;
-		void ReserveRequired(const rox::core::usize capacity) noexcept;
+		[[nodiscard]] bool Reserve(const usize capacity) noexcept;
+		[[nodiscard]] bool Grow(const usize capacity) noexcept;
+		void ReserveRequired(const usize capacity) noexcept;
 
 		// Both invalidate all views. Clear retains capacity; Reset releases the allocation.
 		void Clear() noexcept;
@@ -190,23 +190,23 @@ namespace rox::core
 		// Duplicate admission consumes nothing. A pending entry preserves aliased arguments before relocation.
 		template <typename TKeyArgument, typename... TArguments>
 		InsertResult EmplaceRequired(TKeyArgument&& key, TArguments&&... arguments) noexcept
-		    requires(rox::core::IsSame<rox::core::RemoveCvref<TKeyArgument>, TKey> &&
-		             rox::core::IsNothrowConstructible<TKey, TKeyArgument &&> &&
-		             rox::core::IsNothrowConstructible<TValue, TArguments && ...>);
+		    requires(IsSame<RemoveCvref<TKeyArgument>, TKey> &&
+		             IsNothrowConstructible<TKey, TKeyArgument &&> &&
+		             IsNothrowConstructible<TValue, TArguments && ...>);
 
 		template <typename TKeyArgument, typename TValueArgument>
 		InsertResult InsertRequired(TKeyArgument&& key, TValueArgument&& value) noexcept
-		    requires requires { EmplaceRequired(rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TValueArgument>(value)); };
+		    requires requires { EmplaceRequired(core::Forward<TKeyArgument>(key), core::Forward<TValueArgument>(value)); };
 
 		// Null reports storage allocation failure; arguments and existing entries remain unchanged.
 		// Element constructors retain their own allocation/failure contracts.
 		template <typename TKeyArgument, typename... TArguments>
 		[[nodiscard]] InsertResult Emplace(TKeyArgument&& key, TArguments&&... arguments) noexcept
-		    requires requires { EmplaceRequired(rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TArguments>(arguments)...); };
+		    requires requires { EmplaceRequired(core::Forward<TKeyArgument>(key), core::Forward<TArguments>(arguments)...); };
 
 		template <typename TKeyArgument, typename TValueArgument>
 		[[nodiscard]] InsertResult Insert(TKeyArgument&& key, TValueArgument&& value) noexcept
-		    requires requires { Emplace(rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TValueArgument>(value)); };
+		    requires requires { Emplace(core::Forward<TKeyArgument>(key), core::Forward<TValueArgument>(value)); };
 
 		template <typename TLookup = TKey>
 		[[nodiscard]] TValue* Find(const TLookup& key) noexcept
@@ -245,9 +245,9 @@ namespace rox::core
 		[[nodiscard]] const TValue& operator[](const TLookup& key) const noexcept
 		    requires SUPPORTS_LOOKUP<TLookup>;
 
-		[[nodiscard]] Entry& At(const rox::core::usize index) noexcept;
+		[[nodiscard]] Entry& At(const usize index) noexcept;
 
-		[[nodiscard]] const Entry& At(const rox::core::usize index) const noexcept;
+		[[nodiscard]] const Entry& At(const usize index) const noexcept;
 
 		// Searches before relocation so the probe may borrow an erased key.
 		template <typename TLookup = TKey>
@@ -256,18 +256,18 @@ namespace rox::core
 
 		template <typename TKeyArgument, typename TValueArgument>
 		InsertResult InsertOrAssignRequired(TKeyArgument&& key, TValueArgument&& value) noexcept
-		    requires(rox::core::IsNothrowMoveAssignable<TValue> &&
-		             requires { EmplaceRequired(rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TValueArgument>(value)); });
+		    requires(IsNothrowMoveAssignable<TValue> &&
+		             requires { EmplaceRequired(core::Forward<TKeyArgument>(key), core::Forward<TValueArgument>(value)); });
 
 		// A failed insertion leaves the arguments and existing entries unchanged.
 		template <typename TKeyArgument, typename TValueArgument>
 		[[nodiscard]] InsertResult InsertOrAssign(TKeyArgument&& key, TValueArgument&& value) noexcept
-		    requires requires { InsertOrAssignRequired(rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TValueArgument>(value)); };
+		    requires requires { InsertOrAssignRequired(core::Forward<TKeyArgument>(key), core::Forward<TValueArgument>(value)); };
 
 	private:
-		template <typename TLookup> [[nodiscard]] rox::core::usize lowerBoundIndex(const TLookup& key) const noexcept;
-		template <typename TLookup> [[nodiscard]] rox::core::usize upperBoundIndex(const TLookup& key) const noexcept;
-		template <typename TLookup> [[nodiscard]] rox::core::usize findIndex(const TLookup& key) const noexcept;
+		template <typename TLookup> [[nodiscard]] usize lowerBoundIndex(const TLookup& key) const noexcept;
+		template <typename TLookup> [[nodiscard]] usize upperBoundIndex(const TLookup& key) const noexcept;
+		template <typename TLookup> [[nodiscard]] usize findIndex(const TLookup& key) const noexcept;
 
 	private:
 		Array<Slot> m_Entries;
@@ -280,9 +280,9 @@ namespace rox::core
 	template <typename TKey, typename TValue, typename TCompare>
 	template <typename TKeyArgument, typename... TArguments>
 	FlatMap<TKey, TValue, TCompare>::Entry::Entry(TKeyArgument&& key, TArguments&&... arguments) noexcept
-	    requires(rox::core::IsNothrowConstructible<TKey, TKeyArgument &&> && rox::core::IsNothrowConstructible<TValue, TArguments && ...>)
-	    : m_Key(rox::core::Forward<TKeyArgument>(key))
-	    , Value(rox::core::Forward<TArguments>(arguments)...)
+	    requires(IsNothrowConstructible<TKey, TKeyArgument &&> && IsNothrowConstructible<TValue, TArguments && ...>)
+	    : m_Key(core::Forward<TKeyArgument>(key))
+	    , Value(core::Forward<TArguments>(arguments)...)
 	{
 	}
 
@@ -295,28 +295,28 @@ namespace rox::core
 	template <typename TKey, typename TValue, typename TCompare>
 	template <typename TKeyArgument, typename... TArguments>
 	FlatMap<TKey, TValue, TCompare>::Slot::Slot(TKeyArgument&& key, TArguments&&... arguments) noexcept
-	    requires(rox::core::IsNothrowConstructible<TKey, TKeyArgument &&> && rox::core::IsNothrowConstructible<TValue, TArguments && ...>)
-	    : Item(rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TArguments>(arguments)...)
+	    requires(IsNothrowConstructible<TKey, TKeyArgument &&> && IsNothrowConstructible<TValue, TArguments && ...>)
+	    : Item(core::Forward<TKeyArgument>(key), core::Forward<TArguments>(arguments)...)
 	{
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
 	FlatMap<TKey, TValue, TCompare>::Slot::Slot(Slot&& other) noexcept
-	    requires(!rox::core::IsTriviallyCopyable<Entry>)
-	    : Item(rox::core::Move(other.Item.m_Key), rox::core::Move(other.Item.Value))
+	    requires(!IsTriviallyCopyable<Entry>)
+	    : Item(core::Move(other.Item.m_Key), core::Move(other.Item.Value))
 	{
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
 	FlatMap<TKey, TValue, TCompare>::Slot::Slot(const Slot& other) noexcept
-	    requires(!rox::core::IsTriviallyCopyable<Entry> && rox::core::IsNothrowCopyConstructible<TKey> && rox::core::IsNothrowCopyConstructible<TValue>)
+	    requires(!IsTriviallyCopyable<Entry> && IsNothrowCopyConstructible<TKey> && IsNothrowCopyConstructible<TValue>)
 	    : Item(other.Item.m_Key, other.Item.Value)
 	{
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
 	template <bool TConst>
-	FlatMap<TKey, TValue, TCompare>::BasicIterator<TConst>::BasicIterator(MapType& map, rox::core::usize index) noexcept
+	FlatMap<TKey, TValue, TCompare>::BasicIterator<TConst>::BasicIterator(MapType& map, usize index) noexcept
 	    : m_Map(&map)
 	    , m_Index(index)
 	{
@@ -344,7 +344,7 @@ namespace rox::core
 	template <bool TConst>
 	typename FlatMap<TKey, TValue, TCompare>::BasicIterator<TConst>::pointer FlatMap<TKey, TValue, TCompare>::BasicIterator<TConst>::operator->() const noexcept
 	{
-		return rox::core::AddressOf(operator*());
+		return core::AddressOf(operator*());
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
@@ -374,7 +374,7 @@ namespace rox::core
 
 	template <typename TKey, typename TValue, typename TCompare>
 	FlatMap<TKey, TValue, TCompare>::FlatMap(const FlatMap& other) noexcept
-	    requires rox::core::IsNothrowCopyConstructible<Slot>
+	    requires IsNothrowCopyConstructible<Slot>
 	    : m_Entries(other.m_Entries)
 	    , m_Compare(other.m_Compare)
 	{
@@ -382,14 +382,14 @@ namespace rox::core
 
 	template <typename TKey, typename TValue, typename TCompare>
 	FlatMap<TKey, TValue, TCompare>::FlatMap(FlatMap&& other) noexcept
-	    : m_Entries(rox::core::Move(other.m_Entries))
+	    : m_Entries(core::Move(other.m_Entries))
 	    , m_Compare(other.m_Compare)
 	{
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
 	FlatMap<TKey, TValue, TCompare>& FlatMap<TKey, TValue, TCompare>::operator=(const FlatMap& other) noexcept
-	    requires rox::core::IsNothrowCopyConstructible<Slot>
+	    requires IsNothrowCopyConstructible<Slot>
 	{
 		if (this != &other)
 		{
@@ -405,7 +405,7 @@ namespace rox::core
 	{
 		if (this != &other)
 		{
-			m_Entries = rox::core::Move(other.m_Entries);
+			m_Entries = core::Move(other.m_Entries);
 			m_Compare = other.m_Compare;
 		}
 
@@ -413,13 +413,13 @@ namespace rox::core
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
-	rox::core::usize FlatMap<TKey, TValue, TCompare>::Size() const noexcept
+	usize FlatMap<TKey, TValue, TCompare>::Size() const noexcept
 	{
 		return m_Entries.Size();
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
-	rox::core::usize FlatMap<TKey, TValue, TCompare>::Capacity() const noexcept
+	usize FlatMap<TKey, TValue, TCompare>::Capacity() const noexcept
 	{
 		return m_Entries.Capacity();
 	}
@@ -493,19 +493,19 @@ namespace rox::core
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
-	bool FlatMap<TKey, TValue, TCompare>::Reserve(const rox::core::usize capacity) noexcept
+	bool FlatMap<TKey, TValue, TCompare>::Reserve(const usize capacity) noexcept
 	{
 		return m_Entries.Reserve(capacity);
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
-	bool FlatMap<TKey, TValue, TCompare>::Grow(const rox::core::usize capacity) noexcept
+	bool FlatMap<TKey, TValue, TCompare>::Grow(const usize capacity) noexcept
 	{
 		return m_Entries.Grow(capacity);
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
-	void FlatMap<TKey, TValue, TCompare>::ReserveRequired(const rox::core::usize capacity) noexcept
+	void FlatMap<TKey, TValue, TCompare>::ReserveRequired(const usize capacity) noexcept
 	{
 		m_Entries.ReserveRequired(capacity);
 	}
@@ -525,52 +525,52 @@ namespace rox::core
 	template <typename TKey, typename TValue, typename TCompare>
 	template <typename TKeyArgument, typename... TArguments>
 	typename FlatMap<TKey, TValue, TCompare>::InsertResult FlatMap<TKey, TValue, TCompare>::EmplaceRequired(TKeyArgument&& key, TArguments&&... arguments) noexcept
-	    requires(rox::core::IsSame<rox::core::RemoveCvref<TKeyArgument>, TKey> &&
-	             rox::core::IsNothrowConstructible<TKey, TKeyArgument &&> &&
-	             rox::core::IsNothrowConstructible<TValue, TArguments && ...>)
+	    requires(IsSame<RemoveCvref<TKeyArgument>, TKey> &&
+	             IsNothrowConstructible<TKey, TKeyArgument &&> &&
+	             IsNothrowConstructible<TValue, TArguments && ...>)
 	{
-		const rox::core::usize index = lowerBoundIndex(key);
+		const usize index = lowerBoundIndex(key);
 
-		if (index != Size() && !rox::core::AsConst(m_Compare)(rox::core::AsConst(key), m_Entries[index].Item.GetKey()))
+		if (index != Size() && !core::AsConst(m_Compare)(core::AsConst(key), m_Entries[index].Item.GetKey()))
 		{
-			return {rox::core::AddressOf(m_Entries[index].Item.Value), false};
+			return {core::AddressOf(m_Entries[index].Item.Value), false};
 		}
 
 		return {
-		    rox::core::AddressOf(m_Entries.EmplaceAtRequired(index, rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TArguments>(arguments)...).Item.Value),
+		    core::AddressOf(m_Entries.EmplaceAtRequired(index, core::Forward<TKeyArgument>(key), core::Forward<TArguments>(arguments)...).Item.Value),
 		    true};
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
 	template <typename TKeyArgument, typename TValueArgument>
 	typename FlatMap<TKey, TValue, TCompare>::InsertResult FlatMap<TKey, TValue, TCompare>::InsertRequired(TKeyArgument&& key, TValueArgument&& value) noexcept
-	    requires requires { EmplaceRequired(rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TValueArgument>(value)); }
+	    requires requires { EmplaceRequired(core::Forward<TKeyArgument>(key), core::Forward<TValueArgument>(value)); }
 	{
-		return EmplaceRequired(rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TValueArgument>(value));
+		return EmplaceRequired(core::Forward<TKeyArgument>(key), core::Forward<TValueArgument>(value));
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
 	template <typename TKeyArgument, typename... TArguments>
 	typename FlatMap<TKey, TValue, TCompare>::InsertResult FlatMap<TKey, TValue, TCompare>::Emplace(TKeyArgument&& key, TArguments&&... arguments) noexcept
-	    requires requires { EmplaceRequired(rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TArguments>(arguments)...); }
+	    requires requires { EmplaceRequired(core::Forward<TKeyArgument>(key), core::Forward<TArguments>(arguments)...); }
 	{
-		const rox::core::usize index = lowerBoundIndex(key);
+		const usize index = lowerBoundIndex(key);
 
-		if (index != Size() && !rox::core::AsConst(m_Compare)(rox::core::AsConst(key), m_Entries[index].Item.GetKey()))
+		if (index != Size() && !core::AsConst(m_Compare)(core::AsConst(key), m_Entries[index].Item.GetKey()))
 		{
-			return {rox::core::AddressOf(m_Entries[index].Item.Value), false};
+			return {core::AddressOf(m_Entries[index].Item.Value), false};
 		}
 
-		Slot* const slot = m_Entries.EmplaceAt(index, rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TArguments>(arguments)...);
-		return slot == nullptr ? InsertResult{nullptr, false} : InsertResult{rox::core::AddressOf(slot->Item.Value), true};
+		Slot* const slot = m_Entries.EmplaceAt(index, core::Forward<TKeyArgument>(key), core::Forward<TArguments>(arguments)...);
+		return slot == nullptr ? InsertResult{nullptr, false} : InsertResult{core::AddressOf(slot->Item.Value), true};
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
 	template <typename TKeyArgument, typename TValueArgument>
 	typename FlatMap<TKey, TValue, TCompare>::InsertResult FlatMap<TKey, TValue, TCompare>::Insert(TKeyArgument&& key, TValueArgument&& value) noexcept
-	    requires requires { Emplace(rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TValueArgument>(value)); }
+	    requires requires { Emplace(core::Forward<TKeyArgument>(key), core::Forward<TValueArgument>(value)); }
 	{
-		return Emplace(rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TValueArgument>(value));
+		return Emplace(core::Forward<TKeyArgument>(key), core::Forward<TValueArgument>(value));
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
@@ -579,7 +579,7 @@ namespace rox::core
 	    requires SUPPORTS_LOOKUP<TLookup>
 	{
 		auto* entry = FindEntry(key);
-		return entry == nullptr ? nullptr : rox::core::AddressOf(entry->Value);
+		return entry == nullptr ? nullptr : core::AddressOf(entry->Value);
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
@@ -588,7 +588,7 @@ namespace rox::core
 	    requires SUPPORTS_LOOKUP<TLookup>
 	{
 		const auto* entry = FindEntry(key);
-		return entry == nullptr ? nullptr : rox::core::AddressOf(entry->Value);
+		return entry == nullptr ? nullptr : core::AddressOf(entry->Value);
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
@@ -605,7 +605,7 @@ namespace rox::core
 	    requires SUPPORTS_LOOKUP<TLookup>
 	{
 		const auto index = findIndex(key);
-		return index == Size() ? nullptr : rox::core::AddressOf(m_Entries[index].Item);
+		return index == Size() ? nullptr : core::AddressOf(m_Entries[index].Item);
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
@@ -614,7 +614,7 @@ namespace rox::core
 	    requires SUPPORTS_LOOKUP<TLookup>
 	{
 		const auto index = findIndex(key);
-		return index == Size() ? nullptr : rox::core::AddressOf(m_Entries[index].Item);
+		return index == Size() ? nullptr : core::AddressOf(m_Entries[index].Item);
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
@@ -654,14 +654,14 @@ namespace rox::core
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
-	typename FlatMap<TKey, TValue, TCompare>::Entry& FlatMap<TKey, TValue, TCompare>::At(const rox::core::usize index) noexcept
+	typename FlatMap<TKey, TValue, TCompare>::Entry& FlatMap<TKey, TValue, TCompare>::At(const usize index) noexcept
 	{
 		ASSERT(index < Size(), "FlatMap index must identify a live entry.");
 		return m_Entries[index].Item;
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
-	const typename FlatMap<TKey, TValue, TCompare>::Entry& FlatMap<TKey, TValue, TCompare>::At(const rox::core::usize index) const noexcept
+	const typename FlatMap<TKey, TValue, TCompare>::Entry& FlatMap<TKey, TValue, TCompare>::At(const usize index) const noexcept
 	{
 		ASSERT(index < Size(), "FlatMap index must identify a live entry.");
 		return m_Entries[index].Item;
@@ -686,47 +686,47 @@ namespace rox::core
 	template <typename TKey, typename TValue, typename TCompare>
 	template <typename TKeyArgument, typename TValueArgument>
 	typename FlatMap<TKey, TValue, TCompare>::InsertResult FlatMap<TKey, TValue, TCompare>::InsertOrAssignRequired(TKeyArgument&& key, TValueArgument&& value) noexcept
-	    requires(rox::core::IsNothrowMoveAssignable<TValue> &&
-	             requires { EmplaceRequired(rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TValueArgument>(value)); })
+	    requires(IsNothrowMoveAssignable<TValue> &&
+	             requires { EmplaceRequired(core::Forward<TKeyArgument>(key), core::Forward<TValueArgument>(value)); })
 	{
-		const rox::core::usize index = lowerBoundIndex(key);
-		if (index == Size() || rox::core::AsConst(m_Compare)(rox::core::AsConst(key), m_Entries[index].Item.GetKey()))
+		const usize index = lowerBoundIndex(key);
+		if (index == Size() || core::AsConst(m_Compare)(core::AsConst(key), m_Entries[index].Item.GetKey()))
 		{
 			return {
-			    rox::core::AddressOf(m_Entries.EmplaceAtRequired(index, rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TValueArgument>(value)).Item.Value),
+			    core::AddressOf(m_Entries.EmplaceAtRequired(index, core::Forward<TKeyArgument>(key), core::Forward<TValueArgument>(value)).Item.Value),
 			    true
 			};
 		}
-		TValue* const existing = rox::core::AddressOf(m_Entries[index].Item.Value);
-		TValue pending(rox::core::Forward<TValueArgument>(value));
-		*existing = rox::core::Move(pending);
+		TValue* const existing = core::AddressOf(m_Entries[index].Item.Value);
+		TValue pending(core::Forward<TValueArgument>(value));
+		*existing = core::Move(pending);
 		return {existing, false};
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
 	template <typename TKeyArgument, typename TValueArgument>
 	typename FlatMap<TKey, TValue, TCompare>::InsertResult FlatMap<TKey, TValue, TCompare>::InsertOrAssign(TKeyArgument&& key, TValueArgument&& value) noexcept
-	    requires requires { InsertOrAssignRequired(rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TValueArgument>(value)); }
+	    requires requires { InsertOrAssignRequired(core::Forward<TKeyArgument>(key), core::Forward<TValueArgument>(value)); }
 	{
-		const rox::core::usize index = lowerBoundIndex(key);
-		if (index == Size() || rox::core::AsConst(m_Compare)(rox::core::AsConst(key), m_Entries[index].Item.GetKey()))
+		const usize index = lowerBoundIndex(key);
+		if (index == Size() || core::AsConst(m_Compare)(core::AsConst(key), m_Entries[index].Item.GetKey()))
 		{
-			auto* const entry = m_Entries.EmplaceAt(index, rox::core::Forward<TKeyArgument>(key), rox::core::Forward<TValueArgument>(value));
-			return {entry == nullptr ? nullptr : rox::core::AddressOf(entry->Item.Value), entry != nullptr};
+			auto* const entry = m_Entries.EmplaceAt(index, core::Forward<TKeyArgument>(key), core::Forward<TValueArgument>(value));
+			return {entry == nullptr ? nullptr : core::AddressOf(entry->Item.Value), entry != nullptr};
 		}
-		TValue* const existing = rox::core::AddressOf(m_Entries[index].Item.Value);
-		TValue pending(rox::core::Forward<TValueArgument>(value));
-		*existing = rox::core::Move(pending);
+		TValue* const existing = core::AddressOf(m_Entries[index].Item.Value);
+		TValue pending(core::Forward<TValueArgument>(value));
+		*existing = core::Move(pending);
 		return {existing, false};
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
 	template <typename TLookup>
-	rox::core::usize FlatMap<TKey, TValue, TCompare>::lowerBoundIndex(const TLookup& key) const noexcept
+	usize FlatMap<TKey, TValue, TCompare>::lowerBoundIndex(const TLookup& key) const noexcept
 	{
 		const Slot* const entries = m_Entries.Data();
-		rox::core::usize first = 0;
-		rox::core::usize count = Size();
+		usize first = 0;
+		usize count = Size();
 
 		if (count == 0)
 		{
@@ -735,22 +735,22 @@ namespace rox::core
 
 		while (count > 1)
 		{
-			const rox::core::usize half = count / 2;
+			const usize half = count / 2;
 			const bool bBefore = m_Compare(entries[first + half - 1].Item.GetKey(), key);
 			first = bBefore ? first + half : first;
 			count -= half;
 		}
 
-		return first + static_cast<rox::core::usize>(m_Compare(entries[first].Item.GetKey(), key));
+		return first + static_cast<usize>(m_Compare(entries[first].Item.GetKey(), key));
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
 	template <typename TLookup>
-	rox::core::usize FlatMap<TKey, TValue, TCompare>::upperBoundIndex(const TLookup& key) const noexcept
+	usize FlatMap<TKey, TValue, TCompare>::upperBoundIndex(const TLookup& key) const noexcept
 	{
 		const Slot* const entries = m_Entries.Data();
-		rox::core::usize first = 0;
-		rox::core::usize count = Size();
+		usize first = 0;
+		usize count = Size();
 
 		if (count == 0)
 		{
@@ -759,18 +759,18 @@ namespace rox::core
 
 		while (count > 1)
 		{
-			const rox::core::usize half = count / 2;
+			const usize half = count / 2;
 			const bool bAfter = m_Compare(key, entries[first + half - 1].Item.GetKey());
 			first = bAfter ? first : first + half;
 			count -= half;
 		}
 
-		return first + static_cast<rox::core::usize>(!m_Compare(key, entries[first].Item.GetKey()));
+		return first + static_cast<usize>(!m_Compare(key, entries[first].Item.GetKey()));
 	}
 
 	template <typename TKey, typename TValue, typename TCompare>
 	template <typename TLookup>
-	rox::core::usize FlatMap<TKey, TValue, TCompare>::findIndex(const TLookup& key) const noexcept
+	usize FlatMap<TKey, TValue, TCompare>::findIndex(const TLookup& key) const noexcept
 	{
 		const auto index = lowerBoundIndex(key);
 		return index != Size() && !m_Compare(key, m_Entries[index].Item.GetKey()) ? index : Size();

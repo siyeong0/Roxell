@@ -23,44 +23,44 @@ namespace rox::core
 {
 	namespace
 	{
-		constexpr rox::core::usize MAXIMUM_LOG_LINE_BYTES = 8192;
+		constexpr usize MAXIMUM_LOG_LINE_BYTES = 8192;
 
-		constexpr rox::core::usize MAXIMUM_CATEGORY_BYTES = 64;
-		constexpr rox::core::usize MAXIMUM_MESSAGE_BYTES = 512;
-		constexpr rox::core::usize MAXIMUM_EXPRESSION_BYTES = 256;
-		constexpr rox::core::usize MAXIMUM_FILE_BYTES = 256;
-		constexpr rox::core::usize MAXIMUM_FUNCTION_BYTES = 128;
-		constexpr rox::core::usize MAXIMUM_JSON_STRUCTURE_BYTES = 512;
+		constexpr usize MAXIMUM_CATEGORY_BYTES = 64;
+		constexpr usize MAXIMUM_MESSAGE_BYTES = 512;
+		constexpr usize MAXIMUM_EXPRESSION_BYTES = 256;
+		constexpr usize MAXIMUM_FILE_BYTES = 256;
+		constexpr usize MAXIMUM_FUNCTION_BYTES = 128;
+		constexpr usize MAXIMUM_JSON_STRUCTURE_BYTES = 512;
 
 		static_assert(MAXIMUM_LOG_LINE_BYTES >= (MAXIMUM_CATEGORY_BYTES + MAXIMUM_MESSAGE_BYTES + MAXIMUM_EXPRESSION_BYTES + MAXIMUM_FILE_BYTES + MAXIMUM_FUNCTION_BYTES) * 6 + MAXIMUM_JSON_STRUCTURE_BYTES);
 
-		rox::core::Atomic<ILogSink*> s_LogSink = nullptr;
+		Atomic<ILogSink*> s_LogSink = nullptr;
 
-		rox::core::Atomic<IFailureDiagnostics*> s_FailureDiagnostics = nullptr;
-		rox::core::Atomic<bool> s_bResultFailureTracingEnabled = false;
+		Atomic<IFailureDiagnostics*> s_FailureDiagnostics = nullptr;
+		Atomic<bool> s_bResultFailureTracingEnabled = false;
 #if defined(NDEBUG)
-		rox::core::Atomic<bool> s_bFailureDiagnosticsEnabled = false;
+		Atomic<bool> s_bFailureDiagnosticsEnabled = false;
 #else
-		rox::core::Atomic<bool> s_bFailureDiagnosticsEnabled = true;
+		Atomic<bool> s_bFailureDiagnosticsEnabled = true;
 #endif
 		thread_local bool s_bCapturingFailure = false;
 
-		rox::core::Atomic<ELogStderrPolicy> s_StderrPolicy = ELogStderrPolicy::Immediate;
-		rox::core::Atomic<ELogLevel> s_MinimumLogLevel = ELogLevel::Debug;
+		Atomic<ELogStderrPolicy> s_StderrPolicy = ELogStderrPolicy::Immediate;
+		Atomic<ELogLevel> s_MinimumLogLevel = ELogLevel::Debug;
 
-		rox::core::Atomic<rox::core::uint64> s_LogSequence = 0;
+		Atomic<uint64> s_LogSequence = 0;
 		thread_local bool s_bHandlingLog = false;
 
-		[[nodiscard]] rox::core::uint64 getTimestampUnixMicroseconds() noexcept
+		[[nodiscard]] uint64 getTimestampUnixMicroseconds() noexcept
 		{
-			const rox::core::Microseconds::rep timestamp = rox::core::DurationCast<rox::core::Microseconds>(rox::core::WallClock::now().time_since_epoch()).count();
-			return timestamp > 0 ? static_cast<rox::core::uint64>(timestamp) : 1;
+			const core::Microseconds::rep timestamp = core::DurationCast<core::Microseconds>(core::WallClock::now().time_since_epoch()).count();
+			return timestamp > 0 ? static_cast<uint64>(timestamp) : 1;
 		}
 
-		[[nodiscard]] rox::core::usize getScalarByteCount(const rox::core::DiagnosticText text, const rox::core::usize index) noexcept
+		[[nodiscard]] usize getScalarByteCount(const DiagnosticText text, const usize index) noexcept
 		{
 			const unsigned char lead = static_cast<unsigned char>(text[index]);
-			const rox::core::usize count = lead >= 0xc2 && lead <= 0xdf   ? 2
+			const usize count = lead >= 0xc2 && lead <= 0xdf   ? 2
 			                          : lead >= 0xe0 && lead <= 0xef ? 3
 			                          : lead >= 0xf0 && lead <= 0xf4 ? 4
 			                                                         : 0;
@@ -70,7 +70,7 @@ namespace rox::core
 				return 0;
 			}
 
-			for (rox::core::usize offset = 1; offset < count; ++offset)
+			for (usize offset = 1; offset < count; ++offset)
 			{
 				const unsigned char continuation = static_cast<unsigned char>(text[index + offset]);
 
@@ -94,7 +94,7 @@ namespace rox::core
 		class BufferWriter final
 		{
 		public:
-			explicit BufferWriter(rox::core::StaticArray<char, MAXIMUM_LOG_LINE_BYTES>& buffer) noexcept
+			explicit BufferWriter(StaticArray<char, MAXIMUM_LOG_LINE_BYTES>& buffer) noexcept
 			    : m_Buffer(buffer)
 			{
 			}
@@ -105,41 +105,41 @@ namespace rox::core
 				m_Buffer[m_Size++] = character;
 			}
 
-			void Append(const rox::core::DiagnosticText text) noexcept
+			void Append(const DiagnosticText text) noexcept
 			{
 				ASSERT(m_Size < m_Buffer.size(), "The bounded diagnostic buffer size must remain valid.");
 				ASSERT(text.size() <= m_Buffer.size() - m_Size - 1, "The bounded diagnostic schema and field limits must fit in one log line.");
 
 				if (!text.empty())
 				{
-					rox::core::CopyBytes(m_Buffer.data() + m_Size, text.data(), text.size());
+					core::CopyBytes(m_Buffer.data() + m_Size, text.data(), text.size());
 				}
 
 				m_Size += text.size();
 			}
 
-			void Append(const rox::core::uint64 value) noexcept
+			void Append(const uint64 value) noexcept
 			{
 				char digits[32] = {};
-				const rox::core::ToCharsResult result = rox::core::ToChars(digits, digits + sizeof(digits), value);
-				ASSERT(result.ec == rox::core::EErrorCondition(), "A 32-byte buffer must encode every unsigned 64-bit integer.");
-				Append(rox::core::DiagnosticText(digits, static_cast<rox::core::usize>(result.ptr - digits)));
+				const core::ToCharsResult result = core::ToChars(digits, digits + sizeof(digits), value);
+				ASSERT(result.ec == core::EErrorCondition(), "A 32-byte buffer must encode every unsigned 64-bit integer.");
+				Append(DiagnosticText(digits, static_cast<usize>(result.ptr - digits)));
 			}
 
-			void AppendEscaped(const rox::core::DiagnosticText text, const rox::core::usize maximumBytes, bool* const outTruncated) noexcept
+			void AppendEscaped(const DiagnosticText text, const usize maximumBytes, bool* const outTruncated) noexcept
 			{
 				ASSERT(outTruncated != nullptr, "Log escaping requires a valid truncation output.");
-				const rox::core::usize byteCount = (rox::core::Min)(text.size(), maximumBytes);
+				const usize byteCount = (core::Min)(text.size(), maximumBytes);
 				*outTruncated = *outTruncated || byteCount != text.size();
 				constexpr char HEX[] = "0123456789abcdef";
 
-				for (rox::core::usize index = 0; index < byteCount; ++index)
+				for (usize index = 0; index < byteCount; ++index)
 				{
 					const unsigned char value = static_cast<unsigned char>(text[index]);
 
 					if (value >= 0x80)
 					{
-						const rox::core::usize scalarBytes = getScalarByteCount(text, index);
+						const usize scalarBytes = getScalarByteCount(text, index);
 
 						if (scalarBytes == 0)
 						{
@@ -199,15 +199,15 @@ namespace rox::core
 				}
 			}
 
-			[[nodiscard]] rox::core::DiagnosticText Finish() noexcept
+			[[nodiscard]] DiagnosticText Finish() noexcept
 			{
 				m_Buffer[m_Size] = '\0';
 				return {m_Buffer.data(), m_Size};
 			}
 
 		private:
-			rox::core::StaticArray<char, MAXIMUM_LOG_LINE_BYTES>& m_Buffer;
-			rox::core::usize m_Size = 0;
+			StaticArray<char, MAXIMUM_LOG_LINE_BYTES>& m_Buffer;
+			usize m_Size = 0;
 		};
 
 		[[nodiscard]] const char* getLogLevelName(const ELogLevel level) noexcept
@@ -231,7 +231,7 @@ namespace rox::core
 			}
 		}
 
-		[[nodiscard]] rox::core::DiagnosticText formatLogEvent(LogEvent* const event, rox::core::StaticArray<char, MAXIMUM_LOG_LINE_BYTES>* const buffer) noexcept
+		[[nodiscard]] DiagnosticText formatLogEvent(LogEvent* const event, StaticArray<char, MAXIMUM_LOG_LINE_BYTES>* const buffer) noexcept
 		{
 			ASSERT(event != nullptr, "Log formatting requires a valid event.");
 			ASSERT(buffer != nullptr, "Log formatting requires a valid bounded buffer.");
@@ -255,7 +255,7 @@ namespace rox::core
 			writer.Append("\",\"file\":\"");
 			writer.AppendEscaped(event->Record.Source.file_name(), MAXIMUM_FILE_BYTES, &bTruncated);
 			writer.Append("\",\"line\":");
-			writer.Append(static_cast<rox::core::uint64>(event->Record.Source.line()));
+			writer.Append(static_cast<uint64>(event->Record.Source.line()));
 			writer.Append(",\"function\":\"");
 			writer.AppendEscaped(event->Record.Source.function_name(), MAXIMUM_FUNCTION_BYTES, &bTruncated);
 			writer.Append("\",\"truncated\":");
@@ -269,7 +269,7 @@ namespace rox::core
 		void writeEmergencyStderr(const LogRecord& record) noexcept
 		{
 			std::fprintf(stderr, "Roxell recursive log [%s]: %.*s (%s:%u)\n", getLogLevelName(record.Level),
-			             static_cast<int>((rox::core::Min)(record.Message.size(), MAXIMUM_MESSAGE_BYTES)),
+			             static_cast<int>((core::Min)(record.Message.size(), MAXIMUM_MESSAGE_BYTES)),
 			             record.Message.data(), record.Source.file_name(), record.Source.line());
 			std::fflush(stderr);
 		}
@@ -284,53 +284,53 @@ namespace rox::core
 	ELogStderrPolicy SetLogStderrPolicy(const ELogStderrPolicy policy) noexcept
 	{
 		ASSERT(policy >= ELogStderrPolicy::Immediate && policy <= ELogStderrPolicy::Disabled, "The stderr policy must be a declared ELogStderrPolicy value.");
-		return s_StderrPolicy.exchange(policy, rox::core::MemoryOrderAcqRel);
+		return s_StderrPolicy.exchange(policy, core::MemoryOrderAcqRel);
 	}
 
 	ELogStderrPolicy GetLogStderrPolicy() noexcept
 	{
-		return s_StderrPolicy.load(rox::core::MemoryOrderAcquire);
+		return s_StderrPolicy.load(core::MemoryOrderAcquire);
 	}
 
 	ILogSink* SetLogSink(ILogSink* const sink) noexcept
 	{
-		return s_LogSink.exchange(sink, rox::core::MemoryOrderAcqRel);
+		return s_LogSink.exchange(sink, core::MemoryOrderAcqRel);
 	}
 
 	ELogLevel SetMinimumLogLevel(const ELogLevel level) noexcept
 	{
 		ASSERT(level >= ELogLevel::Trace && level <= ELogLevel::Critical, "The minimum log level must be a declared ELogLevel value.");
-		return s_MinimumLogLevel.exchange(level, rox::core::MemoryOrderAcqRel);
+		return s_MinimumLogLevel.exchange(level, core::MemoryOrderAcqRel);
 	}
 
 	ELogLevel GetMinimumLogLevel() noexcept
 	{
-		return s_MinimumLogLevel.load(rox::core::MemoryOrderAcquire);
+		return s_MinimumLogLevel.load(core::MemoryOrderAcquire);
 	}
 
 	IFailureDiagnostics* SetFailureDiagnostics(IFailureDiagnostics* provider) noexcept
 	{
-		return s_FailureDiagnostics.exchange(provider, rox::core::MemoryOrderAcqRel);
+		return s_FailureDiagnostics.exchange(provider, core::MemoryOrderAcqRel);
 	}
 
 	bool SetFailureDiagnosticsEnabled(bool enabled) noexcept
 	{
-		return s_bFailureDiagnosticsEnabled.exchange(enabled, rox::core::MemoryOrderAcqRel);
+		return s_bFailureDiagnosticsEnabled.exchange(enabled, core::MemoryOrderAcqRel);
 	}
 
 	bool IsFailureDiagnosticsEnabled() noexcept
 	{
-		return s_bFailureDiagnosticsEnabled.load(rox::core::MemoryOrderAcquire);
+		return s_bFailureDiagnosticsEnabled.load(core::MemoryOrderAcquire);
 	}
 
 	bool SetResultFailureTracingEnabled(bool enabled) noexcept
 	{
-		return s_bResultFailureTracingEnabled.exchange(enabled, rox::core::MemoryOrderAcqRel);
+		return s_bResultFailureTracingEnabled.exchange(enabled, core::MemoryOrderAcqRel);
 	}
 
 	bool IsResultFailureTracingEnabled() noexcept
 	{
-		return s_bResultFailureTracingEnabled.load(rox::core::MemoryOrderAcquire);
+		return s_bResultFailureTracingEnabled.load(core::MemoryOrderAcquire);
 	}
 
 	void WriteLog(const LogRecord& record) noexcept
@@ -353,12 +353,12 @@ namespace rox::core
 
 		s_bHandlingLog = true;
 
-		const rox::core::uint64 sequence = s_LogSequence.fetch_add(1, rox::core::MemoryOrderRelaxed) + 1;
+		const uint64 sequence = s_LogSequence.fetch_add(1, core::MemoryOrderRelaxed) + 1;
 		ASSERT(sequence != 0, "The process-local log event sequence must not wrap.");
 
 		LogEvent event{sequence, getTimestampUnixMicroseconds(), diagnosticThreadId(), record, false};
-		rox::core::StaticArray<char, MAXIMUM_LOG_LINE_BYTES> buffer = {};
-		const rox::core::DiagnosticText jsonLine = formatLogEvent(&event, &buffer);
+		StaticArray<char, MAXIMUM_LOG_LINE_BYTES> buffer = {};
+		const DiagnosticText jsonLine = formatLogEvent(&event, &buffer);
 
 		const ELogStderrPolicy policy = GetLogStderrPolicy();
 		const bool bCritical = record.Level == ELogLevel::Critical;
@@ -372,7 +372,7 @@ namespace rox::core
 			}
 		}
 
-		if (ILogSink* const sink = s_LogSink.load(rox::core::MemoryOrderAcquire))
+		if (ILogSink* const sink = s_LogSink.load(core::MemoryOrderAcquire))
 		{
 			sink->Write(event, jsonLine);
 		}
@@ -381,7 +381,7 @@ namespace rox::core
 
 		if (record.Level >= ELogLevel::Error && IsFailureDiagnosticsEnabled() && !s_bCapturingFailure)
 		{
-			if (IFailureDiagnostics* provider = s_FailureDiagnostics.load(rox::core::MemoryOrderAcquire))
+			if (IFailureDiagnostics* provider = s_FailureDiagnostics.load(core::MemoryOrderAcquire))
 			{
 				s_bCapturingFailure = true;
 				provider->Capture(event);
@@ -399,7 +399,7 @@ namespace rox::core
 			return;
 		}
 
-		if (ILogSink* const sink = s_LogSink.load(rox::core::MemoryOrderAcquire))
+		if (ILogSink* const sink = s_LogSink.load(core::MemoryOrderAcquire))
 		{
 			s_bHandlingLog = true;
 			sink->Flush();

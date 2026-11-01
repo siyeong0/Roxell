@@ -21,9 +21,9 @@ namespace rox::core
 		ByteReader& operator=(const ByteReader&) noexcept = default;
 		ByteReader& operator=(ByteReader&&) noexcept = default;
 
-		[[nodiscard]] rox::core::usize GetOffset() const noexcept { return m_Offset; }
-		[[nodiscard]] rox::core::usize GetRemaining() const noexcept { return m_Bytes.Size() - m_Offset; }
-		[[nodiscard]] bool CanRead(rox::core::usize byteCount) const noexcept { return byteCount <= GetRemaining(); }
+		[[nodiscard]] usize GetOffset() const noexcept { return m_Offset; }
+		[[nodiscard]] usize GetRemaining() const noexcept { return m_Bytes.Size() - m_Offset; }
+		[[nodiscard]] bool CanRead(usize byteCount) const noexcept { return byteCount <= GetRemaining(); }
 
 		[[nodiscard]] uint8 ReadU8() noexcept;
 		[[nodiscard]] uint16 ReadU16LE() noexcept;
@@ -32,7 +32,7 @@ namespace rox::core
 		[[nodiscard]] uint32 ReadU32BE() noexcept;
 		[[nodiscard]] uint64 ReadU64LE() noexcept;
 		[[nodiscard]] uint64 ReadU64BE() noexcept;
-		[[nodiscard]] Span<const Byte> ReadBytes(rox::core::usize byteCount) noexcept;
+		[[nodiscard]] Span<const Byte> ReadBytes(usize byteCount) noexcept;
 
 		// Checked reads leave the cursor and output unchanged when input is truncated.
 		// Output pointers must be non-null. Returned byte spans borrow the input storage.
@@ -43,7 +43,7 @@ namespace rox::core
 		[[nodiscard]] bool TryReadU32BE(uint32* output) noexcept { return tryRead(output, 4, &ByteReader::ReadU32BE); }
 		[[nodiscard]] bool TryReadU64LE(uint64* output) noexcept { return tryRead(output, 8, &ByteReader::ReadU64LE); }
 		[[nodiscard]] bool TryReadU64BE(uint64* output) noexcept { return tryRead(output, 8, &ByteReader::ReadU64BE); }
-		[[nodiscard]] bool TryReadBytes(rox::core::usize byteCount, Span<const Byte>* output) noexcept
+		[[nodiscard]] bool TryReadBytes(usize byteCount, Span<const Byte>* output) noexcept
 		{
 			ASSERT(output != nullptr, "ByteReader requires a valid output.");
 
@@ -57,7 +57,7 @@ namespace rox::core
 		}
 
 	private:
-		template <typename T> bool tryRead(T* output, rox::core::usize byteCount, T (ByteReader::*read)() noexcept) noexcept
+		template <typename T> bool tryRead(T* output, usize byteCount, T (ByteReader::*read)() noexcept) noexcept
 		{
 			ASSERT(output != nullptr, "ByteReader requires a valid output.");
 
@@ -70,10 +70,10 @@ namespace rox::core
 			return true;
 		}
 
-		uint64 readUnsigned(rox::core::usize byteCount, bool bLittleEndian) noexcept;
+		uint64 readUnsigned(usize byteCount, bool bLittleEndian) noexcept;
 
 	private:
 		Span<const Byte> m_Bytes;
-		rox::core::usize m_Offset = 0;
+		usize m_Offset = 0;
 	};
 }

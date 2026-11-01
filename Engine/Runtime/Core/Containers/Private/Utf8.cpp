@@ -24,15 +24,15 @@ namespace rox::core
 			const unsigned char* const end = current + text.Size();
 			while (current != end)
 			{
-				const rox::core::uint8 lead = *current++;
+				const uint8 lead = *current++;
 
 				if (lead <= 0x7F)
 				{
 					const unsigned char* ascii = current - 1;
-					while (static_cast<rox::core::usize>(end - ascii) >= sizeof(rox::core::uint64))
+					while (static_cast<usize>(end - ascii) >= sizeof(uint64))
 					{
-						rox::core::uint64 word;
-						rox::core::CopyBytes(&word, ascii, sizeof(word));
+						uint64 word;
+						core::CopyBytes(&word, ascii, sizeof(word));
 						if ((word & 0x8080808080808080ull) != 0)
 						{
 							break;
@@ -61,7 +61,7 @@ namespace rox::core
 					{
 						return false;
 					}
-					const rox::core::uint8 second = current[0];
+					const uint8 second = current[0];
 					// The first continuation excludes overlong forms and surrogate scalars.
 					if ((second & 0xC0) != 0x80 ||
 					    (lead == 0xE0 && second < 0xA0) ||
@@ -78,7 +78,7 @@ namespace rox::core
 					{
 						return false;
 					}
-					const rox::core::uint8 second = current[0];
+					const uint8 second = current[0];
 					// These bounds restrict four-byte sequences to U+10000 through U+10FFFF.
 					if ((second & 0xC0) != 0x80 ||
 					    (lead == 0xF0 && second < 0x90) ||
@@ -98,11 +98,11 @@ namespace rox::core
 
 	bool IsValidUtf8(const StringView text) noexcept
 	{
-		rox::core::usize index = 0;
-		while (text.Size() - index >= sizeof(rox::core::uint64))
+		usize index = 0;
+		while (text.Size() - index >= sizeof(uint64))
 		{
-			rox::core::uint64 word;
-			rox::core::CopyBytes(&word, text.Data() + index, sizeof(word));
+			uint64 word;
+			core::CopyBytes(&word, text.Data() + index, sizeof(word));
 			if ((word & 0x8080808080808080ull) != 0)
 			{
 				break;

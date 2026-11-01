@@ -20,8 +20,8 @@ namespace rox::core
 	template <typename T, typename... ArgumentTypes>
 	[[nodiscard]] T* CreateObject(MemoryResource& resource, ArgumentTypes&&... arguments) noexcept
 	{
-		static_assert(rox::core::IsNothrowConstructible<T, ArgumentTypes...>);
-		static_assert(rox::core::IsNothrowDestructible<T>);
+		static_assert(IsNothrowConstructible<T, ArgumentTypes...>);
+		static_assert(IsNothrowDestructible<T>);
 
 		void* const memory = resource.Allocate({sizeof(T), alignof(T)});
 		if (memory == nullptr)
@@ -29,23 +29,23 @@ namespace rox::core
 			return nullptr;
 		}
 
-		return ::new (memory) T(rox::core::Forward<ArgumentTypes>(arguments)...);
+		return ::new (memory) T(core::Forward<ArgumentTypes>(arguments)...);
 	}
 
 	template <typename T, typename... ArgumentTypes>
 	[[nodiscard]] T* CreateObjectRequired(MemoryResource& resource, ArgumentTypes&&... arguments) noexcept
 	{
-		static_assert(rox::core::IsNothrowConstructible<T, ArgumentTypes...>);
-		static_assert(rox::core::IsNothrowDestructible<T>);
+		static_assert(IsNothrowConstructible<T, ArgumentTypes...>);
+		static_assert(IsNothrowDestructible<T>);
 
 		void* const memory = resource.AllocateRequired({sizeof(T), alignof(T)});
-		return ::new (memory) T(rox::core::Forward<ArgumentTypes>(arguments)...);
+		return ::new (memory) T(core::Forward<ArgumentTypes>(arguments)...);
 	}
 
 	template <typename T>
 	void DestroyObject(MemoryResource& resource, T* const object) noexcept
 	{
-		static_assert(rox::core::IsNothrowDestructible<T>);
+		static_assert(IsNothrowDestructible<T>);
 
 		if (object == nullptr)
 		{
@@ -63,26 +63,26 @@ namespace rox::core
 		template <typename... ArgumentTypes>
 		[[nodiscard]] static UniquePtr Create(MemoryResource& resource, ArgumentTypes&&... arguments) noexcept
 		{
-			return UniquePtr(resource, CreateObject<T>(resource, rox::core::Forward<ArgumentTypes>(arguments)...));
+			return UniquePtr(resource, CreateObject<T>(resource, core::Forward<ArgumentTypes>(arguments)...));
 		}
 
 		template <typename... ArgumentTypes>
 		[[nodiscard]] static UniquePtr CreateRequired(MemoryResource& resource, ArgumentTypes&&... arguments) noexcept
 		{
-			return UniquePtr(resource, CreateObjectRequired<T>(resource, rox::core::Forward<ArgumentTypes>(arguments)...));
+			return UniquePtr(resource, CreateObjectRequired<T>(resource, core::Forward<ArgumentTypes>(arguments)...));
 		}
 
 		template <typename... ArgumentTypes>
 		[[nodiscard]] static bool CreateInto(MemoryResource& resource, UniquePtr* outOwner, ArgumentTypes&&... arguments) noexcept
 		{
 			ASSERT(outOwner != nullptr, "UniquePtr::CreateInto requires a valid output pointer.");
-			UniquePtr<T> replacement = Create(resource, rox::core::Forward<ArgumentTypes>(arguments)...);
+			UniquePtr<T> replacement = Create(resource, core::Forward<ArgumentTypes>(arguments)...);
 			if (!replacement)
 			{
 				return false;
 			}
 
-			*outOwner = rox::core::Move(replacement);
+			*outOwner = core::Move(replacement);
 			return true;
 		}
 
@@ -91,7 +91,7 @@ namespace rox::core
 		[[nodiscard]] static bool ConstructInto(MemoryResource& resource, UniquePtr* const outOwner, ArgumentTypes&&... arguments)
 		{
 			ASSERT(outOwner != nullptr, "UniquePtr::ConstructInto requires a valid output pointer.");
-			static_assert(rox::core::IsNothrowDestructible<T>);
+			static_assert(IsNothrowDestructible<T>);
 
 			void* const memory = resource.Allocate({sizeof(T), alignof(T)});
 			if (memory == nullptr)
@@ -101,9 +101,9 @@ namespace rox::core
 
 			try
 			{
-				T* const object = ::new (memory) T(rox::core::Forward<ArgumentTypes>(arguments)...);
+				T* const object = ::new (memory) T(core::Forward<ArgumentTypes>(arguments)...);
 				UniquePtr replacement(resource, object);
-				*outOwner = rox::core::Move(replacement);
+				*outOwner = core::Move(replacement);
 				return true;
 			}
 			catch (...)
@@ -135,7 +135,7 @@ namespace rox::core
 		{
 			if (this != &other)
 			{
-				UniquePtr previous(rox::core::Move(*this));
+				UniquePtr previous(core::Move(*this));
 				m_Resource = other.m_Resource;
 				m_Object = other.m_Object;
 				other.m_Resource = nullptr;
@@ -152,8 +152,8 @@ namespace rox::core
 		void Reset() noexcept
 		{
 			ASSERT((m_Resource == nullptr) == (m_Object == nullptr), "UniquePtr must keep its resource and object ownership paired.");
-			MemoryResource* const resource = rox::core::Exchange(m_Resource, nullptr);
-			T* const object = rox::core::Exchange(m_Object, nullptr);
+			MemoryResource* const resource = core::Exchange(m_Resource, nullptr);
+			T* const object = core::Exchange(m_Object, nullptr);
 
 			if (resource != nullptr)
 			{
@@ -223,20 +223,20 @@ namespace rox::core
 	template <typename T, typename... ArgumentTypes>
 	UniquePtr<T> MakeUnique(MemoryResource& resource, ArgumentTypes&&... arguments) noexcept
 	{
-		return UniquePtr<T>::Create(resource, rox::core::Forward<ArgumentTypes>(arguments)...);
+		return UniquePtr<T>::Create(resource, core::Forward<ArgumentTypes>(arguments)...);
 	}
 
 	template <typename T, typename... ArgumentTypes>
 	UniquePtr<T> MakeUniqueRequired(MemoryResource& resource, ArgumentTypes&&... arguments) noexcept
 	{
-		return UniquePtr<T>::CreateRequired(resource, rox::core::Forward<ArgumentTypes>(arguments)...);
+		return UniquePtr<T>::CreateRequired(resource, core::Forward<ArgumentTypes>(arguments)...);
 	}
 
 	// Use only while a current owner still has a throwing constructor. The output changes after success.
 	template <typename T, typename... ArgumentTypes>
 	bool ConstructUniqueInto(MemoryResource& resource, UniquePtr<T>* const outOwner, ArgumentTypes&&... arguments)
 	{
-		return UniquePtr<T>::ConstructInto(resource, outOwner, rox::core::Forward<ArgumentTypes>(arguments)...);
+		return UniquePtr<T>::ConstructInto(resource, outOwner, core::Forward<ArgumentTypes>(arguments)...);
 	}
 
 } // namespace rox::core

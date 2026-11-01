@@ -50,6 +50,6 @@ namespace rox::math
 	static_assert(sizeof(Plane<float64>) == sizeof(float64) * 4);
 	static_assert(offsetof(Plane<float32>, Distance) == sizeof(float32) * 3);
 	static_assert(offsetof(Plane<float64>, Distance) == sizeof(float64) * 3);
-	static_assert(rox::core::IsStandardLayout<Plane<float32>> && rox::core::IsTriviallyCopyable<Plane<float32>>);
-	static_assert(rox::core::IsStandardLayout<Plane<float64>> && rox::core::IsTriviallyCopyable<Plane<float64>>);
+	static_assert(core::IsStandardLayout<Plane<float32>> && core::IsTriviallyCopyable<Plane<float32>>);
+	static_assert(core::IsStandardLayout<Plane<float64>> && core::IsTriviallyCopyable<Plane<float64>>);
 } // namespace rox::math

@@ -14,7 +14,7 @@ namespace rox::math
 		template <MathScalar T>
 		[[nodiscard]] T distance(const Vector3<T>& left, const Vector3<T>& right) noexcept
 		{
-			return rox::core::Hypot(static_cast<T>(left.X) - right.X, static_cast<T>(left.Y) - right.Y, static_cast<T>(left.Z) - right.Z);
+			return core::Hypot(static_cast<T>(left.X) - right.X, static_cast<T>(left.Y) - right.Y, static_cast<T>(left.Z) - right.Z);
 		}
 
 		template <MathScalar T>
@@ -31,7 +31,7 @@ namespace rox::math
 		{
 			ASSERT(outValue != nullptr, "Converted float output must not be null.");
 
-			if (!rox::core::IsFinite(value) || rox::core::Abs(value) > static_cast<T>(rox::core::NumericLimits<T>::max()))
+			if (!core::IsFinite(value) || core::Abs(value) > static_cast<T>(core::NumericLimits<T>::max()))
 			{
 				return false;
 			}
@@ -45,7 +45,7 @@ namespace rox::math
 		{
 			ASSERT(outRadius != nullptr, "Rounded sphere radius output must not be null.");
 
-			if (!rox::core::IsFinite(value) || value < T(0.0) || value > static_cast<T>(rox::core::NumericLimits<T>::max()))
+			if (!core::IsFinite(value) || value < T(0.0) || value > static_cast<T>(core::NumericLimits<T>::max()))
 			{
 				return false;
 			}
@@ -54,10 +54,10 @@ namespace rox::math
 
 			if (static_cast<T>(radius) < value)
 			{
-				radius = rox::core::NextAfter(radius, rox::core::NumericLimits<T>::infinity());
+				radius = core::NextAfter(radius, core::NumericLimits<T>::infinity());
 			}
 
-			if (!rox::core::IsFinite(radius))
+			if (!core::IsFinite(radius))
 			{
 				return false;
 			}
@@ -71,13 +71,13 @@ namespace rox::math
 	Sphere<T>::Sphere(const Vector3<T>& center, T radius) noexcept : Center(center), Radius(radius)
 	{
 		ASSERT(center.IsFinite(), "Sphere center must be finite.");
-		ASSERT(rox::core::IsFinite(radius) && radius >= T(0.0), "Sphere radius must be finite and non-negative.");
+		ASSERT(core::IsFinite(radius) && radius >= T(0.0), "Sphere radius must be finite and non-negative.");
 	}
 
 	template <MathScalar T>
 	bool Sphere<T>::IsValid() const noexcept
 	{
-		return Center.IsFinite() && rox::core::IsFinite(Radius) && Radius >= T(0.0);
+		return Center.IsFinite() && core::IsFinite(Radius) && Radius >= T(0.0);
 	}
 
 	template <MathScalar T>
@@ -95,7 +95,7 @@ namespace rox::math
 		}
 
 		const T combinedRadius = static_cast<T>(Radius) + static_cast<T>(other.Radius);
-		if (rox::core::IsFinite(combinedRadius))
+		if (core::IsFinite(combinedRadius))
 		{
 			return distance<T>(other.Center, Center) <= combinedRadius;
 		}
@@ -114,7 +114,7 @@ namespace rox::math
 		const T xOffset = static_cast<T>(point.X) - static_cast<T>(Center.X);
 		const T yOffset = static_cast<T>(point.Y) - static_cast<T>(Center.Y);
 		const T zOffset = static_cast<T>(point.Z) - static_cast<T>(Center.Z);
-		const T pointDistance = rox::core::Hypot(xOffset, yOffset, zOffset);
+		const T pointDistance = core::Hypot(xOffset, yOffset, zOffset);
 
 		if (pointDistance <= static_cast<T>(Radius))
 		{
@@ -133,7 +133,7 @@ namespace rox::math
 			return false;
 		}
 
-		const T requiredRadius = rox::core::Max(distance<T>(newCenter, point), distance<T>(newCenter, Center) + static_cast<T>(Radius));
+		const T requiredRadius = core::Max(distance<T>(newCenter, point), distance<T>(newCenter, Center) + static_cast<T>(Radius));
 
 		if (!tryRoundRadiusUp<T>(requiredRadius, &newRadiusValue))
 		{

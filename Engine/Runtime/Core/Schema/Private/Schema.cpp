@@ -15,7 +15,7 @@ namespace rox::core
 		return nullptr;
 	}
 
-	const SchemaEnumEntry* FindSchemaEnumEntry(const SchemaFieldDescriptor& field, rox::core::StringView name) noexcept
+	const SchemaEnumEntry* FindSchemaEnumEntry(const SchemaFieldDescriptor& field, StringView name) noexcept
 	{
 		for (const SchemaEnumEntry& entry : field.EnumEntries)
 		{

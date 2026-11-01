@@ -14,7 +14,7 @@ namespace rox::math
 		template <MathScalar T>
 		T narrowAffine2DLane(T value) noexcept
 		{
-			ASSERT(rox::core::IsFinite(value), "2D affine result must be representable in the finite scalar range.");
+			ASSERT(core::IsFinite(value), "2D affine result must be representable in the finite scalar range.");
 			return static_cast<T>(value);
 		}
 
@@ -77,9 +77,9 @@ namespace rox::math
 	template <MathScalar T>
 	AffineTransform2D<T> AffineTransform2D<T>::FromTRS(const Vector2<T>& translation, T radians, const Vector2<T>& scale) noexcept
 	{
-		ASSERT(translation.IsFinite() && rox::core::IsFinite(radians) && scale.IsFinite(), "2D affine inputs must be finite.");
-		const T cosine = rox::core::Cos(static_cast<T>(radians));
-		const T sine = rox::core::Sin(static_cast<T>(radians));
+		ASSERT(translation.IsFinite() && core::IsFinite(radians) && scale.IsFinite(), "2D affine inputs must be finite.");
+		const T cosine = core::Cos(static_cast<T>(radians));
+		const T sine = core::Sin(static_cast<T>(radians));
 		return {{narrowAffine2DLane<T>(scale.X * cosine), narrowAffine2DLane<T>(scale.X * sine)},
 		        {narrowAffine2DLane<T>(-scale.Y * sine), narrowAffine2DLane<T>(scale.Y * cosine)},
 		        translation};
