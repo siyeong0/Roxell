@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "name": "ShaderCompiler",
+  "path": "Engine/Tools/ShaderCompiler",
+  "summary": "Slang and DXC compilation, reflected shader artifacts, captured build plans and bounded asynchronous builds.",
+  "dependencies": [
+    "Core",
+    "Shader"
+  ],
+  "targets": [
+    {
+      "name": "Tool-ShaderCompiler",
+      "kind": "STATIC",
+      "dependencies": [
+        "Runtime-Core",
+        "Runtime-Shader"
+      ]
+    }
+  ],
+  "publicHeaders": [
+    "Public/ShaderBuildJob.h",
+    "Public/ShaderBuildPlan.h",
+    "Public/ShaderBuildService.h",
+    "Public/ShaderCompiler.h",
+    "Public/ShaderCompilerTypes.h",
+    "Public/ShaderModuleArtifact.h"
+  ],
+  "status": "candidate-implementation"
+}

@@ -1,13 +1,5 @@
 set(shader_test_directory "${CMAKE_CURRENT_LIST_DIR}/Tests")
 
-if(TARGET Tool-ShaderBuild)
-    add_executable(Build-ShaderTestData EXCLUDE_FROM_ALL "${shader_test_directory}/Data/GenerateFixtures.cpp")
-    target_link_libraries(Build-ShaderTestData PRIVATE Tool-ShaderBuild)
-    roxell_copy_slang_runtime(Build-ShaderTestData)
-    roxell_copy_dxc_runtime(Build-ShaderTestData)
-    set_property(TARGET Build-ShaderTestData PROPERTY FOLDER "Tests/Shader")
-endif()
-
 add_executable(Test-Shader
     "${shader_test_directory}/ShaderTestMain.cpp"
     "${shader_test_directory}/ShaderTestData.h"

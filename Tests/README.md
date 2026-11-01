@@ -81,3 +81,13 @@ behavior not covered by the registered Platform suite.
 ## RHI tests
 
 RHI uses GoogleTest for common types, Null device contracts and optional native GPU readback tests. See [RHI test coverage and execution](../Engine/Runtime/RHI/Tests/README.md).
+
+## ShaderCompiler tests
+
+ShaderCompiler uses real HLSL and Slang files to test compilation, reflection,
+module linking, specialization, asynchronous scheduling and resource lifetime.
+
+```powershell
+cmake --build .build/windows-ninja --target Test-ShaderCompiler
+ctest --test-dir .build/windows-ninja -R '^Roxell\.ShaderCompiler\.' --output-on-failure
+```
