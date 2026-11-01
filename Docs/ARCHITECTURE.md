@@ -8,7 +8,7 @@ Roxell is organized around runtime modules, feature packages, and tools. Modules
 | --- | --- |
 | `Engine/Runtime` | Shared runtime systems |
 | `Engine/Packages` | Feature code and runtime/editor integration |
-| `Engine/Tooling` | Authoring, asset processing, and build services |
+| `Engine/Tools` | Authoring, asset processing, and build services |
 | `Engine/Editor`, `Engine/Agents`, `Engine/SDK` | Editor UI, agent integration, and clients |
 | `Engine/Apps` | Application entry points and feature assembly |
 | `DevKit` | Development tools |
