@@ -61,3 +61,5 @@ __pycache__/
 
 # Authored local projects and editable content (preserve during artifact cleanup)
 /.local/
+
+/ThirdParty/vulkan_headers/restored/

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "name": "RHI",
+  "path": "Engine/Runtime/RHI",
+  "status": "candidate-implementation",
+  "summary": "GPU resources, command recording, submission and lifetime validation with a compile-time Null, D3D12 or Vulkan backend.",
+  "dependencies": [
+    "Core"
+  ],
+  "targets": [
+    {
+      "name": "Runtime-RHI",
+      "kind": "STATIC",
+      "dependencies": [
+        "Runtime-Core"
+      ],
+      "privateDependencies": [
+        "D3D12 (selected Windows backend)",
+        "DXGI (selected D3D12 backend)",
+        "DirectX Agility 1.721.3-preview (optional LinAlg headers)",
+        "NVAPI R595 (optional Windows SDK)",
+        "Vulkan-Headers@v1.4.321 (selected Vulkan backend)"
+      ]
+    }
+  ],
+  "publicHeaders": [
+    "Public/Device.h",
+    "Public/Rhi.h",
+    "Public/RhiBindingTypes.h",
+    "Public/RhiCommandPreparation.h",
+    "Public/RhiCommandTypes.h",
+    "Public/RhiCoopVecTypes.h",
+    "Public/RhiDeviceTypes.h",
+    "Public/RhiDiagnostics.h",
+    "Public/RhiFormat.h",
+    "Public/RhiInterop.h",
+    "Public/RhiPipelineTypes.h",
+    "Public/RhiPresentationTypes.h",
+    "Public/RhiRayTracingTypes.h",
+    "Public/RhiResourceTypes.h",
+    "Public/RhiTypes.h"
+  ]
+}

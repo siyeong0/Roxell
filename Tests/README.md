@@ -77,3 +77,7 @@ behavior not covered by the registered Platform suite.
 | `Windows/WindowsThreadBackend.h` | `WindowsThreadBackendTests.cpp` checks start, join, identity, native handle retirement and fatal ownership boundaries. Native start-failure injection is not covered. |
 | `Windows/WindowsWaitTimer.h` | `WindowsWaitTimerTests.cpp` checks zero/repeated waits and moved ownership. Native timer creation/wait failure is not injected. |
 | `Windows/WindowsWindowSystem.h` | `WindowsWindowSystemTests.cpp` checks creation, allocation failures, lifetime, window state, events, pointer and text/clipboard behavior. Some input paths and desktop-dependent cases remain unverified. |
+
+## RHI tests
+
+RHI uses GoogleTest for common types, Null device contracts and optional native GPU readback tests. See [RHI test coverage and execution](../Engine/Runtime/RHI/Tests/README.md).
