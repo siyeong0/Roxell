@@ -39,4 +39,5 @@ add_subdirectory(Engine/Runtime/Platform)
 
 if(BUILD_TESTING)
     include(Engine/Runtime/Core/Tests.cmake)
+    include(Engine/Runtime/Platform/Tests.cmake)
 endif()
